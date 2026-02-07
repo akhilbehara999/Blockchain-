@@ -3,104 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlockSim - Blockchain Simulator</title>
+    <title>BlockSim - Interactive Blockchain Simulator</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>BlockSim - Blockchain Simulator</h1>
-            <p>Educational blockchain simulator demonstrating transactions, validation, mempool, block creation, Proof of Work, chain integrity, and tampering consequences.</p>
+            <h1>BlockSim: Blockchain Simulator</h1>
+            <p>Learn how blockchains work by building one. Create transactions, mine blocks, and see what happens when you try to cheat.</p>
         </header>
 
-        <section id="settings-section">
-            <h2>Settings</h2>
+        <!-- Settings Section -->
+        <section class="card" id="settings-section">
+            <h2>Simulation Settings</h2>
             <div class="settings-grid">
                 <div class="setting-item">
                     <label for="difficulty">Mining Difficulty (1-5): <span id="difficulty-value">3</span></label>
                     <input type="range" id="difficulty" min="1" max="5" value="3">
+                    <small>Higher difficulty = longer mining time (more leading zeros).</small>
                 </div>
                 <div class="setting-item">
-                    <label>
-                        <input type="checkbox" id="tamper-mode"> Enable Tampering Mode
+                    <label style="cursor: pointer;">
+                        <input type="checkbox" id="tamper-mode"> <strong>Enable Tampering Mode</strong>
                     </label>
-                    <small class="warning-text" id="tamper-warning" style="display: none;">⚠️ Tampering will break chain integrity</small>
+                    <small class="warning-text" id="tamper-warning" style="display: none; color: var(--danger);">⚠️ Allows editing past blocks to break the chain.</small>
                 </div>
                 <div class="setting-item">
-                    <label>
-                        <input type="checkbox" id="sandbox-mode"> Sandbox Mode
+                    <label style="cursor: pointer;">
+                        <input type="checkbox" id="sandbox-mode"> <strong>Sandbox Mode</strong>
                     </label>
+                    <small>Disables strict UI steps (allows creating invalid states for learning).</small>
                 </div>
-                <button id="reset-app" class="btn btn-danger">Reset Simulator</button>
+                <div class="setting-item">
+                    <button id="reset-app" class="btn-danger btn-sm">Reset Simulator</button>
+                </div>
             </div>
         </section>
 
-        <div class="main-grid">
-            <section id="transaction-creator">
+        <!-- Main Grid: Transactions & Mempool -->
+        <div class="grid-2">
+            <!-- 1. Transaction Creator -->
+            <section class="card" id="transaction-creator">
                 <h2>1. Create Transaction</h2>
                 <div class="form-group">
-                    <label for="sender">Sender:</label>
+                    <label for="sender">Sender</label>
                     <input type="text" id="sender" placeholder="e.g., Alice">
-                    <span class="error-msg" id="sender-error"></span>
+                    <div class="error-msg" id="sender-error"></div>
                 </div>
                 <div class="form-group">
-                    <label for="receiver">Receiver:</label>
+                    <label for="receiver">Receiver</label>
                     <input type="text" id="receiver" placeholder="e.g., Bob">
-                    <span class="error-msg" id="receiver-error"></span>
+                    <div class="error-msg" id="receiver-error"></div>
                 </div>
                 <div class="form-group">
-                    <label for="amount">Amount:</label>
+                    <label for="amount">Amount</label>
                     <input type="number" id="amount" placeholder="e.g., 50" min="1">
-                    <span class="error-msg" id="amount-error"></span>
+                    <div class="error-msg" id="amount-error"></div>
                 </div>
-                <button id="create-tx-btn" disabled>Create Transaction</button>
+                <button id="create-tx-btn" disabled>Add to Mempool</button>
+                <small style="display: block; margin-top: 10px; text-align: center;">Transactions start as "pending" in the mempool.</small>
             </section>
 
-            <section id="mempool-section">
-                <h2>2. Mempool (Pending Transactions) <span id="mempool-count" class="badge">0</span></h2>
+            <!-- 2. Mempool -->
+            <section class="card" id="mempool-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h2 style="margin:0; border:none;">2. Mempool <span id="mempool-count" class="badge">0</span></h2>
+                </div>
+                <div style="border-bottom: 2px solid var(--border); margin-bottom: 15px;"></div>
+
                 <div id="mempool-list" class="transaction-list">
-                    <!-- Transactions will appear here -->
-                    <p class="placeholder-text">No pending transactions.</p>
+                    <!-- Transactions appear here -->
+                    <p style="text-align: center; color: var(--text-muted); padding: 20px;">No pending transactions.</p>
                 </div>
                 <button id="create-block-btn" disabled>Create Block from Mempool</button>
             </section>
         </div>
 
-        <section id="block-builder" class="hidden">
-            <h2>3. Block Builder & Mining</h2>
+        <!-- 3. Block Builder / Mining -->
+        <section id="block-builder" class="card hidden">
+            <h2>3. Mine New Block</h2>
             <div class="block-preview">
                 <div class="block-header">
-                    <span>Index: <span id="builder-index"></span></span>
-                    <span>Timestamp: <span id="builder-timestamp"></span></span>
+                    <span>Index: #<span id="builder-index"></span></span>
+                    <span><span id="builder-timestamp"></span></span>
                 </div>
-                <div class="block-body">
-                    <p><strong>Previous Hash:</strong> <span id="builder-prev-hash" class="hash"></span></p>
-                    <p><strong>Transactions:</strong></p>
-                    <ul id="builder-tx-list"></ul>
-                    <div class="mining-controls">
-                        <div class="nonce-display">
-                            <label>Nonce:</label>
-                            <span id="builder-nonce">0</span>
-                        </div>
-                        <div class="hash-display">
-                            <label>Current Hash:</label>
-                            <span id="builder-hash" class="hash"></span>
-                        </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label>Previous Hash:</label>
+                    <span id="builder-prev-hash" class="hash-display"></span>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label>Transactions:</label>
+                    <ul id="builder-tx-list" style="padding-left: 20px; font-size: 0.9rem;"></ul>
+                </div>
+
+                <div class="settings-grid" style="background: white; padding: 15px; border-radius: 4px; border: 1px solid var(--border);">
+                    <div class="setting-item">
+                        <label title="A random number changed to find a valid hash">Nonce (Proof of Work) ℹ️:</label>
+                        <span id="builder-nonce" style="font-family: monospace; font-size: 1.2rem; font-weight: bold;">0</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Current Hash:</label>
+                        <span id="builder-hash" class="hash-display" style="font-size: 0.8rem;"></span>
                     </div>
                 </div>
-                <div class="block-actions">
-                    <button id="mine-block-btn">Mine This Block</button>
-                    <span id="mining-status"></span>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-direction: column;">
+                    <div id="mining-status" style="text-align: center; font-weight: bold; height: 1.5em;"></div>
+                    <button id="mine-block-btn">⛏️ Mine Block (Find Hash)</button>
+                    <button id="add-block-btn" disabled class="btn-success" style="background-color: var(--success);">➕ Add Block to Chain</button>
                 </div>
-                <button id="add-block-btn" disabled>Add to Blockchain</button>
             </div>
         </section>
 
+        <!-- 4. Blockchain -->
         <section id="blockchain-section">
-            <h2>4. Blockchain Visualization</h2>
+            <h2>4. Blockchain</h2>
+            <p>Scroll horizontally to view the entire chain. Green blocks are valid. Red blocks are invalid.</p>
             <div id="blockchain-container">
-                <!-- Blocks will be rendered here -->
+                <!-- Blocks rendered here -->
             </div>
         </section>
     </div>
