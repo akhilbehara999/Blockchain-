@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlockSim - Blockchain Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BlockSim - Blockchain Simulator</h1>
+            <p>Educational blockchain simulator demonstrating transactions, validation, mempool, block creation, Proof of Work, chain integrity, and tampering consequences.</p>
+        </header>
+
+        <section id="settings-section">
+            <h2>Settings</h2>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="difficulty">Mining Difficulty (1-5): <span id="difficulty-value">3</span></label>
+                    <input type="range" id="difficulty" min="1" max="5" value="3">
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="tamper-mode"> Enable Tampering Mode
+                    </label>
+                    <small class="warning-text" id="tamper-warning" style="display: none;">⚠️ Tampering will break chain integrity</small>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="sandbox-mode"> Sandbox Mode
+                    </label>
+                </div>
+                <button id="reset-app" class="btn btn-danger">Reset Simulator</button>
+            </div>
+        </section>
+
+        <div class="main-grid">
+            <section id="transaction-creator">
+                <h2>1. Create Transaction</h2>
+                <div class="form-group">
+                    <label for="sender">Sender:</label>
+                    <input type="text" id="sender" placeholder="e.g., Alice">
+                    <span class="error-msg" id="sender-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="receiver">Receiver:</label>
+                    <input type="text" id="receiver" placeholder="e.g., Bob">
+                    <span class="error-msg" id="receiver-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="amount">Amount:</label>
+                    <input type="number" id="amount" placeholder="e.g., 50" min="1">
+                    <span class="error-msg" id="amount-error"></span>
+                </div>
+                <button id="create-tx-btn" disabled>Create Transaction</button>
+            </section>
+
+            <section id="mempool-section">
+                <h2>2. Mempool (Pending Transactions) <span id="mempool-count" class="badge">0</span></h2>
+                <div id="mempool-list" class="transaction-list">
+                    <!-- Transactions will appear here -->
+                    <p class="placeholder-text">No pending transactions.</p>
+                </div>
+                <button id="create-block-btn" disabled>Create Block from Mempool</button>
+            </section>
+        </div>
+
+        <section id="block-builder" class="hidden">
+            <h2>3. Block Builder & Mining</h2>
+            <div class="block-preview">
+                <div class="block-header">
+                    <span>Index: <span id="builder-index"></span></span>
+                    <span>Timestamp: <span id="builder-timestamp"></span></span>
+                </div>
+                <div class="block-body">
+                    <p><strong>Previous Hash:</strong> <span id="builder-prev-hash" class="hash"></span></p>
+                    <p><strong>Transactions:</strong></p>
+                    <ul id="builder-tx-list"></ul>
+                    <div class="mining-controls">
+                        <div class="nonce-display">
+                            <label>Nonce:</label>
+                            <span id="builder-nonce">0</span>
+                        </div>
+                        <div class="hash-display">
+                            <label>Current Hash:</label>
+                            <span id="builder-hash" class="hash"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="block-actions">
+                    <button id="mine-block-btn">Mine This Block</button>
+                    <span id="mining-status"></span>
+                </div>
+                <button id="add-block-btn" disabled>Add to Blockchain</button>
+            </div>
+        </section>
+
+        <section id="blockchain-section">
+            <h2>4. Blockchain Visualization</h2>
+            <div id="blockchain-container">
+                <!-- Blocks will be rendered here -->
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
