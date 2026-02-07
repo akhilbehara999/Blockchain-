@@ -13,6 +13,9 @@
         <header>
             <h1>BlockSim: Blockchain Simulator</h1>
             <p>Learn how blockchains work by building one. Create transactions, mine blocks, and see what happens when you try to cheat.</p>
+            <div style="margin-top: 15px;">
+                <button id="start-guide-btn" style="width: auto; background: var(--success); padding: 8px 16px;">🎓 Start Interactive Guide</button>
+            </div>
         </header>
 
         <!-- Settings Section -->
@@ -20,6 +23,14 @@
             <h2>Simulation Settings</h2>
             <div class="settings-grid">
                 <div class="setting-item">
+                    <label for="consensus-type">Consensus Mechanism</label>
+                    <select id="consensus-type">
+                        <option value="POW">Proof of Work (Mining)</option>
+                        <option value="POS">Proof of Stake (Validation)</option>
+                    </select>
+                    <small>Choose how blocks are added.</small>
+                </div>
+                <div class="setting-item" id="difficulty-setting">
                     <label for="difficulty">Mining Difficulty (1-5): <span id="difficulty-value">3</span></label>
                     <input type="range" id="difficulty" min="1" max="5" value="3">
                     <small>Higher difficulty = longer mining time (more leading zeros).</small>
@@ -127,8 +138,19 @@
                 <!-- Blocks rendered here -->
             </div>
         </section>
+
+        <!-- 5. Attack Lab (Hidden by default) -->
+        <section id="attack-lab" class="card hidden" style="border-color: var(--danger);">
+            <h2 class="text-danger">5. Attack Lab</h2>
+            <p>Simulate common blockchain attacks to see how they break the chain (or fail).</p>
+            <div class="grid-2">
+                <button onclick="window.app.attackMode.doubleSpend()" class="btn-danger">Attempt Double Spend</button>
+                <button onclick="window.app.attackMode.forkChain()" class="btn-danger">Fork Chain (Split)</button>
+            </div>
+            <div id="attack-info" style="margin-top: 15px; padding: 10px; background: var(--danger-bg); border-radius: var(--radius); display: none;"></div>
+        </section>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="src/app.js"></script>
 </body>
 </html>
