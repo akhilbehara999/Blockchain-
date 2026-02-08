@@ -2,7 +2,7 @@ import { AppState } from '../js/appState.js';
 import { saveState } from '../js/storage.js';
 
 /**
- * Adds a transaction to the ledger (pendingTransactions).
+ * Adds a transaction to the ledger.
  * @param {string} sender
  * @param {string} receiver
  * @param {number} amount
@@ -22,16 +22,55 @@ export function addTransaction(sender, receiver, amount) {
         timestamp: Date.now()
     };
 
-    AppState.pendingTransactions.push(transaction);
+    AppState.ledger.push(transaction);
     saveState();
     return true;
 }
 
 /**
- * Returns the current list of transactions.
+ * Updates an existing transaction in the ledger.
+ * @param {string} id
+ * @param {string} sender
+ * @param {string} receiver
+ * @param {number} amount
+ * @returns {boolean} True if successful, false otherwise.
+ */
+export function updateTransaction(id, sender, receiver, amount) {
+    const index = AppState.ledger.findIndex(tx => tx.id === id);
+    if (index === -1) return false;
+
+    AppState.ledger[index] = {
+        ...AppState.ledger[index],
+        sender,
+        receiver,
+        amount: parseFloat(amount),
+        timestamp: Date.now() // Update timestamp on edit? Maybe.
+    };
+    saveState();
+    return true;
+}
+
+/**
+ * Deletes a transaction from the ledger.
+ * @param {string} id
+ * @returns {boolean} True if successful, false otherwise.
+ */
+export function deleteTransaction(id) {
+    const initialLength = AppState.ledger.length;
+    AppState.ledger = AppState.ledger.filter(tx => tx.id !== id);
+
+    if (AppState.ledger.length !== initialLength) {
+        saveState();
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Returns the current list of ledger transactions.
  */
 export function getTransactions() {
-    return AppState.pendingTransactions;
+    return AppState.ledger || [];
 }
 
 /**
@@ -39,5 +78,5 @@ export function getTransactions() {
  * Condition: At least 2 transactions added.
  */
 export function isModule1Complete() {
-    return AppState.pendingTransactions.length >= 2;
+    return (AppState.ledger && AppState.ledger.length >= 2);
 }

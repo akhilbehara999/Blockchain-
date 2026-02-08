@@ -3,7 +3,10 @@
 export const AppState = {
   currentModule: 0,
 
-  // Blockchain Data
+  // Ledger for Module 1 (User requirement)
+  ledger: [],
+
+  // Blockchain Data (Placeholders for future modules)
   blockchain: [], // Array of Block objects
   pendingTransactions: [], // Array of Transaction objects
 

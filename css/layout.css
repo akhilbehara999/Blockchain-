@@ -19,7 +19,7 @@ body {
 /* Layout Grid */
 .app-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Mobile: Top-down (Sidebar hidden, Main, Nav) */
   height: 100vh;
   overflow: hidden;
 }
@@ -31,14 +31,57 @@ body {
   border-right: 1px solid var(--border-color);
   padding: 1.5rem;
   display: none; /* Mobile first: hidden, will show on desktop */
+  overflow-y: auto;
+}
+
+/* Sidebar Nav Item */
+.nav-item {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 0.5rem;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s;
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-item.active {
+  background: var(--accent-color);
+  color: #fff;
+  cursor: default;
+}
+
+.nav-item.locked {
+  color: #555;
+  cursor: not-allowed;
+}
+
+.nav-item.locked:hover {
+  background: transparent;
+}
+
+
+/* Main Content Wrapper */
+.main-wrapper {
+  flex: 1; /* Take remaining space */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Ensure scrolling happens inside main-content */
+  position: relative;
 }
 
 /* Main Content Area */
 .main-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
+  overflow-y: auto; /* Scrollable area */
   padding: 1.5rem;
   max-width: 800px;
   margin: 0 auto;
@@ -51,25 +94,70 @@ body {
   border-top: 1px solid var(--border-color);
   padding: 1rem;
   overflow-x: auto;
-  min-height: 200px;
+  min-height: 150px; /* Reduced slightly for mobile */
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
 /* Module Content Wrapper */
 .module-container {
   background-color: var(--card-bg);
   border-radius: 12px;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: var(--shadow);
   margin-bottom: 2rem;
+}
+
+/* Mobile Bottom Navigation */
+.mobile-nav {
+  height: 64px;
+  background-color: var(--card-bg);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 1rem;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.75rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.mobile-nav-item.active {
+  color: var(--accent-color);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.mobile-nav-item.locked {
+  color: #444;
+  cursor: not-allowed;
+}
+
+.mobile-nav-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.2rem;
 }
 
 /* Responsive */
 @media (min-width: 768px) {
   .app-container {
-    flex-direction: row;
+    flex-direction: row; /* Desktop: Sidebar | Main */
   }
 
   .sidebar {
@@ -77,15 +165,15 @@ body {
     flex-direction: column;
   }
 
+  .mobile-nav {
+    display: none;
+  }
+
   .main-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
     height: 100vh;
   }
 
-  .main-content {
-    flex: 1;
-    overflow-y: auto;
+  .module-container {
+      padding: 2.5rem;
   }
 }
