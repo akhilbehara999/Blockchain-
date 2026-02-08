@@ -2,6 +2,9 @@ import { AppState } from './appState.js';
 import { navigateTo, isModuleLocked, completeModule } from './router.js';
 import { addTransaction, getTransactions, isModule1Complete, updateTransaction, deleteTransaction } from '../modules/ledger.js';
 import { getBlockchain, isChainEmpty } from './blockchain.js';
+import { renderModule2 } from '../modules/block.js';
+import { renderModule3 } from '../modules/hashing.js';
+import { renderModule4 } from '../modules/chain.js';
 
 // DOM Elements
 const sidebar = document.getElementById('sidebar');
@@ -17,7 +20,9 @@ let editingTransactionId = null;
 const MODULES = [
     { id: 0, title: "Introduction", icon: "👋", shortTitle: "Intro" },
     { id: 1, title: "Ledger", icon: "📒", shortTitle: "Ledger" },
-    { id: 2, title: "Blocks", icon: "🧱", shortTitle: "Blocks" } // Placeholder
+    { id: 2, title: "Blocks", icon: "🧱", shortTitle: "Blocks" },
+    { id: 3, title: "Hashing", icon: "🔐", shortTitle: "Hash" },
+    { id: 4, title: "Blockchain", icon: "⛓️", shortTitle: "Chain" }
 ];
 
 /**
@@ -107,7 +112,13 @@ function renderMainContent() {
             renderModule1();
             break;
         case 2:
-            renderModule2Placeholder();
+            renderModule2();
+            break;
+        case 3:
+            renderModule3();
+            break;
+        case 4:
+            renderModule4();
             break;
         default:
             mainContent.innerHTML = '<h2>Module Not Found</h2>';
@@ -358,26 +369,6 @@ function renderModule1() {
 }
 
 /**
- * Renders Module 2: Blocks (Placeholder).
- */
-function renderModule2Placeholder() {
-    const container = document.createElement('div');
-    container.className = 'module-container text-center';
-    container.innerHTML = `
-        <div style="font-size: 4rem; margin-bottom: 1rem;">🧱</div>
-        <h1>Module 2: Blocks</h1>
-        <p style="font-size: 1.2rem; margin-bottom: 2rem;">
-            Great job! You've learned that ledgers can be easily tampered with.
-        </p>
-        <p>In the next module, we will learn how to <strong>seal</strong> transactions into blocks using <strong>Hashes</strong>.</p>
-        <div class="card" style="display: inline-block; margin-top: 2rem;">
-            <p style="margin-bottom: 0; color: var(--accent-color);">Coming Soon...</p>
-        </div>
-    `;
-    mainContent.appendChild(container);
-}
-
-/**
  * Renders the Blockchain Visualization Panel.
  */
 function renderBlockchainPanel() {
@@ -390,6 +381,16 @@ function renderBlockchainPanel() {
     blockchainPanel.classList.remove('hidden');
     blockchainPanel.innerHTML = '';
 
+    // If Module 4 is active, we rely on the module to update the panel,
+    // OR we invoke the module's panel renderer.
+    if (AppState.currentModule === 4) {
+        import('../modules/chain.js').then(module => {
+            module.renderBlockchainPanel();
+        });
+        return;
+    }
+
+    // Default behavior for other modules (1, 2, 3)
     if (isChainEmpty()) {
         const placeholder = document.createElement('div');
         placeholder.className = 'placeholder-text';
@@ -397,12 +398,17 @@ function renderBlockchainPanel() {
         placeholder.style.fontStyle = 'italic';
         placeholder.style.width = '100%';
         placeholder.style.textAlign = 'center';
-        placeholder.textContent = 'No blocks mined yet.';
+        placeholder.textContent = 'Blockchain will appear here later.';
         blockchainPanel.appendChild(placeholder);
     } else {
+        // Simple visualization for earlier modules if blocks exist
         const blocks = getBlockchain();
         const placeholder = document.createElement('div');
-        placeholder.textContent = `Chain has ${blocks.length} blocks.`;
+        placeholder.style.padding = '1rem';
+        placeholder.style.color = '#888';
+        placeholder.style.textAlign = 'center';
+        placeholder.style.width = '100%';
+        placeholder.textContent = `Current Blockchain: ${blocks.length} Block(s).`;
         blockchainPanel.appendChild(placeholder);
     }
 }
