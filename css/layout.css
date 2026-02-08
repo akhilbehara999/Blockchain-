@@ -1,163 +1,146 @@
-/* Reset & Base */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* Mobile First Layout */
 
-body {
-  font-family: var(--font-family);
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  line-height: 1.5;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Layout Grid */
+/* App Container */
 .app-container {
   display: flex;
-  flex-direction: column; /* Mobile: Top-down (Sidebar hidden, Main, Nav) */
-  height: 100vh;
-  overflow: hidden;
+  flex-direction: column;
+  height: 100vh; /* Full viewport height */
+  overflow: hidden; /* Prevent body scroll */
+  background-color: var(--bg-color);
 }
 
-/* Sidebar/Nav */
+/* Sidebar (Desktop Only) */
 .sidebar {
-  width: 250px;
+  display: none; /* Hidden on mobile */
+  width: 260px;
   background-color: var(--card-bg);
   border-right: 1px solid var(--border-color);
   padding: 1.5rem;
-  display: none; /* Mobile first: hidden, will show on desktop */
   overflow-y: auto;
+  flex-shrink: 0;
 }
-
-/* Sidebar Nav Item */
-.nav-item {
-  width: 100%;
-  text-align: left;
-  margin-bottom: 0.5rem;
-  border: none;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s;
-  background: transparent;
-  color: var(--text-color);
-  cursor: pointer;
-}
-
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.nav-item.active {
-  background: var(--accent-color);
-  color: #fff;
-  cursor: default;
-}
-
-.nav-item.locked {
-  color: #555;
-  cursor: not-allowed;
-}
-
-.nav-item.locked:hover {
-  background: transparent;
-}
-
 
 /* Main Content Wrapper */
 .main-wrapper {
-  flex: 1; /* Take remaining space */
+  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Ensure scrolling happens inside main-content */
   position: relative;
+  overflow: hidden;
+  width: 100%;
 }
 
 /* Main Content Area */
 .main-content {
   flex: 1;
-  overflow-y: auto; /* Scrollable area */
-  padding: 1.5rem;
-  max-width: 800px;
-  margin: 0 auto;
+  overflow-y: auto; /* Scrollable content */
+  padding: 1rem; /* Smaller padding for mobile */
+  padding-bottom: 80px; /* Space for FAB or Bottom Nav */
   width: 100%;
-}
-
-/* Blockchain Visualization Panel */
-.blockchain-panel {
-  background-color: var(--card-bg);
-  border-top: 1px solid var(--border-color);
-  padding: 1rem;
-  overflow-x: auto;
-  min-height: 150px; /* Reduced slightly for mobile */
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-shrink: 0;
-}
-
-/* Module Content Wrapper */
-.module-container {
-  background-color: var(--card-bg);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
+  max-width: 100%; /* Full width */
+  margin: 0 auto;
 }
 
 /* Mobile Bottom Navigation */
 .mobile-nav {
-  height: 64px;
+  height: 60px;
   background-color: var(--card-bg);
   border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0 1rem;
+  padding: 0 0.5rem;
   flex-shrink: 0;
-  z-index: 10;
+  z-index: 50; /* Above content */
 }
 
-.mobile-nav-item {
-  flex: 1;
+/* Blockchain Drawer (Mobile) */
+.blockchain-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60vh; /* Take up 60% of screen */
+  background-color: var(--card-bg);
+  border-top: 1px solid var(--accent-color);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+  transform: translateY(100%); /* Hidden by default */
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  z-index: 100; /* Above everything */
   display: flex;
   flex-direction: column;
+}
+
+.blockchain-drawer.open {
+  transform: translateY(0);
+}
+
+.drawer-header {
+  padding: 0.75rem 1rem;
+  background-color: rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 0.75rem;
-  padding: 0.5rem;
-  cursor: pointer;
-  border-radius: 8px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.mobile-nav-item.active {
-  color: var(--accent-color);
-  background-color: rgba(59, 130, 246, 0.1);
+.drawer-content {
+  flex: 1;
+  overflow-x: auto; /* Horizontal scroll */
+  overflow-y: hidden;
+  padding: 1rem;
+  display: flex;
+  align-items: center; /* Center blocks vertically */
 }
 
-.mobile-nav-item.locked {
-  color: #444;
-  cursor: not-allowed;
+/* Toggle Button (Floating or Fixed) */
+.blockchain-toggle-btn {
+  position: fixed;
+  bottom: 70px; /* Above mobile nav */
+  right: 1rem;
+  background-color: var(--accent-color);
+  color: white;
+  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
-.mobile-nav-icon {
-  font-size: 1.25rem;
-  margin-bottom: 0.2rem;
+.blockchain-toggle-btn:hover {
+  transform: translateY(-2px);
+  background-color: var(--accent-hover);
 }
 
-/* Responsive */
+/* Backdrop for Drawer */
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 90;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+/* Desktop Responsive Override */
 @media (min-width: 768px) {
   .app-container {
-    flex-direction: row; /* Desktop: Sidebar | Main */
+    flex-direction: row;
   }
 
   .sidebar {
@@ -169,11 +152,24 @@ body {
     display: none;
   }
 
-  .main-wrapper {
-    height: 100vh;
+  .main-content {
+    max-width: 900px;
+    padding: 2rem;
+    padding-bottom: 2rem;
   }
 
-  .module-container {
-      padding: 2.5rem;
+  /* Desktop: Drawer becomes a fixed bottom panel inside main-wrapper?
+     Or keeps the drawer behavior?
+     Let's keep the drawer behavior for consistency, but maybe make it less intrusive or just the same.
+     Actually, for "Desktop", a permanent visible panel might be better as per original design?
+     The user requirement is "Mobile-first... Blockchain panel must be collapsible".
+     Let's stick to the collapsible drawer for ALL sizes for simplicity and "clean" look.
+  */
+  .blockchain-drawer {
+    height: 350px;
+    width: 100%; /* Or constrain max-width */
+    left: auto;
+    right: 0;
+    /* If sidebar is present, maybe offset? No, simple overlay is fine. */
   }
 }

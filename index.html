@@ -6,22 +6,19 @@
     <title>BlockSim - Interactive Blockchain Learning</title>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="css/theme.css">
-    <link rel="stylesheet" href="css/layout.css">
+    <!-- main.css imports layout, theme, block, chain -->
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/block.css">
-    <link rel="stylesheet" href="css/chain.css">
 
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
+        <!-- Sidebar Navigation (Desktop) -->
         <aside class="sidebar" id="sidebar">
-            <div class="logo">
-                <h2>BlockSim</h2>
-                <p>Learn by doing.</p>
+            <div class="logo" style="margin-bottom: 2rem;">
+                <h2 style="color: var(--accent-color);">BlockSim</h2>
+                <p style="font-size: 0.8rem; color: #666;">Learn by doing.</p>
             </div>
             <nav id="module-nav">
                 <!-- Navigation items will be injected by JS -->
@@ -34,18 +31,35 @@
             <main id="main-content" class="main-content">
                 <!-- Module content will be injected here -->
             </main>
-
-            <!-- Fixed Blockchain Visualization Panel -->
-            <section id="blockchain-panel" class="blockchain-panel hidden">
-                <!-- Blockchain blocks will be visualized here -->
-                <div class="placeholder-text">Blockchain Visualization Panel</div>
-            </section>
         </div>
 
         <!-- Mobile Bottom Navigation -->
         <nav id="mobile-nav" class="mobile-nav">
             <!-- Navigation items will be injected by JS -->
         </nav>
+    </div>
+
+    <!-- Blockchain Drawer Components -->
+
+    <!-- 1. Floating Action Button to Open Drawer -->
+    <button id="blockchain-toggle-btn" class="blockchain-toggle-btn hidden">
+        <span>🔗 View Chain</span>
+    </button>
+
+    <!-- 2. Backdrop -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
+    <!-- 3. The Drawer -->
+    <div id="blockchain-drawer" class="blockchain-drawer">
+        <div class="drawer-header">
+            <span style="font-weight: 600;">Live Blockchain</span>
+            <button id="close-drawer-btn" class="secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">▼ Close</button>
+        </div>
+        <!-- The content container (Target for JS rendering) -->
+        <div id="blockchain-panel" class="drawer-content">
+            <!-- Blockchain blocks will be visualized here -->
+            <div class="placeholder-text" style="color: #666; width: 100%; text-align: center;">Blockchain data will appear here.</div>
+        </div>
     </div>
 
     <!-- Application Logic -->
