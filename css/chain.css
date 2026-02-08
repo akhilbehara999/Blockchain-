@@ -1,0 +1,88 @@
+
+/* Blockchain Visualization Panel */
+.blockchain-panel {
+    background: #0f0f13;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 1rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: 320px; /* Fixed height for consistency */
+}
+
+/* Individual Block Card in Panel */
+.chain-block {
+    display: inline-block;
+    width: 280px;
+    background: #1e1e24;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    vertical-align: top;
+    white-space: normal; /* Allow text wrapping inside card */
+    position: relative;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.chain-block.invalid {
+    border-color: var(--error-color);
+    background: rgba(239, 68, 68, 0.05);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+.chain-block h4 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    color: var(--accent-color);
+    display: flex;
+    justify-content: space-between;
+}
+
+.chain-block .field {
+    margin-bottom: 0.5rem;
+}
+
+.chain-block label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    display: block;
+}
+
+.chain-block .value {
+    font-family: monospace;
+    font-size: 0.8rem;
+    background: rgba(0,0,0,0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chain-block input.data-edit {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #ddd;
+    font-family: monospace;
+    font-size: 0.8rem;
+    padding: 0.25rem;
+}
+
+.chain-block input.data-edit:focus {
+    border-color: var(--accent-color);
+    outline: none;
+}
+
+/* Link Arrow */
+.chain-arrow {
+    font-size: 1.5rem;
+    color: #666;
+    flex-shrink: 0;
+}
