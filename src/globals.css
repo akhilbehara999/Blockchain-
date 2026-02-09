@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .glass {
+    @apply bg-opacity-50 backdrop-blur-xl;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#6366F1] to-[#A855F7];
+  }
+
+  .glow {
+    box-shadow: 0 0 10px #6366F1;
+  }
+
+  .hash-font {
+    @apply font-mono;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #13131A;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A2A3C;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6366F1;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background-color: #6366F1;
+  color: #F8FAFC;
+}
