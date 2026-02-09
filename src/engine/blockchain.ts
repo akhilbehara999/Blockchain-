@@ -5,13 +5,17 @@ export class Blockchain {
   private chain: Block[];
   private difficulty: number;
 
-  constructor() {
-    this.difficulty = 2; // Default difficulty
-    const genesisBlock = createBlock(0, "Genesis Block", "0", this.difficulty);
-    // Determine if genesis block needs to be mined.
-    // Usually yes for validity checks to pass uniformly.
-    mineBlock(genesisBlock, this.difficulty);
-    this.chain = [genesisBlock];
+  constructor(difficulty: number = 2, genesisBlock?: Block) {
+    this.difficulty = difficulty;
+    if (genesisBlock) {
+      this.chain = [{ ...genesisBlock }];
+    } else {
+      const genesis = createBlock(0, "Genesis Block", "0", this.difficulty);
+      // Determine if genesis block needs to be mined.
+      // Usually yes for validity checks to pass uniformly.
+      mineBlock(genesis, this.difficulty);
+      this.chain = [genesis];
+    }
   }
 
   public getChain(): Block[] {
@@ -69,7 +73,8 @@ export class Blockchain {
   }
 
   public replaceChain(newChain: Block[]): boolean {
-    if (newChain.length <= this.chain.length) {
+    // If new chain is not longer, only replace if current chain is invalid
+    if (newChain.length <= this.chain.length && this.isChainValid()) {
       return false;
     }
 
@@ -78,7 +83,32 @@ export class Blockchain {
       return false;
     }
 
-    this.chain = newChain;
+    this.chain = newChain.map(b => ({ ...b }));
+    return true;
+  }
+
+  public receiveBlock(block: Block): boolean {
+    const latestBlock = this.getLatestBlock();
+
+    // Check linkage
+    if (block.previousHash !== latestBlock.hash) {
+      return false;
+    }
+    if (block.index !== latestBlock.index + 1) {
+      return false;
+    }
+
+    // Check integrity
+    if (block.hash !== calculateHash(block)) {
+      return false;
+    }
+
+    // Check proof of work
+    if (!isBlockValid(block, this.difficulty)) {
+      return false;
+    }
+
+    this.chain.push({ ...block });
     return true;
   }
 
