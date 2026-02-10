@@ -3,7 +3,7 @@ import ModuleLayout from '../components/layout/ModuleLayout';
 import PeerNetwork from '../components/blockchain/PeerNetwork';
 import { useNetworkStore } from '../stores/useNetworkStore';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Info } from 'lucide-react';
+import { Info, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 const M04_Network: React.FC = () => {
   const {
@@ -22,7 +22,7 @@ const M04_Network: React.FC = () => {
 
   useEffect(() => {
     initializeNetwork(['Peer A', 'Peer B', 'Peer C']);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRunConsensus = async () => {
     setIsConsensusRunning(true);
@@ -42,18 +42,16 @@ const M04_Network: React.FC = () => {
   const getResultMessage = () => {
     if (!consensusResult) return '';
     const { invalidPeers } = consensusResult;
+
+    // If no invalid peers found during consensus check
     if (invalidPeers.length === 0) {
         return "All chains were valid. No consensus changes needed.";
     }
-    // We can't easily get names of removed peers because they are updated in store.
-    // Wait, runConsensus updates peers to valid ones.
-    // But `invalidPeers` contains IDs.
-    // We can try to find them in current `peers`? No, they might be replaced.
-    // Actually, `runConsensus` replaces the chain, not the peer object itself usually?
-    // Let's check `network.ts`.
-    // `peer.blockchain.replaceChain(winner.chain);`
-    // So the peer object (id, name) persists.
 
+    // Since consensus restores the chain, we can't look up names of invalid peers directly
+    // from the CURRENT peers list easily if they were just reset,
+    // but the store logic just updates the chain content, not the peer name/id.
+    // So we can find them.
     const invalidPeerNames = peers
         .filter(p => invalidPeers.includes(p.id))
         .map(p => p.name);
@@ -80,34 +78,45 @@ const M04_Network: React.FC = () => {
         </div>
 
         {/* Consensus Result Message */}
-        <AnimatePresence>
-            {showResult && consensusResult && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className={`p-4 rounded-xl border ${consensusResult.invalidPeers.length > 0 ? 'bg-success/10 border-success/20 text-success' : 'bg-secondary-bg border-border text-text-secondary'}`}
-                >
-                    <div className="flex items-center gap-2 font-medium">
+        <div className="min-h-[60px]">
+            <AnimatePresence mode="wait">
+                {showResult && consensusResult && (
+                    <motion.div
+                        key="result"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className={`p-4 rounded-xl border flex items-center gap-3 ${
+                            consensusResult.invalidPeers.length > 0
+                                ? 'bg-success/10 border-success/20 text-success'
+                                : 'bg-secondary-bg border-border text-text-secondary'
+                        }`}
+                    >
                         {consensusResult.invalidPeers.length > 0 ? (
-                            <>
-                                <span>🛡️</span>
-                                {getResultMessage()}
-                            </>
+                            <ShieldCheck className="w-5 h-5 shrink-0" />
                         ) : (
-                             "Network is in sync."
+                            <div className="w-5 h-5 flex items-center justify-center">✓</div>
                         )}
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                        <span className="font-medium text-sm">{getResultMessage()}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
 
         <PeerNetwork
             peers={peers}
             onTamper={tamperBlock}
             onConsensusCheck={handleRunConsensus}
             onBroadcastBlock={broadcastNewBlock}
-            onAddPeer={() => addPeer(`Peer ${String.fromCharCode(65 + peers.length)}`)}
+            onAddPeer={() => {
+                // Generate next peer name
+                const existingNames = new Set(peers.map(p => p.name));
+                let nextChar = 65; // 'A'
+                while (existingNames.has(`Peer ${String.fromCharCode(nextChar)}`)) {
+                    nextChar++;
+                }
+                addPeer(`Peer ${String.fromCharCode(nextChar)}`);
+            }}
             onRemovePeer={removePeer}
             isConsensusRunning={isConsensusRunning}
         />
