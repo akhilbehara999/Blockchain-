@@ -3,9 +3,9 @@ import { Outlet } from 'react-router-dom';
 import TopBar from './TopBar';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
+import ModuleList from './ModuleList';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import Sheet from '../ui/Sheet';
-import ModuleNavigation from './ModuleNavigation';
 
 const MainLayout: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -14,7 +14,7 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-primary-bg text-text-primary font-sans selection:bg-accent/30 selection:text-accent-foreground">
-      <TopBar />
+      <TopBar onToggleSidebar={() => setIsMobileMenuOpen(true)} />
 
       {!isMobile && (
         <Sidebar
@@ -25,11 +25,8 @@ const MainLayout: React.FC = () => {
 
       {isMobile && (
         <Sheet isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} title="Modules">
-           <div className="py-4 px-2">
-             <ModuleNavigation
-                onItemClick={() => setIsMobileMenuOpen(false)}
-                isCollapsed={false}
-             />
+           <div className="py-4">
+             <ModuleList onItemClick={() => setIsMobileMenuOpen(false)} />
            </div>
         </Sheet>
       )}
@@ -49,7 +46,11 @@ const MainLayout: React.FC = () => {
       {isMobile && (
         <BottomNav
           onModulesClick={() => setIsMobileMenuOpen(true)}
-          onSettingsClick={() => {}}
+          onSettingsClick={() => {
+            // Theme toggle is handled in TopBar for now, but we could add a settings modal here
+            // For now, let's just log or ignore
+            console.log("Settings clicked");
+          }}
         />
       )}
     </div>

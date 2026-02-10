@@ -1,74 +1,79 @@
 import React, { useState } from 'react';
-import { useIsMobile } from '../../hooks/useMediaQuery';
 import { EXPLANATIONS } from '../../content/explanations';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 import Tabs from '../ui/Tabs';
 import Sheet from '../ui/Sheet';
-import { BookOpen, Terminal } from 'lucide-react';
 import Card from '../ui/Card';
+import Button from '../ui/Button';
+import { BookOpen, Code, Info } from 'lucide-react';
 
 interface ExplanationPanelProps {
   moduleId: string;
 }
 
 const ExplanationPanel: React.FC<ExplanationPanelProps> = ({ moduleId }) => {
-  const [activeTab, setActiveTab] = useState<'simple' | 'technical'>('simple');
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState<'simple' | 'technical'>('simple');
+  const [isOpen, setIsOpen] = useState(false);
 
-  const content = EXPLANATIONS[moduleId] || { simple: 'Content not found', technical: 'Content not found' };
+  const explanation = EXPLANATIONS[moduleId as keyof typeof EXPLANATIONS];
+
+  if (!explanation) {
+    return null;
+  }
 
   const tabs = [
     { id: 'simple', label: 'Simple', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'technical', label: 'Technical', icon: <Terminal className="w-4 h-4" /> },
+    { id: 'technical', label: 'Technical', icon: <Code className="w-4 h-4" /> },
   ];
 
-  // Mobile layout: render trigger button, sheet on click
+  const content = (
+    <div className="space-y-4">
+      <Tabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as 'simple' | 'technical')}
+        className="w-full"
+      />
+      <div className="mt-4 text-text-secondary leading-relaxed space-y-4">
+        <p>{explanation[activeTab]}</p>
+      </div>
+    </div>
+  );
+
   if (isMobile) {
     return (
       <>
-        <div className="fixed bottom-24 right-4 z-40">
-           <button
-             onClick={() => setIsSheetOpen(true)}
-             className="bg-accent text-white p-3 rounded-full shadow-lg hover:bg-accent/90 transition-colors flex items-center justify-center"
-             aria-label="Open explanation"
-           >
-             <BookOpen className="w-6 h-6" />
-           </button>
+        <div className="fixed bottom-20 right-4 z-40">
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setIsOpen(true)}
+            className="rounded-full shadow-lg shadow-indigo-500/40"
+          >
+            <Info className="w-5 h-5 mr-2" />
+            Explain
+          </Button>
         </div>
 
-        <Sheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} title="Explanation">
-           <Tabs
-             tabs={tabs}
-             activeTab={activeTab}
-             onChange={(id) => setActiveTab(id as 'simple' | 'technical')}
-             className="mb-4"
-           />
-           <div className="prose prose-invert max-w-none pb-20">
-             <div className="whitespace-pre-wrap font-sans text-text-secondary">
-               {content[activeTab]}
-             </div>
-           </div>
+        <Sheet
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          title="Module Explanation"
+        >
+          {content}
         </Sheet>
       </>
     );
   }
 
-  // Desktop layout: render inline card
   return (
-    <Card className="mt-8 bg-tertiary-bg/30 border-t border-border">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold text-text-primary">Explanation</h3>
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onChange={(id) => setActiveTab(id as 'simple' | 'technical')}
-        />
+    <Card className="mt-8">
+      <div className="flex items-center mb-4 space-x-2">
+        <Info className="w-5 h-5 text-accent" />
+        <h3 className="text-lg font-semibold text-text-primary">Explanation</h3>
       </div>
-      <div className="prose prose-invert max-w-none">
-        <div className="whitespace-pre-wrap font-sans text-text-secondary leading-relaxed">
-          {content[activeTab]}
-        </div>
-      </div>
+      {content}
     </Card>
   );
 };

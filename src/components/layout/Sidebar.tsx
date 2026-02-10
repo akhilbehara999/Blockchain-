@@ -1,36 +1,35 @@
 import React from 'react';
-import ModuleNavigation from './ModuleNavigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import ModuleList from './ModuleList';
 
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
-  className?: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, className = '' }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   return (
     <aside
-      className={`
-        fixed left-0 top-16 bottom-0 z-40
-        bg-secondary-bg/95 backdrop-blur-xl border-r border-border
-        transition-all duration-300 ease-in-out
-        flex flex-col
-        ${isCollapsed ? 'w-20' : 'w-72'}
-        ${className}
-      `}
+      className={`fixed left-0 top-16 h-[calc(100vh-64px)] bg-secondary-bg border-r border-border transition-all duration-300 z-20 overflow-y-auto overflow-x-hidden ${
+        isCollapsed ? 'w-20' : 'w-72'
+      }`}
     >
-      <div className="flex-1 overflow-y-auto py-6 px-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-        <ModuleNavigation isCollapsed={isCollapsed} />
-      </div>
+      <div className="flex flex-col h-full py-6">
+        <ModuleList isCollapsed={isCollapsed} />
 
-      <div className="p-4 border-t border-border flex justify-end">
-        <button
-          onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-tertiary-bg text-text-secondary hover:text-text-primary transition-colors"
-        >
-          {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-        </button>
+        <div className="p-4 mt-auto border-t border-border">
+          <button
+            onClick={onToggle}
+            className="flex items-center justify-center w-full p-2 text-text-secondary hover:text-text-primary hover:bg-tertiary-bg rounded-lg transition-colors"
+          >
+            {isCollapsed ? <ChevronRight className="w-5 h-5" /> : (
+              <div className="flex items-center w-full">
+                <ChevronLeft className="w-5 h-5 mr-2" />
+                <span>Collapse</span>
+              </div>
+            )}
+          </button>
+        </div>
       </div>
     </aside>
   );

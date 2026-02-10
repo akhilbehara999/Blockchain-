@@ -1,14 +1,14 @@
 import React from 'react';
 import Button from '../ui/Button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface StepNavigatorProps {
   currentStep: number;
   totalSteps: number;
   onPrev: () => void;
   onNext: () => void;
-  canNext?: boolean;
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
 }
 
 const StepNavigator: React.FC<StepNavigatorProps> = ({
@@ -16,30 +16,30 @@ const StepNavigator: React.FC<StepNavigatorProps> = ({
   totalSteps,
   onPrev,
   onNext,
-  canNext = true,
+  isFirstStep,
+  isLastStep
 }) => {
   return (
-    <div className="flex items-center justify-between w-full mt-8 pt-6 border-t border-border">
+    <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
       <Button
         variant="secondary"
         onClick={onPrev}
-        disabled={currentStep === 0}
-        className="w-32"
+        disabled={isFirstStep || currentStep === 0}
+        className="flex items-center"
       >
         <ChevronLeft className="w-4 h-4 mr-2" />
-        Back
+        Previous
       </Button>
 
-      <div className="hidden md:flex space-x-2">
+      <div className="flex space-x-2">
         {Array.from({ length: totalSteps }).map((_, index) => (
-          <motion.div
+          <div
             key={index}
-            initial={false}
-            animate={{
-              scale: currentStep === index ? 1.2 : 1,
-              backgroundColor: currentStep === index ? '#6366F1' : '#2A2A3C', // accent vs border color
-            }}
-            className={`w-3 h-3 rounded-full transition-colors duration-300`}
+            className={`w-2.5 h-2.5 rounded-full transition-colors ${
+              index === currentStep
+                ? 'bg-accent shadow-lg shadow-indigo-500/50'
+                : 'bg-tertiary-bg'
+            }`}
           />
         ))}
       </div>
@@ -47,8 +47,8 @@ const StepNavigator: React.FC<StepNavigatorProps> = ({
       <Button
         variant="primary"
         onClick={onNext}
-        disabled={!canNext || currentStep === totalSteps - 1}
-        className="w-32"
+        disabled={isLastStep || currentStep === totalSteps - 1}
+        className="flex items-center"
       >
         Next
         <ChevronRight className="w-4 h-4 ml-2" />

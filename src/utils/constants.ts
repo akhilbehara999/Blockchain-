@@ -1,102 +1,114 @@
+
+import {
+  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home
+} from 'lucide-react';
+
 export const MODULE_LIST = [
+  {
+    id: 'landing',
+    title: 'Home',
+    path: '/',
+    icon: Home,
+    description: 'Welcome to BlockSim'
+  },
   {
     id: 'introduction',
     title: 'Introduction',
     path: '/module/introduction',
-    icon: 'BookOpen',
-    description: 'Welcome to BlockSim. Start here to understand the basics.',
+    icon: Book,
+    description: 'Understand the basics of blockchain technology.'
   },
   {
     id: 'hash',
-    title: 'Hash',
+    title: 'Hashing',
     path: '/module/hash',
-    icon: 'Hash',
-    description: 'Learn how hashing secures data and ensures integrity.',
+    icon: Hash,
+    description: 'Learn how cryptographic hashing secures data.'
   },
   {
     id: 'block',
     title: 'Block',
     path: '/module/block',
-    icon: 'Box',
-    description: 'Understand the fundamental building block of the chain.',
+    icon: Box,
+    description: 'Discover the structure of a block.'
   },
   {
     id: 'blockchain',
     title: 'Blockchain',
     path: '/module/blockchain',
-    icon: 'Link',
-    description: 'See how blocks link together to form an immutable chain.',
+    icon: Link,
+    description: 'See how blocks form an immutable chain.'
   },
   {
     id: 'distributed',
     title: 'Distributed',
     path: '/module/distributed',
-    icon: 'Users',
-    description: 'Explore how a peer-to-peer network maintains the ledger.',
+    icon: Network,
+    description: 'Explore the power of a distributed ledger.'
   },
   {
     id: 'tokens',
     title: 'Tokens',
     path: '/module/tokens',
-    icon: 'Coins',
-    description: 'Learn about digital assets and value transfer.',
+    icon: Coins,
+    description: 'Understand how digital assets work.'
   },
   {
     id: 'coinbase',
     title: 'Coinbase',
     path: '/module/coinbase',
-    icon: 'CircleDollarSign',
-    description: 'Discover how new coins are created in the first transaction.',
+    icon: Database,
+    description: 'Learn about the first transaction in a block.'
   },
   {
     id: 'keys',
     title: 'Keys',
     path: '/module/keys',
-    icon: 'Key',
-    description: 'Understand Public and Private keys for identity and security.',
+    icon: Key,
+    description: 'Master public and private keys.'
   },
   {
     id: 'signatures',
     title: 'Signatures',
     path: '/module/signatures',
-    icon: 'PenTool',
-    description: 'Learn how digital signatures prove ownership and authenticity.',
+    icon: PenTool,
+    description: 'Verify authenticity with digital signatures.'
   },
   {
     id: 'transaction',
     title: 'Transaction',
     path: '/module/transaction',
-    icon: 'ArrowRightLeft',
-    description: 'Combine concepts to securely transfer value.',
+    icon: Send,
+    description: 'Send and receive value securely.'
   },
   {
     id: 'pow',
     title: 'Proof of Work',
     path: '/module/pow',
-    icon: 'Cpu',
-    description: 'The consensus mechanism that secures the network.',
+    icon: Zap,
+    description: 'Understand the consensus mechanism.'
   },
   {
     id: 'mining',
     title: 'Mining',
     path: '/module/mining',
-    icon: 'Hammer',
-    description: 'Experience the process of validating blocks and earning rewards.',
+    icon: Hammer,
+    description: 'Participate in securing the network.'
   },
   {
     id: 'difficulty',
     title: 'Difficulty',
     path: '/module/difficulty',
-    icon: 'Gauge',
-    description: 'See how the network adjusts difficulty to maintain block time.',
+    icon: BarChart,
+    description: 'Adjusting difficulty to maintain block time.'
   },
   {
     id: 'smart-contracts',
     title: 'Smart Contracts',
     path: '/module/smart-contracts',
-    icon: 'FileCode',
-    description: 'Programmatic rules that execute automatically on the chain.',
-  },
+    icon: FileCode,
+    description: 'Programmable logic on the blockchain.'
+  }
 ];
 
 export const DIFFICULTY_LEVELS = [1, 2, 3, 4, 5, 6];
