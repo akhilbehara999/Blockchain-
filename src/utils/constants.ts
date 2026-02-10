@@ -1,6 +1,6 @@
 
 import {
-  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home, Users, GitBranch
+  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home, Users, GitBranch, ShieldAlert, GitMerge
 } from 'lucide-react';
 
 export const MODULE_LIST = [
@@ -122,6 +122,20 @@ export const MODULE_LIST = [
     path: '/module/merkletrees',
     icon: GitBranch,
     description: 'Verify data integrity efficiently.'
+  },
+  {
+    id: 'attack51',
+    title: '51% Attack',
+    path: '/module/attack51',
+    icon: ShieldAlert,
+    description: 'Simulate a majority attack on the network.'
+  },
+  {
+    id: 'forks',
+    title: 'Forks',
+    path: '/module/forks',
+    icon: GitMerge,
+    description: 'Understand soft and hard forks.'
   }
 ];
 
