@@ -13,7 +13,7 @@ const Distributed = React.lazy(() => import('../modules/Distributed'));
 const Tokens = React.lazy(() => import('../modules/M05_Tokens'));
 const Coinbase = React.lazy(() => import('../modules/Coinbase'));
 const Keys = React.lazy(() => import('../modules/Keys'));
-const Signatures = React.lazy(() => import('../modules/Signatures'));
+const Signatures = React.lazy(() => import('../modules/M06_Signatures'));
 const Transaction = React.lazy(() => import('../modules/Transaction'));
 const Pow = React.lazy(() => import('../modules/Pow'));
 const Mining = React.lazy(() => import('../modules/Mining'));

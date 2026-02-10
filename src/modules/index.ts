@@ -6,7 +6,7 @@ export { default as Distributed } from './Distributed';
 export { default as Tokens } from './Tokens';
 export { default as Coinbase } from './Coinbase';
 export { default as Keys } from './Keys';
-export { default as Signatures } from './Signatures';
+export { default as Signatures } from './M06_Signatures';
 export { default as Transaction } from './Transaction';
 export { default as Pow } from './Pow';
 export { default as Mining } from './Mining';
