@@ -31,7 +31,7 @@ const M14_NFTs: React.FC = () => {
     setActiveWalletId(wallets[0].name);
   }
 
-  const handleMint = (nftData: any) => {
+  const handleMint = (nftData: Omit<NFT, 'history'>) => {
     mintNFT(nftData);
     setActiveTab('gallery');
   };

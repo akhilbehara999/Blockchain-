@@ -40,6 +40,10 @@ const Slider: React.FC<SliderProps> = ({
           max={max}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
+          aria-label={label}
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-valuenow={value}
           className="absolute w-full h-full opacity-0 cursor-pointer z-10"
         />
         <div

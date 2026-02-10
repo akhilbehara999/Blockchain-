@@ -8,6 +8,7 @@ import HashDisplay from './HashDisplay';
 import NonceCounter from './NonceCounter';
 import MiningAnimation from './MiningAnimation';
 import { Hammer } from 'lucide-react';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface BlockCardProps {
   block: Block;
@@ -44,6 +45,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [prevStatus, setPrevStatus] = useState(status);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (prevStatus === 'mining' && status === 'valid') {
@@ -71,14 +73,14 @@ const BlockCard: React.FC<BlockCardProps> = ({
   }
 
   return (
-    <div className="relative group">
+    <div className="relative group" role="region" aria-label={`Block number ${block.index}, status: ${status}`}>
       <motion.div
-        animate={{ x: status === 'invalid' && prevStatus !== 'invalid' ? [0, -5, 5, -5, 5, 0] : 0 }}
-        transition={{ duration: 0.4 }}
+        animate={{ x: !shouldReduceMotion && status === 'invalid' && prevStatus !== 'invalid' ? [0, -5, 5, -5, 5, 0] : 0 }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.4 }}
       >
         <Card
           className={`transition-all duration-300 border-l-4 ${getBorderColor()}`}
-          style={{ transitionDelay: `${delay || 0}ms` }}
+          style={{ transitionDelay: shouldReduceMotion ? '0ms' : `${delay || 0}ms` }}
         >
             <div className="space-y-4 relative">
                 {/* Header */}
@@ -130,8 +132,10 @@ const BlockCard: React.FC<BlockCardProps> = ({
 
                 {/* Data */}
                 <div className="space-y-1 relative">
-                    <label className="text-xs font-medium text-text-secondary uppercase">Data</label>
+                    <label htmlFor={`block-${block.index}-data`} className="text-xs font-medium text-text-secondary uppercase">Data</label>
                     <textarea
+                        id={`block-${block.index}-data`}
+                        aria-label={`Data for block ${block.index}`}
                         value={block.data}
                         onChange={(e) => onDataChange && onDataChange(e.target.value)}
                         readOnly={!editable}
@@ -171,6 +175,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
                             onClick={onMine}
                             variant="primary"
                             className="flex items-center gap-2"
+                            aria-label={`Mine block number ${block.index}`}
                         >
                         <Hammer className="w-4 h-4" />
                             Mine

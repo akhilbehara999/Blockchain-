@@ -99,7 +99,7 @@ const HeroSection: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 pb-2"
+          className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 pb-2"
         >
           Learn Blockchain by Building One
         </motion.h1>
@@ -108,7 +108,7 @@ const HeroSection: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-xl md:text-2xl text-text-secondary max-w-2xl mx-auto"
+          className="text-lg md:text-2xl text-text-secondary max-w-2xl mx-auto"
         >
           No jargon. No crypto needed. Just interactive simulations that make it click.
         </motion.p>
@@ -341,7 +341,7 @@ const FeaturesSection: React.FC = () => {
   );
 };
 
-const FeatureCard: React.FC<{ icon: any, title: string, description: string, delay: number }> = ({ icon: Icon, title, description, delay }) => (
+const FeatureCard: React.FC<{ icon: React.ElementType, title: string, description: string, delay: number }> = ({ icon: Icon, title, description, delay }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

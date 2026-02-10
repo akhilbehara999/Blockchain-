@@ -21,12 +21,20 @@ const Tabs: React.FC<TabsProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`flex space-x-1 bg-tertiary-bg/50 p-1 rounded-xl ${className}`}>
+    <div
+      role="tablist"
+      aria-orientation="horizontal"
+      className={`flex space-x-1 bg-tertiary-bg/50 p-1 rounded-xl ${className}`}
+    >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={`tabpanel-${tab.id}`}
+            id={`tab-${tab.id}`}
             onClick={() => onChange(tab.id)}
             className={`
               relative flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors

@@ -63,13 +63,17 @@ const ChainView: React.FC<ChainViewProps> = ({ blocks, onBlockEdit, onBlockMine,
   }, [blocks, difficulty]);
 
   return (
-    <div className={`flex ${direction === 'vertical' ? 'flex-col items-center space-y-0' : 'flex-row items-center overflow-x-auto pb-8 space-x-0'} p-4 min-h-[500px]`}>
+    <div
+      role="list"
+      aria-label="Blockchain"
+      className={`flex ${direction === 'vertical' ? 'flex-col items-center space-y-0' : 'flex-row items-center overflow-x-auto pb-8 space-x-0 cursor-grab active:cursor-grabbing'} p-4 min-h-[500px]`}
+    >
       {blocks.map((block, index) => {
         const { status, delay } = blockStatuses[index];
 
         return (
           <React.Fragment key={block.index}>
-            <div className={`shrink-0 ${direction === 'horizontal' ? 'w-80' : 'w-full max-w-md'}`}>
+            <div role="listitem" className={`shrink-0 ${direction === 'horizontal' ? 'w-80' : 'w-full max-w-md'}`}>
               <BlockCard
                 block={block}
                 editable={block.index !== 0} // Genesis not editable
