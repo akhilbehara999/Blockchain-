@@ -17,6 +17,7 @@ const Signatures = React.lazy(() => import('../modules/M06_Signatures'));
 const Transaction = React.lazy(() => import('../modules/Transaction'));
 const Pow = React.lazy(() => import('../modules/Pow'));
 const Mining = React.lazy(() => import('../modules/M07_Mining'));
+const Consensus = React.lazy(() => import('../modules/M08_Consensus'));
 const Difficulty = React.lazy(() => import('../modules/Difficulty'));
 const SmartContracts = React.lazy(() => import('../modules/SmartContracts'));
 const Network = React.lazy(() => import('../modules/M04_Network'));
@@ -46,6 +47,7 @@ const Router: React.FC = () => {
             <Route path="/module/transaction" element={<Transaction />} />
             <Route path="/module/pow" element={<Pow />} />
             <Route path="/module/mining" element={<Mining />} />
+            <Route path="/module/consensus" element={<Consensus />} />
             <Route path="/module/difficulty" element={<Difficulty />} />
             <Route path="/module/smart-contracts" element={<SmartContracts />} />
             <Route path="/module/network" element={<Network />} />

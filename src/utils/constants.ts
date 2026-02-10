@@ -1,6 +1,6 @@
 
 import {
-  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home
+  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home, Users
 } from 'lucide-react';
 
 export const MODULE_LIST = [
@@ -94,6 +94,13 @@ export const MODULE_LIST = [
     path: '/module/mining',
     icon: Hammer,
     description: 'Participate in securing the network.'
+  },
+  {
+    id: 'consensus',
+    title: 'Consensus',
+    path: '/module/consensus',
+    icon: Users,
+    description: 'Compare PoW, PoS, and DPoS.'
   },
   {
     id: 'difficulty',
