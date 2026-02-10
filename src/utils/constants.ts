@@ -1,6 +1,6 @@
 
 import {
-  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home, Users, GitBranch, ShieldAlert, GitMerge
+  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home, Users, GitBranch, ShieldAlert, GitMerge, Landmark, Image
 } from 'lucide-react';
 
 export const MODULE_LIST = [
@@ -136,6 +136,20 @@ export const MODULE_LIST = [
     path: '/module/forks',
     icon: GitMerge,
     description: 'Understand soft and hard forks.'
+  },
+  {
+    id: 'defi',
+    title: 'DeFi Basics',
+    path: '/module/defi',
+    icon: Landmark,
+    description: 'Explore Decentralized Finance and AMMs.'
+  },
+  {
+    id: 'nfts',
+    title: 'NFTs',
+    path: '/module/nfts',
+    icon: Image,
+    description: 'Mint and transfer Non-Fungible Tokens.'
   }
 ];
 

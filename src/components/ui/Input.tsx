@@ -5,6 +5,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
   variant?: 'default' | 'monospace';
+  containerClassName?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -12,6 +13,7 @@ const Input: React.FC<InputProps> = ({
   error,
   variant = 'default',
   className = '',
+  containerClassName = '',
   value,
   onFocus,
   onBlur,
@@ -31,7 +33,7 @@ const Input: React.FC<InputProps> = ({
   };
 
   return (
-    <div className="relative mb-6 pt-2">
+    <div className={`relative mb-6 pt-2 ${containerClassName}`}>
       <motion.div
         animate={error ? { x: [-5, 5, -5, 5, 0] } : {}}
         transition={{ duration: 0.4 }}

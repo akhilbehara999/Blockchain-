@@ -24,6 +24,8 @@ const MerkleTrees = React.lazy(() => import('../modules/M10_MerkleTrees'));
 const Network = React.lazy(() => import('../modules/M04_Network'));
 const Attack51 = React.lazy(() => import('../modules/M11_Attack51'));
 const Forks = React.lazy(() => import('../modules/M12_Forks'));
+const DeFi = React.lazy(() => import('../modules/M13_DeFi'));
+const NFTs = React.lazy(() => import('../modules/M14_NFTs'));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -57,6 +59,8 @@ const Router: React.FC = () => {
             <Route path="/module/network" element={<Network />} />
             <Route path="/module/attack51" element={<Attack51 />} />
             <Route path="/module/forks" element={<Forks />} />
+            <Route path="/module/defi" element={<DeFi />} />
+            <Route path="/module/nfts" element={<NFTs />} />
           </Route>
 
           {/* Fallback route */}
