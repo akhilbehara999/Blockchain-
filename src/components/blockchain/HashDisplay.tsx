@@ -5,15 +5,35 @@ interface HashDisplayProps {
   hash: string;
   previousHash?: string;
   animate?: boolean;
+  highlightLeadingZeros?: boolean;
 }
 
-const HashDisplay: React.FC<HashDisplayProps> = ({ hash, previousHash, animate = false }) => {
+const HashDisplay: React.FC<HashDisplayProps> = ({
+  hash,
+  previousHash,
+  animate = false,
+  highlightLeadingZeros = false
+}) => {
+  const leadingZeroCount = highlightLeadingZeros ? (hash.match(/^0*/) || [''])[0].length : 0;
+
   return (
     <div className="font-mono text-sm break-all bg-tertiary-bg p-4 rounded-xl border border-border/50 shadow-inner">
       <div className="flex flex-wrap">
         <AnimatePresence mode="popLayout">
           {hash.split('').map((char, index) => {
             const isDifferent = previousHash && previousHash[index] !== char;
+            const isLeadingZero = highlightLeadingZeros && index < leadingZeroCount;
+
+            let color = '#94A3B8'; // default text-secondary (slate-400)
+            let className = 'text-text-secondary';
+
+            if (isLeadingZero) {
+              color = '#22C55E'; // success (green-500)
+              className = 'text-success font-bold';
+            } else if (isDifferent) {
+              color = '#6366F1'; // accent (indigo-500)
+              className = 'text-accent font-bold';
+            }
 
             // If animating, use motion.span
             if (animate) {
@@ -24,24 +44,24 @@ const HashDisplay: React.FC<HashDisplayProps> = ({ hash, previousHash, animate =
                   animate={{
                     opacity: 1,
                     y: 0,
-                    color: isDifferent ? '#6366F1' : '#94A3B8' // End color: Accent if different, standard text otherwise (slate-400 is close to text-secondary, maybe use text-primary #F8FAFC)
+                    color: color
                   }}
                   transition={{
                     duration: 0.2,
                     delay: index * 0.005 // Stagger effect
                   }}
-                  className={`inline-block ${isDifferent ? 'font-bold' : ''}`}
+                  className={`inline-block ${isLeadingZero || isDifferent ? 'font-bold' : ''}`}
                 >
                   {char}
                 </motion.span>
               );
             }
 
-            // If not animating, just highlight diffs
+            // If not animating, just highlight diffs or leading zeros
             return (
               <span
                 key={index}
-                className={`${isDifferent ? 'text-accent font-bold' : 'text-text-secondary'}`}
+                className={className}
               >
                 {char}
               </span>
