@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { Block } from '../engine/types';
 
 interface MiningResult {
   nonce: number;
@@ -20,7 +21,7 @@ export function useMining() {
     setIsMining(false);
   }, []);
 
-  const startMine = useCallback((blockData: any, difficulty: number, onComplete?: (result: MiningResult) => void) => {
+  const startMine = useCallback((blockData: Block, difficulty: number, onComplete?: (result: MiningResult) => void) => {
     // Ensure previous worker is stopped
     if (workerRef.current) {
       workerRef.current.terminate();

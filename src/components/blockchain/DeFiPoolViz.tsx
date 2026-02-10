@@ -33,7 +33,7 @@ const DeFiPoolViz: React.FC<DeFiPoolVizProps> = ({ tokenA, tokenB, k }) => {
     <div className="bg-secondary-bg/50 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-xl">
       <h3 className="text-xl font-bold mb-6 text-text-primary">Constant Product AMM (x * y = k)</h3>
 
-      <div className="h-[350px] w-full">
+      <div className="h-[250px] md:h-[350px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />

@@ -117,7 +117,7 @@ const PeerNetwork: React.FC<PeerNetworkProps> = ({
             )}
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-x-auto pb-4 snap-x snap-mandatory">
+         <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-x-auto pb-4 snap-x snap-mandatory md:overflow-visible">
              <AnimatePresence mode="popLayout">
                  {peers.map((peer, index) => (
                    <motion.div

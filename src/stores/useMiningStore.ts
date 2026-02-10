@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Block } from '../engine/types';
 
 interface Miner {
   name: string;
@@ -13,7 +14,7 @@ interface MiningState {
   difficulty: number;
   miners: Miner[];
 
-  startMining: (blockData: any) => void;
+  startMining: (blockData: Block) => void;
   stopMining: () => void;
   setDifficulty: (d: number) => void;
   updateProgress: (nonce: number, hash: string) => void;
@@ -28,7 +29,7 @@ export const useMiningStore = create<MiningState>((set) => ({
     { name: 'You', hashRate: 0, progress: 0 },
   ],
 
-  startMining: (_blockData: any) => {
+  startMining: (_blockData: Block) => {
     set({ isMining: true, nonceTried: 0, currentHash: '' });
   },
 

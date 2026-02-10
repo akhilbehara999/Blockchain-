@@ -26,6 +26,7 @@ const CompactBlockCard: React.FC<CompactBlockCardProps> = ({ block, status, onTa
         <input
             type="text"
             value={block.data}
+            aria-label={`Data for block ${block.index}`}
             onChange={(e) => onTamper && onTamper(e.target.value)}
             className={`w-full bg-tertiary-bg rounded px-2 py-1.5 text-xs font-mono border ${
                 onTamper ? 'border-border focus:border-accent' : 'border-transparent'

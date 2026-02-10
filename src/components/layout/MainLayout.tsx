@@ -49,7 +49,6 @@ const MainLayout: React.FC = () => {
           onSettingsClick={() => {
             // Theme toggle is handled in TopBar for now, but we could add a settings modal here
             // For now, let's just log or ignore
-            console.log("Settings clicked");
           }}
         />
       )}
