@@ -30,7 +30,7 @@ const PeerNetwork: React.FC<PeerNetworkProps> = ({
   const [newBlockData, setNewBlockData] = useState<Record<string, string>>({});
 
   const handleBroadcast = (peerId: string) => {
-    const data = newBlockData[peerId] || 'New Transaction';
+    const data = newBlockData[peerId] || '';
     if (!data.trim()) return;
     onBroadcastBlock(peerId, data);
     setNewBlockData(prev => ({ ...prev, [peerId]: '' }));
@@ -39,15 +39,15 @@ const PeerNetwork: React.FC<PeerNetworkProps> = ({
   const getBlockStatus = (chain: Block[], index: number): 'valid' | 'invalid' => {
       if (index === 0) return 'valid';
 
-      // Check previous block link
       const currentBlock = chain[index];
       const prevBlock = chain[index - 1];
 
+      // Check linkage
       if (currentBlock.previousHash !== prevBlock.hash) {
           return 'invalid';
       }
 
-      // Check if current block hash matches content (integrity)
+      // Check integrity
       if (currentBlock.hash !== calculateHash(currentBlock)) {
           return 'invalid';
       }
@@ -104,22 +104,33 @@ const PeerNetwork: React.FC<PeerNetworkProps> = ({
       </div>
 
       {/* Network Visualization */}
-      <div className="relative">
-         {/* Desktop Connection Lines */}
-         <div className="hidden md:block absolute top-[2rem] left-[10%] right-[10%] h-0.5 bg-border -z-10">
-            {isConsensusRunning && (
-                <motion.div
-                    className="h-full bg-accent/50 w-full"
-                    initial={{ x: '-100%' }}
-                    animate={{ x: '100%' }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                />
-            )}
+      <div className="relative min-h-[500px]">
+         {/* Background SVG Lines */}
+         <div className="absolute top-[2rem] left-0 right-0 h-20 -z-10 overflow-hidden pointer-events-none">
+            <svg width="100%" height="100%">
+                <defs>
+                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="rgba(99, 102, 241, 0)" />
+                        <stop offset="50%" stopColor="rgba(99, 102, 241, 0.5)" />
+                        <stop offset="100%" stopColor="rgba(99, 102, 241, 0)" />
+                    </linearGradient>
+                </defs>
+                {/* Connection line */}
+                <line x1="0" y1="32" x2="100%" y2="32" stroke="rgba(42, 42, 60, 1)" strokeWidth="2" />
+                {/* Animated pulse on the line */}
+                {isConsensusRunning && (
+                    <motion.rect
+                        x="-10%" y="31" width="20%" height="2" fill="url(#lineGradient)"
+                        animate={{ x: "110%" }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    />
+                )}
+            </svg>
          </div>
 
-         <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-x-auto pb-4 snap-x snap-mandatory md:overflow-visible">
+         <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-x-auto pb-8 snap-x snap-mandatory md:overflow-visible px-4">
              <AnimatePresence mode="popLayout">
-                 {peers.map((peer, index) => (
+                 {peers.map((peer) => (
                    <motion.div
                       key={peer.id}
                       layout
@@ -162,25 +173,30 @@ const PeerNetwork: React.FC<PeerNetworkProps> = ({
                          </AnimatePresence>
 
                          {/* Broadcast Form */}
-                         <div className="mt-4 pt-4 border-t border-border w-full">
-                            <div className="flex gap-2">
+                         <motion.div
+                            layout
+                            className="mt-4 pt-4 border-t border-border w-full flex flex-col gap-2"
+                         >
+                            <label className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">Broadcast Block</label>
+                            <div className="flex gap-2 items-center">
                                 <Input
-                                    placeholder="New Data..."
+                                    label="Data"
                                     value={newBlockData[peer.id] || ''}
                                     onChange={(e) => setNewBlockData(prev => ({ ...prev, [peer.id]: e.target.value }))}
-                                    className="bg-tertiary-bg text-xs h-8"
+                                    className="!text-xs !py-2 !h-10"
+                                    containerClassName="!mb-0 flex-1"
                                 />
                                 <Button
                                     size="sm"
                                     variant="secondary"
                                     onClick={() => handleBroadcast(peer.id)}
-                                    className="h-8 w-8 p-0 flex items-center justify-center"
+                                    className="h-10 w-10 p-0 flex items-center justify-center shrink-0"
                                     title="Broadcast Block"
                                 >
-                                    <Send className="w-3 h-3" />
+                                    <Send className="w-4 h-4" />
                                 </Button>
                             </div>
-                         </div>
+                         </motion.div>
                       </div>
                    </motion.div>
                  ))}
