@@ -7,6 +7,10 @@ export const EXPLANATIONS = {
     simple: "A hash is like a unique digital fingerprint for data. If you change even a single letter in the data, the fingerprint changes completely. This makes it easy to spot if someone has tampered with the information.",
     technical: "A cryptographic hash function (like SHA-256) maps data of arbitrary size to a bit array of a fixed size. It is a one-way function, meaning it is computationally infeasible to invert. The avalanche effect ensures that a small change in input results in a significantly different output."
   },
+  hashing: {
+    simple: "A hash is like a unique digital fingerprint for data. If you change even a single letter in the data, the fingerprint changes completely. This makes it easy to spot if someone has tampered with the information.",
+    technical: "A cryptographic hash function (like SHA-256) maps data of arbitrary size to a bit array of a fixed size. It is a one-way function, meaning it is computationally infeasible to invert. The avalanche effect ensures that a small change in input results in a significantly different output."
+  },
   block: {
     simple: "A block is a container that holds a list of transactions. It also has a unique ID (hash) and a reference to the previous block. This chaining of blocks is what makes the blockchain secure.",
     technical: "A block consists of a header and a body. The header typically includes the version, previous block hash, Merkle root, timestamp, difficulty target, and nonce. The body contains the transaction data. The block hash is calculated by hashing the header."
