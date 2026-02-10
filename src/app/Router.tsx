@@ -19,7 +19,8 @@ const Pow = React.lazy(() => import('../modules/Pow'));
 const Mining = React.lazy(() => import('../modules/M07_Mining'));
 const Consensus = React.lazy(() => import('../modules/M08_Consensus'));
 const Difficulty = React.lazy(() => import('../modules/Difficulty'));
-const SmartContracts = React.lazy(() => import('../modules/SmartContracts'));
+const SmartContracts = React.lazy(() => import('../modules/M09_SmartContracts'));
+const MerkleTrees = React.lazy(() => import('../modules/M10_MerkleTrees'));
 const Network = React.lazy(() => import('../modules/M04_Network'));
 
 const LoadingFallback = () => (
@@ -50,6 +51,7 @@ const Router: React.FC = () => {
             <Route path="/module/consensus" element={<Consensus />} />
             <Route path="/module/difficulty" element={<Difficulty />} />
             <Route path="/module/smart-contracts" element={<SmartContracts />} />
+            <Route path="/module/merkletrees" element={<MerkleTrees />} />
             <Route path="/module/network" element={<Network />} />
           </Route>
 

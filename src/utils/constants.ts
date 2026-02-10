@@ -1,6 +1,6 @@
 
 import {
-  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home, Users
+  Book, Hash, Box, Link, Network, Coins, Database, Key, PenTool, Send, Zap, Hammer, BarChart, FileCode, Home, Users, GitBranch
 } from 'lucide-react';
 
 export const MODULE_LIST = [
@@ -110,11 +110,18 @@ export const MODULE_LIST = [
     description: 'Adjusting difficulty to maintain block time.'
   },
   {
-    id: 'smart-contracts',
+    id: 'smartcontracts',
     title: 'Smart Contracts',
     path: '/module/smart-contracts',
     icon: FileCode,
     description: 'Programmable logic on the blockchain.'
+  },
+  {
+    id: 'merkletrees',
+    title: 'Merkle Trees',
+    path: '/module/merkletrees',
+    icon: GitBranch,
+    description: 'Verify data integrity efficiently.'
   }
 ];
 
