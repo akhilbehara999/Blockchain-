@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 const Landing = React.lazy(() => import('../modules/Landing'));
 const Introduction = React.lazy(() => import('../modules/Introduction'));
 const Hash = React.lazy(() => import('../modules/M01_Hashing'));
-const Block = React.lazy(() => import('../modules/Block'));
+const Block = React.lazy(() => import('../modules/M02_Block'));
 const Blockchain = React.lazy(() => import('../modules/Blockchain'));
 const Distributed = React.lazy(() => import('../modules/Distributed'));
 const Tokens = React.lazy(() => import('../modules/Tokens'));

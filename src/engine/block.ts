@@ -21,7 +21,7 @@ export function createBlock(index: number, data: string, previousHash: string, _
 
 export function calculateHash(block: Block): string {
   const { index, timestamp, data, previousHash, nonce } = block;
-  return sha256(index.toString() + timestamp.toString() + data + previousHash + nonce.toString());
+  return sha256(index.toString() + previousHash + timestamp.toString() + data + nonce.toString());
 }
 
 export function isBlockValid(block: Block, difficulty: number): boolean {
