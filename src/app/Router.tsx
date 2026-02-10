@@ -19,6 +19,7 @@ const Pow = React.lazy(() => import('../modules/Pow'));
 const Mining = React.lazy(() => import('../modules/Mining'));
 const Difficulty = React.lazy(() => import('../modules/Difficulty'));
 const SmartContracts = React.lazy(() => import('../modules/SmartContracts'));
+const Network = React.lazy(() => import('../modules/M04_Network'));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -47,6 +48,7 @@ const Router: React.FC = () => {
             <Route path="/module/mining" element={<Mining />} />
             <Route path="/module/difficulty" element={<Difficulty />} />
             <Route path="/module/smart-contracts" element={<SmartContracts />} />
+            <Route path="/module/network" element={<Network />} />
           </Route>
 
           {/* Fallback route */}
