@@ -1,7 +1,7 @@
 export { default as Introduction } from './Introduction';
 export { default as Hash } from './Hash';
 export { default as Block } from './Block';
-export { default as Blockchain } from './Blockchain';
+export { default as Blockchain } from './M03_Blockchain';
 export { default as Distributed } from './Distributed';
 export { default as Tokens } from './Tokens';
 export { default as Coinbase } from './Coinbase';

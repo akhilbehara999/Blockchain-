@@ -16,6 +16,7 @@ interface BlockCardProps {
   onMine?: () => void;
   showAnatomy?: boolean;
   status: 'valid' | 'invalid' | 'mining' | 'neutral';
+  delay?: number;
 }
 
 const AnatomyTooltip: React.FC<{ label: string; description: string; className?: string }> = ({ label, description, className }) => (
@@ -39,6 +40,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
   onMine,
   showAnatomy,
   status,
+  delay,
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [prevStatus, setPrevStatus] = useState(status);
@@ -74,7 +76,10 @@ const BlockCard: React.FC<BlockCardProps> = ({
         animate={{ x: status === 'invalid' && prevStatus !== 'invalid' ? [0, -5, 5, -5, 5, 0] : 0 }}
         transition={{ duration: 0.4 }}
       >
-        <Card className={`transition-all duration-300 border-l-4 ${getBorderColor()}`}>
+        <Card
+          className={`transition-all duration-300 border-l-4 ${getBorderColor()}`}
+          style={{ transitionDelay: `${delay || 0}ms` }}
+        >
             <div className="space-y-4 relative">
                 {/* Header */}
                 <div className="flex justify-between items-center">
