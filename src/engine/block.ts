@@ -1,7 +1,7 @@
 import { Block } from './types';
 import { sha256 } from './hash';
 
-export function createBlock(index: number, data: string, previousHash: string, difficulty: number): Block {
+export function createBlock(index: number, data: string, previousHash: string, _difficulty: number): Block {
   const timestamp = Date.now();
   const nonce = 0;
 
