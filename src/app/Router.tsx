@@ -8,7 +8,7 @@ const Landing = React.lazy(() => import('../modules/Landing'));
 const Introduction = React.lazy(() => import('../modules/Introduction'));
 const Hash = React.lazy(() => import('../modules/M01_Hashing'));
 const Block = React.lazy(() => import('../modules/M02_Block'));
-const Blockchain = React.lazy(() => import('../modules/Blockchain'));
+const Blockchain = React.lazy(() => import('../modules/M03_Blockchain'));
 const Distributed = React.lazy(() => import('../modules/Distributed'));
 const Tokens = React.lazy(() => import('../modules/Tokens'));
 const Coinbase = React.lazy(() => import('../modules/Coinbase'));

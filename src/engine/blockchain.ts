@@ -161,6 +161,14 @@ export class Blockchain {
     }
   }
 
+  public setBlockPreviousHash(index: number, hash: string): void {
+    const block = this.chain[index];
+    if (block) {
+      block.previousHash = hash;
+      block.hash = calculateHash(block);
+    }
+  }
+
   public mineBlock(index: number): Block | undefined {
     const block = this.chain[index];
     if (block) {

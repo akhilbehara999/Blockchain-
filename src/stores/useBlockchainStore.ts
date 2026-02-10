@@ -8,6 +8,7 @@ interface BlockchainState {
   selectedBlockIndex: number | null;
 
   initializeChain: (blockCount: number) => void;
+  initializeWithData: (data: string[]) => void;
   addBlock: (data: string) => void;
   editBlock: (index: number, newData: string) => void;
   mineBlock: (index: number) => void;
@@ -34,6 +35,22 @@ export const useBlockchainStore = create<BlockchainState>((set, get) => ({
     set({ blocks: [...blockchain.getChain()] });
   },
 
+  initializeWithData: (data: string[]) => {
+    const difficulty = get().difficulty;
+    blockchain = new Blockchain(difficulty);
+
+    // Handle Genesis Block (index 0)
+    if (data.length > 0 && data[0] !== "Genesis Block") {
+       blockchain.editBlockData(0, data[0]);
+       blockchain.mineBlock(0);
+    }
+
+    for (let i = 1; i < data.length; i++) {
+      blockchain.addBlock(data[i]);
+    }
+    set({ blocks: [...blockchain.getChain()] });
+  },
+
   addBlock: (data: string) => {
     blockchain.addBlock(data);
     set({ blocks: [...blockchain.getChain()] });
@@ -46,6 +63,15 @@ export const useBlockchainStore = create<BlockchainState>((set, get) => ({
   },
 
   mineBlock: (index: number) => {
+    const chain = blockchain.getChain();
+    if (index > 0) {
+      const prevBlock = chain[index - 1];
+      const currBlock = chain[index];
+      // Auto-fix linkage if broken
+      if (currBlock.previousHash !== prevBlock.hash) {
+        blockchain.setBlockPreviousHash(index, prevBlock.hash);
+      }
+    }
     blockchain.mineBlock(index);
     set({ blocks: [...blockchain.getChain()] });
   },
