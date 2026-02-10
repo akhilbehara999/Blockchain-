@@ -22,6 +22,8 @@ const Difficulty = React.lazy(() => import('../modules/Difficulty'));
 const SmartContracts = React.lazy(() => import('../modules/M09_SmartContracts'));
 const MerkleTrees = React.lazy(() => import('../modules/M10_MerkleTrees'));
 const Network = React.lazy(() => import('../modules/M04_Network'));
+const Attack51 = React.lazy(() => import('../modules/M11_Attack51'));
+const Forks = React.lazy(() => import('../modules/M12_Forks'));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -53,6 +55,8 @@ const Router: React.FC = () => {
             <Route path="/module/smart-contracts" element={<SmartContracts />} />
             <Route path="/module/merkletrees" element={<MerkleTrees />} />
             <Route path="/module/network" element={<Network />} />
+            <Route path="/module/attack51" element={<Attack51 />} />
+            <Route path="/module/forks" element={<Forks />} />
           </Route>
 
           {/* Fallback route */}
