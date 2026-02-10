@@ -45,6 +45,21 @@ export class Network {
     });
   }
 
+  public mineBlock(peerId: string, data: string): Block | null {
+    const peer = this.peers.get(peerId);
+    if (!peer) {
+      return null;
+    }
+    return peer.blockchain.addBlock(data);
+  }
+
+  public deliverBlock(peerId: string, block: Block): void {
+    const peer = this.peers.get(peerId);
+    if (peer) {
+      peer.blockchain.receiveBlock(block);
+    }
+  }
+
   public mineAndBroadcast(peerId: string, data: string): boolean {
     const peer = this.peers.get(peerId);
     if (!peer) {

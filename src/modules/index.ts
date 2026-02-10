@@ -12,3 +12,4 @@ export { default as Pow } from './Pow';
 export { default as Mining } from './Mining';
 export { default as Difficulty } from './Difficulty';
 export { default as SmartContracts } from './SmartContracts';
+export { default as Network } from './M04_Network';
