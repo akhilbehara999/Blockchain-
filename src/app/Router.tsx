@@ -16,7 +16,7 @@ const Keys = React.lazy(() => import('../modules/Keys'));
 const Signatures = React.lazy(() => import('../modules/M06_Signatures'));
 const Transaction = React.lazy(() => import('../modules/Transaction'));
 const Pow = React.lazy(() => import('../modules/Pow'));
-const Mining = React.lazy(() => import('../modules/Mining'));
+const Mining = React.lazy(() => import('../modules/M07_Mining'));
 const Difficulty = React.lazy(() => import('../modules/Difficulty'));
 const SmartContracts = React.lazy(() => import('../modules/SmartContracts'));
 const Network = React.lazy(() => import('../modules/M04_Network'));
