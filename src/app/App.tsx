@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Router from './Router';
+import { useThemeStore } from '../stores/useThemeStore';
 
 const App: React.FC = () => {
-  return (
-    <div className="bg-primary-bg min-h-screen text-text-primary">
-       <Router />
-    </div>
-  );
+  const theme = useThemeStore((state) => state.theme);
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  return <Router />;
 };
 
 export default App;

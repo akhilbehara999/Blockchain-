@@ -1,28 +1,28 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
-import Landing from '../modules/Landing';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load modules
-const Introduction = lazy(() => import('../modules/Introduction'));
-const Hash = lazy(() => import('../modules/Hash'));
-const Block = lazy(() => import('../modules/Block'));
-const Blockchain = lazy(() => import('../modules/Blockchain'));
-const Distributed = lazy(() => import('../modules/Distributed'));
-const Tokens = lazy(() => import('../modules/Tokens'));
-const Coinbase = lazy(() => import('../modules/Coinbase'));
-const Keys = lazy(() => import('../modules/Keys'));
-const Signatures = lazy(() => import('../modules/Signatures'));
-const Transaction = lazy(() => import('../modules/Transaction'));
-const Pow = lazy(() => import('../modules/Pow'));
-const Mining = lazy(() => import('../modules/Mining'));
-const Difficulty = lazy(() => import('../modules/Difficulty'));
-const SmartContracts = lazy(() => import('../modules/SmartContracts'));
+const Landing = React.lazy(() => import('../modules/Landing'));
+const Introduction = React.lazy(() => import('../modules/Introduction'));
+const Hash = React.lazy(() => import('../modules/Hash'));
+const Block = React.lazy(() => import('../modules/Block'));
+const Blockchain = React.lazy(() => import('../modules/Blockchain'));
+const Distributed = React.lazy(() => import('../modules/Distributed'));
+const Tokens = React.lazy(() => import('../modules/Tokens'));
+const Coinbase = React.lazy(() => import('../modules/Coinbase'));
+const Keys = React.lazy(() => import('../modules/Keys'));
+const Signatures = React.lazy(() => import('../modules/Signatures'));
+const Transaction = React.lazy(() => import('../modules/Transaction'));
+const Pow = React.lazy(() => import('../modules/Pow'));
+const Mining = React.lazy(() => import('../modules/Mining'));
+const Difficulty = React.lazy(() => import('../modules/Difficulty'));
+const SmartContracts = React.lazy(() => import('../modules/SmartContracts'));
 
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center h-screen bg-primary-bg text-accent">
-    <Loader2 className="w-10 h-10 animate-spin" />
+  <div className="flex items-center justify-center min-h-screen">
+    <Loader2 className="w-8 h-8 animate-spin text-accent" />
   </div>
 );
 
@@ -32,7 +32,6 @@ const Router: React.FC = () => {
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<Landing />} />
-
           <Route element={<MainLayout />}>
             <Route path="/module/introduction" element={<Introduction />} />
             <Route path="/module/hash" element={<Hash />} />
@@ -48,12 +47,9 @@ const Router: React.FC = () => {
             <Route path="/module/mining" element={<Mining />} />
             <Route path="/module/difficulty" element={<Difficulty />} />
             <Route path="/module/smart-contracts" element={<SmartContracts />} />
-
-            {/* Redirects */}
-            <Route path="/modules" element={<Navigate to="/module/introduction" replace />} />
           </Route>
 
-          {/* 404 */}
+          {/* Fallback route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

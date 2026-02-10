@@ -6,32 +6,26 @@ import { motion } from 'framer-motion';
 interface ModuleLayoutProps {
   moduleId: string;
   title: string;
-  subtitle?: string;
+  subtitle: string;
   children: React.ReactNode;
 }
 
-const ModuleLayout: React.FC<ModuleLayoutProps> = ({
-  moduleId,
-  title,
-  subtitle,
-  children
-}) => {
+const ModuleLayout: React.FC<ModuleLayoutProps> = ({ moduleId, title, subtitle, children }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col space-y-8"
-    >
+    <div className="space-y-8">
       <ModuleHeader title={title} subtitle={subtitle} />
 
-      <div className="min-h-[60vh] relative">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="min-h-[400px]"
+      >
         {children}
-      </div>
+      </motion.div>
 
       <ExplanationPanel moduleId={moduleId} />
-    </motion.div>
+    </div>
   );
 };
 
