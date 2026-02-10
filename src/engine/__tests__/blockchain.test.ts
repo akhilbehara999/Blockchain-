@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Blockchain } from '../blockchain';
-import { createBlock, calculateHash, mineBlock, isBlockValid } from '../block';
+import { calculateHash, isBlockValid } from '../block';
 
 describe('Blockchain', () => {
   let blockchain: Blockchain;

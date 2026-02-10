@@ -160,4 +160,12 @@ export class Blockchain {
       // Do NOT re-mine
     }
   }
+
+  public mineBlock(index: number): Block | undefined {
+    const block = this.chain[index];
+    if (block) {
+      mineBlock(block, this.difficulty);
+    }
+    return block;
+  }
 }

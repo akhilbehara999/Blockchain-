@@ -10,8 +10,8 @@ describe('Network', () => {
   });
 
   it('should add peers', () => {
-    const peer1 = network.addPeer('Peer 1');
-    const peer2 = network.addPeer('Peer 2');
+    network.addPeer('Peer 1');
+    network.addPeer('Peer 2');
     const peers = network.getPeers();
     expect(peers.length).toBe(2);
     expect(peers[0].name).toBe('Peer 1');

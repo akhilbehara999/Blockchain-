@@ -45,6 +45,16 @@ export class Network {
     });
   }
 
+  public mineAndBroadcast(peerId: string, data: string): boolean {
+    const peer = this.peers.get(peerId);
+    if (!peer) {
+      return false;
+    }
+    const newBlock = peer.blockchain.addBlock(data);
+    this.broadcastBlock(peerId, newBlock);
+    return true;
+  }
+
   public tamperBlock(peerId: string, blockIndex: number, newData: string): void {
     const peer = this.peers.get(peerId);
     if (peer) {
