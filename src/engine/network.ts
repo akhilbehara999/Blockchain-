@@ -1,6 +1,7 @@
 import { Block, Peer } from './types';
 import { Blockchain } from './blockchain';
 import { createBlock, mineBlock } from './block';
+import { generateSecureId } from '../utils/secureRandom';
 
 export class Network {
   private peers: Map<string, { id: string, name: string, blockchain: Blockchain }>;
@@ -15,7 +16,7 @@ export class Network {
   }
 
   public addPeer(name: string): string {
-    const id = Math.random().toString(36).substring(2, 11);
+    const id = generateSecureId();
     const blockchain = new Blockchain(this.difficulty, this.genesisBlock);
     this.peers.set(id, { id, name, blockchain });
     return id;

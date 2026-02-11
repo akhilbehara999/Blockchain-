@@ -5,6 +5,7 @@ import ModuleLayout from '../components/layout/ModuleLayout';
 import TransactionForm from '../components/blockchain/TransactionForm';
 import Card from '../components/ui/Card';
 import { Wallet } from '../engine/types';
+import { generateSecureId } from '../utils/secureRandom';
 
 // Dummy wallets for demonstration
 const INITIAL_WALLETS: Wallet[] = [
@@ -48,7 +49,7 @@ const Transaction: React.FC = () => {
 
     // Add to history
     const newTx: SimpleTransaction = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateSecureId(),
       from: fromName,
       to: toName,
       amount,
