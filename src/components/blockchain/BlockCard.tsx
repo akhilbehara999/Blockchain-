@@ -148,7 +148,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
                                 <AnatomyTooltip
                                     label="Data"
                                     description="The transactions or information stored in this block"
-                                    className="top-1/2 right-0 translate-x-[105%] -translate-y-1/2 w-48"
+                                    className="top-full left-0 mt-2 lg:top-1/2 lg:right-0 lg:translate-x-[105%] lg:-translate-y-1/2 lg:left-auto lg:mt-0 w-48"
                                 />
                             )}
                     </AnimatePresence>

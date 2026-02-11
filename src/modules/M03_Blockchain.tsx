@@ -117,7 +117,7 @@ const M03_Blockchain: React.FC = () => {
             <Card className="w-full max-w-md p-4 animate-in fade-in slide-in-from-bottom-4 bg-tertiary-bg/50">
                <div className="space-y-4">
                   <h4 className="text-sm font-medium text-text-secondary">New Block Data</h4>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                       <div className="flex-1">
                         <Input
                             value={newBlockData}
@@ -125,10 +125,13 @@ const M03_Blockchain: React.FC = () => {
                             placeholder="Enter transaction data..."
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && handleAddBlock()}
+                            containerClassName="!mb-0"
                         />
                       </div>
-                      <Button onClick={handleAddBlock} disabled={!newBlockData.trim()}>Add</Button>
-                      <Button variant="ghost" onClick={() => setShowAddForm(false)}>Cancel</Button>
+                      <div className="flex gap-2">
+                          <Button onClick={handleAddBlock} disabled={!newBlockData.trim()} className="flex-1 sm:flex-none">Add</Button>
+                          <Button variant="ghost" onClick={() => setShowAddForm(false)} className="flex-1 sm:flex-none">Cancel</Button>
+                      </div>
                   </div>
                </div>
             </Card>
