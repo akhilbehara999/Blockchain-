@@ -6,6 +6,7 @@ interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
+  leftIcon?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -13,6 +14,7 @@ const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   loading = false,
+  leftIcon,
   className = '',
   children,
   disabled,
@@ -42,6 +44,7 @@ const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+      {!loading && leftIcon && <span className="mr-2">{leftIcon}</span>}
       {children}
     </motion.button>
   );

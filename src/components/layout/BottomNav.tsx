@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, List, BarChart2, Settings } from 'lucide-react';
+import { Home, List, Settings } from 'lucide-react';
 
 interface BottomNavProps {
   onModulesClick?: () => void;
@@ -29,18 +29,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ onModulesClick, onSettingsClick }
         <List className="w-6 h-6" />
         <span className="text-xs font-medium">Modules</span>
       </button>
-
-      <NavLink
-        to="/progress" // This route might not exist yet, but it's okay
-        className={({ isActive }) =>
-          `flex flex-col items-center justify-center space-y-1 p-2 rounded-lg transition-colors ${
-            isActive ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
-          }`
-        }
-      >
-        <BarChart2 className="w-6 h-6" />
-        <span className="text-xs font-medium">Progress</span>
-      </NavLink>
 
       <button
         onClick={onSettingsClick}
