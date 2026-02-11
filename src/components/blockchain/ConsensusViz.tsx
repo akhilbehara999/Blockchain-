@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Cpu, Coins, Users, Shield, Zap, Clock, Lock, AlertTriangle,
-  Play, RotateCcw, Trophy, Activity, CheckCircle
+  Cpu, Coins, Users, AlertTriangle, Trophy, CheckCircle
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip
@@ -13,7 +12,6 @@ import Button from '../ui/Button';
 import Slider from '../ui/Slider';
 import Toggle from '../ui/Toggle';
 import Tabs from '../ui/Tabs';
-import ProgressBar from '../ui/ProgressBar';
 import Badge from '../ui/Badge';
 import { simulatePoW, simulatePoS, simulateDPoS } from '../../engine/consensus';
 
@@ -321,7 +319,7 @@ const PoSTab: React.FC = () => {
         v.id === '1' ? { ...v, stake: 800 } : { ...v, stake: 50 }
       ));
     } else {
-      setValidators(prev => prev.map((v, i) => ({ ...v, stake: 100 })));
+      setValidators(prev => prev.map(v => ({ ...v, stake: 100 })));
     }
     setSelectedValidator(null);
     setSimulationCount(0);
@@ -761,7 +759,7 @@ const ComparisonTable: React.FC = () => {
                    <tr key={i} className="hover:bg-tertiary-bg/30 transition-colors">
                       <td className="px-6 py-4 font-bold text-text-primary">{row.mech}</td>
                       <td className="px-6 py-4">
-                         <Badge variant={row.energy === 'High' ? 'danger' : row.energy === 'Low' ? 'success' : 'secondary'}>
+                         <Badge variant={row.energy === 'High' ? 'danger' : row.energy === 'Low' ? 'success' : 'neutral'}>
                             {row.energy}
                          </Badge>
                       </td>

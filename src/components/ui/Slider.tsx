@@ -8,6 +8,7 @@ interface SliderProps {
   label?: string;
   showValue?: boolean;
   className?: string;
+  disabled?: boolean;
 }
 
 const Slider: React.FC<SliderProps> = ({
@@ -18,11 +19,12 @@ const Slider: React.FC<SliderProps> = ({
   label,
   showValue = false,
   className = '',
+  disabled = false,
 }) => {
   const percentage = ((value - min) / (max - min)) * 100;
 
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full ${className} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
       {(label || showValue) && (
         <div className="flex justify-between items-center mb-2">
           {label && <span className="text-sm font-medium text-text-secondary">{label}</span>}
@@ -31,7 +33,7 @@ const Slider: React.FC<SliderProps> = ({
       )}
       <div className="relative w-full h-2 bg-tertiary-bg rounded-full flex items-center">
         <div
-          className="absolute h-full bg-accent rounded-full pointer-events-none"
+          className={`absolute h-full rounded-full pointer-events-none ${disabled ? 'bg-text-secondary' : 'bg-accent'}`}
           style={{ width: `${percentage}%` }}
         />
         <input
@@ -40,14 +42,15 @@ const Slider: React.FC<SliderProps> = ({
           max={max}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
+          disabled={disabled}
           aria-label={label}
           aria-valuemin={min}
           aria-valuemax={max}
           aria-valuenow={value}
-          className="absolute w-full h-full opacity-0 cursor-pointer z-10"
+          className="absolute w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
         />
         <div
-          className="absolute w-4 h-4 bg-white rounded-full shadow-lg pointer-events-none transition-transform active:scale-110 z-20"
+          className={`absolute w-4 h-4 bg-white rounded-full shadow-lg pointer-events-none transition-transform active:scale-110 z-20 ${disabled ? 'bg-text-secondary' : ''}`}
           style={{
             left: `${percentage}%`,
             transform: 'translateX(-50%)'

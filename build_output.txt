@@ -1,0 +1,51 @@
+
+> react-ts-vite-project@0.0.0 build
+> tsc && vite build
+
+src/components/ErrorBoundary.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/blockchain/ForkViz.tsx(4,1): error TS6192: All imports in import declaration are unused.
+src/components/blockchain/PeerNetwork.test.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/blockchain/TransactionForm.tsx(2,1): error TS6192: All imports in import declaration are unused.
+src/components/blockchain/__tests__/BlockCard.test.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/blockchain/__tests__/BlockCard.test.tsx(5,23): error TS2307: Cannot find module '../../engine/types' or its corresponding type declarations.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(5,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(6,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(8,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(9,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(10,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(13,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(17,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(26,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(31,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(34,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(36,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(38,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/ConsensusViz.test.tsx(39,5): error TS2304: Cannot find name 'expect'.
+src/components/blockchain/__tests__/HashDisplay.test.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/blockchain/__tests__/HashDisplay.test.tsx(2,18): error TS6133: 'screen' is declared but its value is never read.
+src/modules/M03_Blockchain.tsx(122,26): error TS2741: Property 'label' is missing in type '{ value: string; onChange: (e: ChangeEvent<HTMLInputElement>) => void; placeholder: string; autoFocus: true; onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => false | void; }' but required in type 'InputProps'.
+src/modules/M04_Network.tsx(6,29): error TS6133: 'AlertTriangle' is declared but its value is never read.
+src/modules/M07_Mining.tsx(1,46): error TS6133: 'useCallback' is declared but its value is never read.
+src/modules/M07_Mining.tsx(192,55): error TS6133: 'progress' is declared but its value is never read.
+src/modules/M07_Mining.tsx(193,10): error TS6133: 'startTime' is declared but its value is never read.
+src/modules/M07_Mining.tsx(229,15): error TS6133: 'timeDiff' is declared but its value is never read.
+src/modules/M09_SmartContracts.tsx(10,16): error TS6133: 'Unlock' is declared but its value is never read.
+src/modules/M09_SmartContracts.tsx(19,61): error TS6133: 'onDeploy' is declared but its value is never read.
+src/modules/M09_SmartContracts.tsx(96,13): error TS2322: Type '{ children: string; onClick: () => void; disabled: boolean; leftIcon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'leftIcon' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/modules/M09_SmartContracts.tsx(104,13): error TS2322: Type '{ children: string; onClick: () => void; disabled: boolean; variant: "secondary"; leftIcon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'leftIcon' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/modules/M09_SmartContracts.tsx(111,13): error TS2322: Type '"success"' is not assignable to type '"primary" | "secondary" | "danger" | "ghost" | undefined'.
+src/modules/M09_SmartContracts.tsx(120,17): error TS2322: Type '{ children: string; onClick: () => void; variant: "danger"; leftIcon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'leftIcon' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/modules/M09_SmartContracts.tsx(385,17): error TS2322: Type '"primary" | "success"' is not assignable to type '"primary" | "secondary" | "danger" | "ghost" | undefined'.
+  Type '"success"' is not assignable to type '"primary" | "secondary" | "danger" | "ghost" | undefined'.
+src/modules/M10_MerkleTrees.tsx(9,23): error TS6133: 'Info' is declared but its value is never read.
+src/modules/M11_Attack51.tsx(6,23): error TS6133: 'Zap' is declared but its value is never read.
+src/modules/M11_Attack51.tsx(6,66): error TS6133: 'Truck' is declared but its value is never read.
+src/modules/M11_Attack51.tsx(217,20): error TS2322: Type '"outline"' is not assignable to type '"primary" | "secondary" | "danger" | "ghost" | undefined'.
+src/modules/M12_Forks.tsx(8,63): error TS6133: 'GitCommit' is declared but its value is never read.
+src/modules/M12_Forks.tsx(126,25): error TS2322: Type '"outline"' is not assignable to type '"primary" | "secondary" | "danger" | "ghost" | undefined'.
+src/modules/index.ts(14,43): error TS2307: Cannot find module './SmartContracts' or its corresponding type declarations.
+src/stores/useNetworkStore.ts(40,11): error TS6133: 'id' is declared but its value is never read.
