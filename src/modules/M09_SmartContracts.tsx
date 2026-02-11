@@ -199,10 +199,10 @@ const CrowdfundingTemplate: React.FC = () => {
                 </div>
             </Card>
 
-            <div className="flex items-end gap-4 bg-tertiary-bg/30 p-4 rounded-xl">
-                <Input label="Name" value={name} onChange={e => setName(e.target.value)} />
-                <Input label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} />
-                <Button onClick={contribute} disabled={state.status !== 'active'}>Contribute</Button>
+            <div className="flex flex-col md:flex-row items-end gap-4 bg-tertiary-bg/30 p-4 rounded-xl">
+                <Input label="Name" value={name} onChange={e => setName(e.target.value)} containerClassName="w-full md:w-auto flex-1 !mb-0" />
+                <Input label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} containerClassName="w-full md:w-auto flex-1 !mb-0" />
+                <Button onClick={contribute} disabled={state.status !== 'active'} className="w-full md:w-auto">Contribute</Button>
             </div>
          </div>
 
@@ -271,10 +271,10 @@ const AuctionTemplate: React.FC = () => {
                         </div>
                     </Card>
 
-                    <div className="flex items-end gap-4 bg-tertiary-bg/30 p-4 rounded-xl">
-                        <Input label="Bidder" value={bidderName} onChange={e => setBidderName(e.target.value)} />
-                        <Input label="Amount" type="number" value={bidAmount} onChange={e => setBidAmount(e.target.value)} />
-                        <Button onClick={placeBid} disabled={state.status === 'ended' || (parseInt(bidAmount) || 0) <= state.highestBid}>
+                    <div className="flex flex-col md:flex-row items-end gap-4 bg-tertiary-bg/30 p-4 rounded-xl">
+                        <Input label="Bidder" value={bidderName} onChange={e => setBidderName(e.target.value)} containerClassName="w-full md:w-auto flex-1 !mb-0" />
+                        <Input label="Amount" type="number" value={bidAmount} onChange={e => setBidAmount(e.target.value)} containerClassName="w-full md:w-auto flex-1 !mb-0" />
+                        <Button onClick={placeBid} disabled={state.status === 'ended' || (parseInt(bidAmount) || 0) <= state.highestBid} className="w-full md:w-auto">
                             Place Bid
                         </Button>
                     </div>
@@ -369,8 +369,8 @@ const SmartContracts: React.FC = () => {
              </AnimatePresence>
         </Card>
 
-        <div className="flex justify-between items-center bg-tertiary-bg/20 p-4 rounded-xl border border-tertiary-bg">
-            <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-tertiary-bg/20 p-4 rounded-xl border border-tertiary-bg">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div className={`p-2 rounded-lg ${deployed ? 'bg-success/20 text-success' : 'bg-tertiary-bg text-text-tertiary'}`}>
                     <FileCode className="w-6 h-6" />
                 </div>
@@ -384,6 +384,7 @@ const SmartContracts: React.FC = () => {
                 disabled={deployed}
                 variant={deployed ? 'success' : 'primary'}
                 leftIcon={deployed ? <CheckCircle className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                className="w-full sm:w-auto"
             >
                 {deployed ? 'Deployed' : 'Deploy Contract'}
             </Button>

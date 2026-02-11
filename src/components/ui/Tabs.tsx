@@ -24,7 +24,7 @@ const Tabs: React.FC<TabsProps> = ({
     <div
       role="tablist"
       aria-orientation="horizontal"
-      className={`flex space-x-1 bg-tertiary-bg/50 p-1 rounded-xl ${className}`}
+      className={`flex space-x-1 bg-tertiary-bg/50 p-1 rounded-xl overflow-x-auto scrollbar-hide ${className}`}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
@@ -39,7 +39,7 @@ const Tabs: React.FC<TabsProps> = ({
             className={`
               relative flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors
               ${isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'}
-              flex-1
+              flex-1 min-w-fit whitespace-nowrap
             `}
           >
             {isActive && (

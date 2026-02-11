@@ -162,7 +162,7 @@ const M13_DeFi: React.FC = () => {
         {/* Interaction Panel */}
         <div>
           {/* Tabs */}
-          <div className="flex space-x-2 bg-secondary-bg/50 p-1 rounded-xl mb-6">
+          <div className="flex space-x-2 bg-secondary-bg/50 p-1 rounded-xl mb-6 overflow-x-auto scrollbar-hide">
             {[
               { id: 'swap', label: 'Swap', icon: ArrowLeftRight },
               { id: 'pool', label: 'Add Liquidity', icon: PiggyBank },
@@ -171,7 +171,7 @@ const M13_DeFi: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex-1 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium transition-all min-w-fit whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'bg-accent text-white shadow-lg'
                     : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
@@ -362,36 +362,36 @@ const M13_DeFi: React.FC = () => {
                    </div>
 
                    <div className="space-y-4">
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2 items-end">
                         <Input
                           label="Deposit Collateral (A)"
                           type="number"
                           value={depositAmount}
                           onChange={(e) => setDepositAmount(e.target.value)}
-                          containerClassName="flex-1 mb-0"
+                          containerClassName="w-full sm:w-auto flex-1 !mb-0"
                         />
                         <Button
                           onClick={handleDeposit}
                           disabled={!depositAmount}
-                          className="mt-2 h-[50px]" // Match input height roughly
+                          className="w-full sm:w-auto mt-2 h-[50px]" // Match input height roughly
                         >
                           Deposit
                         </Button>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2 items-end">
                         <Input
                           label="Borrow (B)"
                           type="number"
                           value={borrowAmount}
                           onChange={(e) => setBorrowAmount(e.target.value)}
-                          containerClassName="flex-1 mb-0"
+                          containerClassName="w-full sm:w-auto flex-1 !mb-0"
                         />
                         <Button
                           onClick={handleBorrow}
                           variant="secondary"
                           disabled={!borrowAmount}
-                          className="mt-2 h-[50px]"
+                          className="w-full sm:w-auto mt-2 h-[50px]"
                         >
                           Borrow
                         </Button>

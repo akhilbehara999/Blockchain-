@@ -169,7 +169,7 @@ const PuzzleMode: React.FC = () => {
           <p className="text-text-secondary">Type random characters until you find a matching hash!</p>
         </div>
 
-        <div className="flex justify-between items-center mb-6 px-4 bg-tertiary-bg/50 py-3 rounded-lg">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 px-4 bg-tertiary-bg/50 py-3 rounded-lg">
           <div className="flex items-center space-x-2">
             <Timer className="w-5 h-5 text-accent" />
             <span className="font-mono text-lg">{elapsed.toFixed(1)}s</span>
@@ -204,18 +204,19 @@ const PuzzleMode: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-between items-center">
+        <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <Button
             variant="secondary"
             size="sm"
             onClick={() => setShowHint(!showHint)}
+            className="w-full sm:w-auto"
           >
             <Lightbulb className="w-4 h-4 mr-2" />
             {showHint ? "Hide Hint" : "Need a Hint?"}
           </Button>
 
           {isSolved && (
-            <Button variant="primary" onClick={reset}>
+            <Button variant="primary" onClick={reset} className="w-full sm:w-auto">
               <RefreshCw className="w-4 h-4 mr-2" />
               Play Again
             </Button>
