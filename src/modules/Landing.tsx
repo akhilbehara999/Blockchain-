@@ -74,11 +74,11 @@ const HeroSection: React.FC = () => {
           />
 
           {/* Connecting Lines */}
-          <svg className="absolute inset-0 w-full h-full">
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
             <motion.path
-              d="M 25% 45% L 50% 35% L 75% 55%"
+              d="M 25 45 L 50 35 L 75 55"
               stroke="url(#gradient-line)"
-              strokeWidth="2"
+              strokeWidth="0.5"
               fill="none"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: 1, opacity: 0.3 }}
