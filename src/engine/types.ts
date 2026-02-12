@@ -12,6 +12,7 @@ export interface Transaction {
   from: string;
   to: string;
   amount: number;
+  fee?: number;
   signature: string;
   timestamp: number;
 }
