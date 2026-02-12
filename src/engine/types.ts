@@ -6,6 +6,7 @@ export interface Block {
   previousHash: string;
   nonce: number;
   hash: string;
+  confirmations?: number;
 }
 
 export interface Transaction {

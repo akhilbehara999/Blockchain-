@@ -1,5 +1,5 @@
 import { Block } from './types';
-import { createBlock, calculateHash, isBlockValid, mineBlock } from './block';
+import { createBlock, calculateHash, isBlockValid, mineBlock, calculateConfirmations } from './block';
 
 export class Blockchain {
   private chain: Block[];
@@ -16,6 +16,7 @@ export class Blockchain {
       mineBlock(genesis, this.difficulty);
       this.chain = [genesis];
     }
+    this.updateConfirmations();
   }
 
   public getChain(): Block[] {
@@ -32,6 +33,7 @@ export class Blockchain {
     const newBlock = createBlock(newIndex, data, previousBlock.hash, this.difficulty);
     mineBlock(newBlock, this.difficulty);
     this.chain.push(newBlock);
+    this.updateConfirmations();
     return newBlock;
   }
 
@@ -84,6 +86,7 @@ export class Blockchain {
     }
 
     this.chain = newChain.map(b => ({ ...b }));
+    this.updateConfirmations();
     return true;
   }
 
@@ -109,6 +112,7 @@ export class Blockchain {
     }
 
     this.chain.push({ ...block });
+    this.updateConfirmations();
     return true;
   }
 
@@ -155,6 +159,10 @@ export class Blockchain {
   public editBlockData(index: number, newData: string): void {
     const block = this.chain[index];
     if (block) {
+      // Reject if finalized
+      if (block.confirmations !== undefined && block.confirmations >= 6) {
+        return;
+      }
       block.data = newData;
       block.hash = calculateHash(block);
       // Do NOT re-mine
@@ -164,6 +172,13 @@ export class Blockchain {
   public setBlockPreviousHash(index: number, hash: string): void {
     const block = this.chain[index];
     if (block) {
+      // Note: Typically tampering with previous hash is also prevented if finalized,
+      // but for simulation consistency we might want to check here too.
+      // However, the prompt specifically mentioned "edit/tamper buttons".
+      // We'll enforce immutability here too for consistency.
+      if (block.confirmations !== undefined && block.confirmations >= 6) {
+          return;
+      }
       block.previousHash = hash;
       block.hash = calculateHash(block);
     }
@@ -172,8 +187,24 @@ export class Blockchain {
   public mineBlock(index: number): Block | undefined {
     const block = this.chain[index];
     if (block) {
+      // Reject if finalized
+      if (block.confirmations !== undefined && block.confirmations >= 6) {
+        return block;
+      }
       mineBlock(block, this.difficulty);
     }
     return block;
+  }
+
+  public getConfirmations(blockHash: string): number {
+    const block = this.chain.find(b => b.hash === blockHash);
+    return block?.confirmations || 0;
+  }
+
+  private updateConfirmations(): void {
+    const chainLength = this.chain.length;
+    this.chain.forEach(block => {
+      block.confirmations = calculateConfirmations(block.index, chainLength);
+    });
   }
 }
