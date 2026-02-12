@@ -71,6 +71,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     mempool.forEach(tx => {
       // Deduct from sender
       walletManager.updateBalance(tx.from, -tx.amount);
+      // Deduct fee from sender if present
+      if (tx.fee) {
+        walletManager.updateBalance(tx.from, -tx.fee);
+      }
       // Add to receiver
       walletManager.updateBalance(tx.to, tx.amount);
     });
