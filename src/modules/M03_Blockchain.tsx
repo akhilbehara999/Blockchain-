@@ -8,8 +8,10 @@ import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
 import { Plus, RefreshCw } from 'lucide-react';
 import { calculateHash, isBlockValid } from '../engine/block';
+import { useNetworkDelay } from '../hooks/useNetworkDelay';
 
 const M03_Blockchain: React.FC = () => {
+  const { propagateBlock, isWaiting } = useNetworkDelay();
   const {
     blocks,
     difficulty,
@@ -47,10 +49,12 @@ const M03_Blockchain: React.FC = () => {
   };
 
   const handleAddBlock = () => {
-    if (newBlockData.trim()) {
-      addBlock(newBlockData);
-      setNewBlockData('');
-      setShowAddForm(false);
+    if (newBlockData.trim() && !isWaiting) {
+      propagateBlock(newBlockData, () => {
+        addBlock(newBlockData);
+        setNewBlockData('');
+        setShowAddForm(false);
+      });
     }
   };
 
@@ -129,8 +133,14 @@ const M03_Blockchain: React.FC = () => {
                         />
                       </div>
                       <div className="flex gap-2">
-                          <Button onClick={handleAddBlock} disabled={!newBlockData.trim()} className="flex-1 sm:flex-none">Add</Button>
-                          <Button variant="ghost" onClick={() => setShowAddForm(false)} className="flex-1 sm:flex-none">Cancel</Button>
+                          <Button
+                              onClick={handleAddBlock}
+                              disabled={!newBlockData.trim() || isWaiting}
+                              className="flex-1 sm:flex-none"
+                          >
+                              {isWaiting ? 'Propagating...' : 'Add'}
+                          </Button>
+                          <Button variant="ghost" onClick={() => setShowAddForm(false)} className="flex-1 sm:flex-none" disabled={isWaiting}>Cancel</Button>
                       </div>
                   </div>
                </div>

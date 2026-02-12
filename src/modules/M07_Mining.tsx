@@ -9,6 +9,7 @@ import HashDisplay from '../components/blockchain/HashDisplay';
 import MiningAnimation from '../components/blockchain/MiningAnimation';
 import ProgressBar from '../components/ui/ProgressBar';
 import { useMining } from '../hooks/useMining';
+import { useNetworkDelay } from '../hooks/useNetworkDelay';
 import { calculateHash } from '../engine/block';
 import { Block } from '../engine/types';
 import { Hammer, Play, Square, Trophy, Timer, Zap, History } from 'lucide-react';
@@ -179,6 +180,7 @@ const ManualMiningTab: React.FC = () => {
 // --- Tab 2: Auto Mining ---
 
 const AutoMiningTab: React.FC = () => {
+  const { propagateBlock, isWaiting } = useNetworkDelay();
   const [difficulty, setDifficulty] = useState(4);
   const [block, setBlock] = useState<Block>({
     index: 1,
@@ -219,8 +221,12 @@ const AutoMiningTab: React.FC = () => {
       startMine(currentBlock, difficulty, (result) => {
         // On Complete
         if (timerRef.current) clearInterval(timerRef.current);
-        setBlock(prev => ({ ...prev, nonce: result.nonce, hash: result.hash }));
-        setShowSuccess(true);
+
+        // Propagate mined block with delay
+        propagateBlock(result, () => {
+            setBlock(prev => ({ ...prev, nonce: result.nonce, hash: result.hash }));
+            setShowSuccess(true);
+        });
       });
 
       // Start metrics timer
@@ -294,7 +300,8 @@ const AutoMiningTab: React.FC = () => {
                 {/* Status */}
                <div className="flex justify-between items-center text-sm h-6">
                   {isMining && <span className="text-warning font-bold animate-pulse">MINING IN PROGRESS...</span>}
-                  {isValid && !isMining && <span className="text-success font-bold">BLOCK MINED!</span>}
+                  {isWaiting && !isMining && <span className="text-accent font-bold animate-pulse">PROPAGATING BLOCK...</span>}
+                  {isValid && !isMining && !isWaiting && <span className="text-success font-bold">BLOCK MINED!</span>}
                </div>
              </div>
 
@@ -325,6 +332,7 @@ const AutoMiningTab: React.FC = () => {
                     variant={isMining ? 'danger' : 'primary'}
                     className="w-full"
                     onClick={toggleMining}
+                    disabled={isWaiting}
                 >
                     {isMining ? (
                         <>
