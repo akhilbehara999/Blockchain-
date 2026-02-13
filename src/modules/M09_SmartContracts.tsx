@@ -9,6 +9,95 @@ import ProgressBar from '../components/ui/ProgressBar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Unlock, DollarSign, User, Gavel, CheckCircle, XCircle, FileCode, Play } from 'lucide-react';
 
+import { GasSystem, GAS_COSTS } from '../engine/GasSystem';
+import { ContractVM } from '../engine/ContractVM';
+import type { VMStep, ExecutionResult } from '../engine/types';
+import GasEstimator from '../components/contracts/GasEstimator';
+import ExecutionViewer from '../components/contracts/ExecutionViewer';
+
+// --- VM Hook for Integration ---
+const useSmartContractVM = (currentState: any, onStateUpdate: (newState: any) => void) => {
+  const [status, setStatus] = useState<'idle' | 'estimating' | 'executing' | 'result'>('idle');
+  const [steps, setSteps] = useState<VMStep[]>([]);
+  const [estimatedGas, setEstimatedGas] = useState(0);
+  const [userLimit, setUserLimit] = useState(0);
+  const [executionResult, setExecutionResult] = useState<ExecutionResult>();
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [currentGasUsed, setCurrentGasUsed] = useState(0);
+
+  const execute = (actionSteps: VMStep[]) => {
+    const totalEst = actionSteps.reduce((acc, s) => acc + s.cost, 0);
+    setEstimatedGas(totalEst);
+    setUserLimit(Math.ceil(totalEst * 1.3)); // 30% buffer
+    setSteps(actionSteps);
+    setStatus('estimating');
+  };
+
+  const confirm = async () => {
+    setStatus('executing');
+    setCurrentStepIndex(0);
+    setCurrentGasUsed(0);
+
+    const vm = new ContractVM(currentState);
+    const gasPrice = GasSystem.getCurrentGasPrice();
+
+    const res = await vm.execute(steps, userLimit, gasPrice, (idx, cost, total) => {
+      setCurrentStepIndex(idx);
+      setCurrentGasUsed(total);
+    });
+
+    setExecutionResult(res);
+    setStatus('result');
+
+    if (res.success && res.result) {
+      onStateUpdate(res.result);
+    }
+  };
+
+  const reset = () => {
+    setStatus('idle');
+    setExecutionResult(undefined);
+    setSteps([]);
+  };
+
+  const RenderOverlay = () => (
+    <AnimatePresence>
+      {status !== 'idle' && (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        >
+          {status === 'estimating' && (
+            <GasEstimator
+              estimatedGas={estimatedGas}
+              recommendedLimit={Math.ceil(estimatedGas * 1.3)}
+              userLimit={userLimit}
+              onLimitChange={setUserLimit}
+              onConfirm={confirm}
+              onCancel={reset}
+            />
+          )}
+          {(status === 'executing' || status === 'result') && (
+            <ExecutionViewer
+              steps={steps}
+              currentStepIndex={currentStepIndex}
+              gasUsed={status === 'result' && executionResult ? executionResult.gasUsed : currentGasUsed}
+              gasLimit={userLimit}
+              status={status === 'executing' ? 'pending' : executionResult?.success ? 'success' : 'failed'}
+              result={executionResult}
+              onClose={reset}
+            />
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  return { execute, RenderOverlay };
+};
+
 // --- Escrow Template ---
 interface EscrowState {
   buyerDeposit: number;
@@ -23,28 +112,48 @@ const EscrowTemplate: React.FC<{ onDeploy: () => void }> = ({ onDeploy }) => {
     status: 'waiting_for_deposit',
   });
 
+  const { execute, RenderOverlay } = useSmartContractVM(state, setState);
+
   const deposit = () => {
-    setState(s => ({ ...s, buyerDeposit: 10, status: 'ready_to_deliver' }));
+    execute([
+        { name: 'Check Authorization', cost: GAS_COSTS.READ, action: () => {} }, // Simulating auth check
+        { name: 'Transfer Funds (User -> Contract)', cost: GAS_COSTS.TRANSFER, action: () => {} },
+        { name: 'Update Ledger', cost: GAS_COSTS.STORE, action: (s) => ({ ...s, buyerDeposit: 10, status: 'ready_to_deliver' }) }
+    ]);
   };
 
   const deliver = () => {
-    setState(s => ({ ...s, sellerDelivered: true, status: 'delivered' }));
+    execute([
+        { name: 'Verify Deposit', cost: GAS_COSTS.READ, action: (s) => { if (s.buyerDeposit < 10) throw new Error('No deposit found'); } },
+        { name: 'Update Shipment Status', cost: GAS_COSTS.STORE, action: (s) => ({ ...s, sellerDelivered: true, status: 'delivered' }) }
+    ]);
   };
 
   const release = () => {
-    setState(s => ({ ...s, status: 'complete', buyerDeposit: 0 }));
+    execute([
+        { name: 'Check Delivery Status', cost: GAS_COSTS.READ, action: (s) => { if (!s.sellerDelivered) throw new Error('Item not delivered'); } },
+        { name: 'Transfer Funds (Contract -> Seller)', cost: GAS_COSTS.TRANSFER, action: () => {} },
+        { name: 'Close Escrow', cost: GAS_COSTS.STORE, action: (s) => ({ ...s, status: 'complete', buyerDeposit: 0 }) }
+    ]);
   };
 
   const dispute = () => {
-    setState(s => ({ ...s, status: 'disputed' }));
+    execute([
+        { name: 'Register Dispute', cost: GAS_COSTS.LOGIC_MIN, action: (s) => ({ ...s, status: 'disputed' }) }
+    ]);
   };
 
   const refund = () => {
-    setState(s => ({ ...s, status: 'refunded', buyerDeposit: 0 }));
+    execute([
+        { name: 'Verify Dispute', cost: GAS_COSTS.READ, action: (s) => { if (s.status !== 'disputed') throw new Error('Not disputed'); } },
+        { name: 'Refund Buyer', cost: GAS_COSTS.TRANSFER, action: () => {} },
+        { name: 'Close Escrow', cost: GAS_COSTS.STORE, action: (s) => ({ ...s, status: 'refunded', buyerDeposit: 0 }) }
+    ]);
   };
 
   return (
     <div className="space-y-6">
+      <RenderOverlay />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Logic Visualization */}
         <div className="lg:col-span-2 space-y-4">
@@ -151,6 +260,8 @@ const CrowdfundingTemplate: React.FC = () => {
     status: 'active',
   });
 
+  const { execute, RenderOverlay } = useSmartContractVM(state, setState);
+
   const [amount, setAmount] = useState('10');
   const [name, setName] = useState('Alice');
 
@@ -158,30 +269,38 @@ const CrowdfundingTemplate: React.FC = () => {
     const val = parseInt(amount) || 0;
     if (val <= 0) return;
 
-    setState(s => ({
-        ...s,
-        fundsCollected: s.fundsCollected + val,
-        contributors: [...s.contributors, { name, amount: val }]
-    }));
+    execute([
+        { name: 'Check Status', cost: GAS_COSTS.READ, action: (s) => { if (s.status !== 'active') throw new Error('Campaign ended'); } },
+        { name: 'Transfer Contribution', cost: GAS_COSTS.TRANSFER, action: () => {} },
+        { name: 'Update Funds', cost: GAS_COSTS.STORE, action: (s) => ({
+             ...s,
+             fundsCollected: s.fundsCollected + val,
+             contributors: [...s.contributors, { name, amount: val }]
+        }) }
+    ]);
   };
 
   const checkGoal = () => {
-    if (state.fundsCollected >= state.goal) {
-        setState(s => ({ ...s, status: 'success' }));
-    } else {
-        setState(s => ({ ...s, status: 'failed' }));
-    }
+    execute([
+        { name: 'Read Funds', cost: GAS_COSTS.READ, action: () => {} },
+        { name: 'Evaluate Goal', cost: GAS_COSTS.LOGIC_MIN, action: (s) => {
+             if (s.fundsCollected >= s.goal) return { ...s, status: 'success' };
+             return { ...s, status: 'failed' };
+        } }
+    ]);
   };
 
   const withdraw = () => {
-      // Logic for withdraw (e.g., reset if failed)
-      if (state.status === 'failed') {
-          setState({ fundsCollected: 0, goal: 100, contributors: [], status: 'active' });
-      }
+      execute([
+          { name: 'Check Status', cost: GAS_COSTS.READ, action: (s) => { if (s.status !== 'failed') throw new Error('Cannot withdraw'); } },
+          { name: 'Process Refunds', cost: GAS_COSTS.LOGIC_MAX, action: () => {} }, // Expensive loop
+          { name: 'Reset State', cost: GAS_COSTS.STORE, action: (s) => ({ fundsCollected: 0, goal: 100, contributors: [], status: 'active' }) }
+      ]);
   };
 
   return (
     <div className="space-y-6">
+       <RenderOverlay />
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
          <div className="lg:col-span-2 space-y-6">
             <Card>
@@ -240,6 +359,8 @@ const AuctionTemplate: React.FC = () => {
         status: 'open'
     });
 
+    const { execute, RenderOverlay } = useSmartContractVM(state, setState);
+
     const [bidAmount, setBidAmount] = useState('10');
     const [bidderName, setBidderName] = useState('Bob');
 
@@ -247,20 +368,30 @@ const AuctionTemplate: React.FC = () => {
         const val = parseInt(bidAmount) || 0;
         if (val <= state.highestBid) return;
 
-        setState(s => ({
-            ...s,
-            highestBid: val,
-            highestBidder: bidderName,
-            bids: [{ bidder: bidderName, amount: val }, ...s.bids]
-        }));
+        execute([
+            { name: 'Check Auction Status', cost: GAS_COSTS.READ, action: (s) => { if (s.status === 'ended') throw new Error('Auction ended'); } },
+            { name: 'Verify Bid Amount', cost: GAS_COSTS.LOGIC_MIN, action: (s) => { if (val <= s.highestBid) throw new Error('Bid too low'); } },
+            { name: 'Refund Previous Bidder', cost: GAS_COSTS.TRANSFER, action: () => {} },
+            { name: 'Accept New Bid', cost: GAS_COSTS.STORE, action: (s) => ({
+                ...s,
+                highestBid: val,
+                highestBidder: bidderName,
+                bids: [{ bidder: bidderName, amount: val }, ...s.bids]
+            }) }
+        ]);
     };
 
     const endAuction = () => {
-        setState(s => ({ ...s, status: 'ended' }));
+        execute([
+            { name: 'Finalize Winner', cost: GAS_COSTS.LOGIC_MIN, action: () => {} },
+            { name: 'Transfer Funds to Owner', cost: GAS_COSTS.TRANSFER, action: () => {} },
+            { name: 'Update Status', cost: GAS_COSTS.STORE, action: (s) => ({ ...s, status: 'ended' }) }
+        ]);
     };
 
     return (
         <div className="space-y-6">
+            <RenderOverlay />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-6">
                     <Card className="bg-gradient-to-br from-tertiary-bg to-secondary-bg">
