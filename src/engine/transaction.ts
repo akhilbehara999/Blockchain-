@@ -3,6 +3,12 @@ import { Transaction } from './types';
 
 const ec = new EC('secp256k1');
 
+export const FEE_LEVELS = {
+  HIGH: 0.001,
+  STANDARD: 0.0005,
+  ECONOMY: 0.0001,
+};
+
 export function createTransaction(from: string, to: string, amount: number, privateKey: string, fee: number = 0): Transaction {
   const timestamp = Date.now();
   const tx: Transaction = {
