@@ -52,6 +52,11 @@ export class WalletManager {
     return Array.from(this.wallets.values());
   }
 
+  public setWallets(wallets: Wallet[]): void {
+    this.wallets.clear();
+    wallets.forEach(w => this.wallets.set(w.publicKey, w));
+  }
+
   public updateBalance(publicKey: string, amount: number): void {
     const wallet = this.wallets.get(publicKey);
     if (wallet) {
