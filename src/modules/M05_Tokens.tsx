@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Check, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ModuleLayout from '../components/layout/ModuleLayout';
 import WalletCard from '../components/blockchain/WalletCard';
@@ -28,20 +28,19 @@ const M05_Tokens: React.FC = () => {
   } = useBlockchainStore();
 
   const [transactionSuccess, setTransactionSuccess] = useState<string | null>(null);
+  const [lastBlockStats, setLastBlockStats] = useState<{
+      blockIndex: number;
+      txCount: number;
+      pendingCount: number;
+      highestFee: number;
+      lowestFee: number;
+      userIncluded: boolean;
+  } | null>(null);
 
   // Initialization
   useEffect(() => {
-    // Reset wallets to specific state for this module
     initializeWallets();
-    // Ensure we have a clean chain or appropriate start state
-    initializeChain(1); // Just Genesis
-    // Override wallets to match requirements if initializeWallets defaults differ
-    // (Assuming initializeWallets sets Alice 100, Bob 50 as per store code. We need Charlie 25)
-    // The store code sets Alice 100, Bob 50. We need to add Charlie 25.
-    // However, initializeWallets might be async or state update might be batched.
-    // Best to check if Charlie exists, if not create him.
-    // Since we can't easily modify store init logic from here without expanding store API,
-    // we will rely on checking wallets length or specific names in a separate effect or just add him.
+    initializeChain(1);
   }, []);
 
   // Ensure Charlie exists
@@ -51,29 +50,10 @@ const M05_Tokens: React.FC = () => {
     }
   }, [wallets, createWallet]);
 
-  const handleTransactionSubmit = (from: string, to: string, amount: number) => {
-    sendTransaction(from, to, amount);
+  const handleTransactionSubmit = (from: string, to: string, amount: number, fee: number) => {
+    sendTransaction(from, to, amount, fee);
     setTransactionSuccess(`Transaction added to mempool!`);
     setTimeout(() => setTransactionSuccess(null), 3000);
-  };
-
-  const handleMineBlock = () => {
-    if (mempool.length === 0) return;
-
-    // Format transactions for block data
-    const blockData = mempool.map(tx => {
-      const fromWallet = wallets.find(w => w.publicKey === tx.from);
-      const toWallet = wallets.find(w => w.publicKey === tx.to);
-      const fromName = fromWallet ? fromWallet.name : tx.from.substring(0, 8);
-      const toName = toWallet ? toWallet.name : tx.to.substring(0, 8);
-      return `${fromName} -> ${toName}: ${tx.amount}`;
-    }).join('\n');
-
-    // Add to blockchain
-    addBlock(blockData);
-
-    // Process balances and clear mempool
-    mineMempool();
   };
 
   const handleCreateWallet = () => {
@@ -81,6 +61,47 @@ const M05_Tokens: React.FC = () => {
     const usedNames = wallets.map(w => w.name);
     const nextName = names.find(n => !usedNames.includes(n)) || `User ${wallets.length + 1}`;
     createWallet(nextName, 0);
+  };
+
+  const handleMineBlock = () => {
+    if (mempool.length === 0) return;
+
+    // Mine transactions first to get the list of included ones
+    const minedTxs = mineMempool();
+
+    if (minedTxs.length === 0) return;
+
+    // Format transactions for block data
+    const blockData = minedTxs.map(tx => {
+      const fromWallet = wallets.find(w => w.publicKey === tx.from);
+      const toWallet = wallets.find(w => w.publicKey === tx.to);
+      const fromName = fromWallet ? fromWallet.name : tx.from.substring(0, 8);
+      const toName = toWallet ? toWallet.name : tx.to.substring(0, 8);
+      return `${fromName} -> ${toName}: ${tx.amount} (Fee: ${tx.fee?.toFixed(4)})`;
+    }).join('\n');
+
+    // Add to blockchain
+    addBlock(blockData);
+
+    // Stats
+    const highestFee = Math.max(...minedTxs.map(t => t.fee || 0));
+    const lowestFee = Math.min(...minedTxs.map(t => t.fee || 0));
+
+    // Check if user tx included (user is anyone in wallets)
+    const userTxIncluded = minedTxs.some(tx => wallets.some(w => w.publicKey === tx.from));
+
+    setLastBlockStats({
+        blockIndex: blocks.length,
+        txCount: minedTxs.length,
+        pendingCount: mempool.length, // use remaining pending count from stale state which is close enough or use math
+        // Better:
+        // pendingCount: Math.max(0, mempool.length - minedTxs.length),
+        // No, `mempool` is stale, so it includes the mined ones.
+        // So `mempool.length - minedTxs.length` is correct for "pending left".
+        highestFee,
+        lowestFee,
+        userIncluded: userTxIncluded
+    });
   };
 
   return (
@@ -114,7 +135,6 @@ const M05_Tokens: React.FC = () => {
                     <WalletCard
                       wallet={wallet}
                       onSend={() => {
-                        // Scroll to transaction form or pre-fill it (optional, simplest is just render)
                         document.getElementById('transaction-form')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     />
@@ -153,6 +173,45 @@ const M05_Tokens: React.FC = () => {
              onMineBlock={handleMineBlock}
              wallets={wallets}
            />
+
+           <AnimatePresence>
+               {lastBlockStats && (
+                   <motion.div
+                       initial={{ opacity: 0, height: 0 }}
+                       animate={{ opacity: 1, height: 'auto' }}
+                       exit={{ opacity: 0, height: 0 }}
+                       className="mt-4"
+                   >
+                       <div className="bg-secondary-bg border border-border rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                           <div>
+                               <h4 className="font-bold text-text-primary">Block #{lastBlockStats.blockIndex} Mined!</h4>
+                               <p className="text-sm text-text-secondary">
+                                   Included {lastBlockStats.txCount} transactions. {Math.max(0, lastBlockStats.pendingCount - lastBlockStats.txCount)} pending left.
+                               </p>
+                               <div className="text-xs text-text-tertiary mt-1">
+                                   Highest fee: {lastBlockStats.highestFee.toFixed(4)} | Lowest fee: {lastBlockStats.lowestFee.toFixed(4)}
+                               </div>
+                           </div>
+
+                           <div className="flex items-center gap-3">
+                               <div className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2 ${lastBlockStats.userIncluded ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
+                                   {lastBlockStats.userIncluded ? (
+                                       <>INCLUDED <Check className="w-4 h-4" /></>
+                                   ) : (
+                                       <>NOT INCLUDED <X className="w-4 h-4" /></>
+                                   )}
+                               </div>
+                               <button
+                                   onClick={() => setLastBlockStats(null)}
+                                   className="text-text-tertiary hover:text-text-primary"
+                               >
+                                   <X className="w-5 h-5" />
+                               </button>
+                           </div>
+                       </div>
+                   </motion.div>
+               )}
+           </AnimatePresence>
         </section>
 
         {/* Blockchain View */}
@@ -160,7 +219,6 @@ const M05_Tokens: React.FC = () => {
           <h2 className="text-2xl font-bold text-text-primary mb-6">Blockchain Ledger</h2>
           <div className="flex overflow-x-auto gap-4 pb-4 items-start min-h-[160px]">
              {blocks.map((block, index) => {
-               // Quick validity check for display (simplified)
                const isValid = block.hash === calculateHash(block) &&
                               (index === 0 || block.previousHash === blocks[index-1].hash);
 
