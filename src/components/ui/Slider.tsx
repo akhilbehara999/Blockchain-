@@ -4,6 +4,7 @@ interface SliderProps {
   value: number;
   min: number;
   max: number;
+  step?: number;
   onChange: (value: number) => void;
   label?: string;
   showValue?: boolean;
@@ -15,6 +16,7 @@ const Slider: React.FC<SliderProps> = ({
   value,
   min,
   max,
+  step = 1,
   onChange,
   label,
   showValue = false,
@@ -40,6 +42,7 @@ const Slider: React.FC<SliderProps> = ({
           type="range"
           min={min}
           max={max}
+          step={step}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
           disabled={disabled}
