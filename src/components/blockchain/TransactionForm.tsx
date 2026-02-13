@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Clock, Gauge, TrendingUp } from 'lucide-react';
+import { ArrowRight, Clock, Gauge, TrendingUp, Lock, AlertTriangle, ShieldCheck, History, AlertCircle } from 'lucide-react';
 import { Wallet } from '../../engine/types';
 import { FEE_LEVELS } from '../../engine/transaction';
 import Card from '../ui/Card';
@@ -11,16 +11,21 @@ import { useWalletStore } from '../../stores/useWalletStore';
 interface TransactionFormProps {
   wallets: Wallet[];
   onSubmit: (from: string, to: string, amount: number, fee: number) => void;
+  showHistory?: boolean;
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit }) => {
-  const { mempool, getEstimatedConfirmationTime } = useWalletStore();
+const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit, showHistory = true }) => {
+  const { mempool, minedTransactions, getEstimatedConfirmationTime, cancelTransaction } = useWalletStore();
   const [from, setFrom] = useState(wallets[0]?.name || '');
   const [to, setTo] = useState(wallets[1]?.name || '');
   const [amount, setAmount] = useState<string>('');
   const [feeType, setFeeType] = useState<'high' | 'standard' | 'economy' | 'custom'>('standard');
   const [customFee, setCustomFee] = useState<string>(FEE_LEVELS.STANDARD.toString());
   const [error, setError] = useState<string | null>(null);
+
+  // Confirmation State
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingTx, setPendingTx] = useState<{from: string, to: string, amount: number, fee: number} | null>(null);
 
   // Sync state when wallets load
   useEffect(() => {
@@ -92,11 +97,38 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit }) 
       return;
     }
 
-    onSubmit(from, to, numAmount, currentFee);
-    setAmount('');
+    // Show Confirmation Dialog instead of submitting immediately
+    setPendingTx({ from, to, amount: numAmount, fee: currentFee });
+    setShowConfirm(true);
+  };
+
+  const confirmSend = () => {
+      if (pendingTx) {
+          onSubmit(pendingTx.from, pendingTx.to, pendingTx.amount, pendingTx.fee);
+          setShowConfirm(false);
+          setPendingTx(null);
+          setAmount('');
+      }
+  };
+
+  const myTransactions = [...mempool, ...minedTransactions]
+    .filter(tx => wallets.some(w => w.publicKey === tx.from || w.publicKey === tx.to))
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 5); // Show last 5
+
+  const getWalletName = (pubKey: string) => {
+      const w = wallets.find(w => w.publicKey === pubKey);
+      return w ? w.name : pubKey.substring(0, 8);
+  };
+
+  const handleCancel = (tx: any) => {
+      // Send 0 value to self with higher fee
+      const newFee = (tx.fee || 0) * 1.5; // Bump fee
+      cancelTransaction(tx.signature, newFee);
   };
 
   return (
+    <div className="space-y-8">
     <Card className="w-full max-w-2xl mx-auto p-8 border-none bg-secondary-bg/50 backdrop-blur-md">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -109,7 +141,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit }) 
             >
               <option value="" disabled>Select Sender</option>
               {wallets.map(w => (
-                <option key={w.publicKey} value={w.name}>{w.name} ({w.balance} TKN)</option>
+                <option key={w.publicKey} value={w.name}>{w.name} ({w.balance.toFixed(4)} TKN)</option>
               ))}
             </select>
           </div>
@@ -233,6 +265,155 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit }) 
         </div>
       </form>
     </Card>
+
+    {/* Recent Activity */}
+    {showHistory && myTransactions.length > 0 && (
+        <div className="max-w-2xl mx-auto space-y-4">
+            <h3 className="text-xl font-bold text-text-primary flex items-center gap-2">
+                <History className="w-5 h-5" />
+                Recent Activity
+            </h3>
+            <div className="space-y-3">
+                {myTransactions.map(tx => {
+                    const isConfirmed = tx.status === 'confirmed';
+                    const isPending = tx.status === 'pending';
+                    const isMe = wallets.some(w => w.publicKey === tx.from);
+
+                    return (
+                        <div key={tx.signature} className="bg-secondary-bg/50 border border-border rounded-xl p-4 flex flex-col gap-3">
+                            <div className="flex justify-between items-start">
+                                <div className="flex items-center gap-2 text-sm">
+                                    {isConfirmed ? (
+                                        <div className="flex items-center gap-1 text-success font-bold bg-success/10 px-2 py-1 rounded">
+                                            <Lock className="w-3 h-3" />
+                                            Confirmed
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1 text-warning font-bold bg-warning/10 px-2 py-1 rounded">
+                                            <Clock className="w-3 h-3" />
+                                            Pending
+                                        </div>
+                                    )}
+                                    {isConfirmed && tx.confirmationBlock && (
+                                         <span className="text-text-tertiary">Block #{tx.confirmationBlock}</span>
+                                    )}
+                                </div>
+                                <div className="font-mono text-xs text-text-tertiary">
+                                    {new Date(tx.timestamp).toLocaleTimeString()}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-text-primary font-medium">
+                                    <span>{getWalletName(tx.from)}</span>
+                                    <ArrowRight className="w-4 h-4 text-text-secondary" />
+                                    <span>{getWalletName(tx.to)}</span>
+                                </div>
+                                <span className="font-bold text-lg">{tx.amount} TKN</span>
+                            </div>
+
+                            {isConfirmed ? (
+                                <div className="bg-success/5 text-success text-xs p-2 rounded border border-success/20 flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4" />
+                                    Transaction confirmed in block #{tx.confirmationBlock}. This is permanent.
+                                </div>
+                            ) : (
+                                <div className="flex justify-between items-center pt-2 border-t border-border/30">
+                                    <span className="text-xs text-text-tertiary">Waiting for miner...</span>
+                                    {isMe && isPending && (
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => handleCancel(tx)}
+                                            className="h-7 px-3 text-xs"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+
+                            {isConfirmed && (
+                                <div className="flex justify-end gap-2 opacity-50 pointer-events-none">
+                                     <Button variant="secondary" size="sm" className="h-7 px-3 text-xs">Edit</Button>
+                                     <Button variant="secondary" size="sm" className="h-7 px-3 text-xs">Undo</Button>
+                                </div>
+                            )}
+                            {isConfirmed && (
+                                <div className="text-[10px] text-danger text-right mt-1">
+                                    ❌ Confirmed transactions cannot be reversed.
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    )}
+
+    {/* Confirmation Dialog */}
+    <AnimatePresence>
+        {showConfirm && pendingTx && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                    onClick={() => setShowConfirm(false)}
+                />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="relative bg-secondary-bg border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-6 overflow-hidden"
+                >
+                     {/* Header */}
+                     <div className="flex items-center gap-3 text-warning border-b border-border/50 pb-4">
+                         <AlertTriangle className="w-8 h-8" />
+                         <h3 className="text-xl font-bold">CONFIRM TRANSACTION</h3>
+                     </div>
+
+                     {/* Details */}
+                     <div className="space-y-4 font-mono text-sm">
+                         <div className="flex justify-between">
+                             <span className="text-text-secondary">To:</span>
+                             <span className="text-text-primary text-right break-all max-w-[200px] truncate">{pendingTx.to} ({getWalletName(pendingTx.to)})</span>
+                         </div>
+                         <div className="flex justify-between">
+                             <span className="text-text-secondary">Amount:</span>
+                             <span className="text-text-primary">{pendingTx.amount} coins</span>
+                         </div>
+                         <div className="flex justify-between">
+                             <span className="text-text-secondary">Fee:</span>
+                             <span className="text-text-primary">{pendingTx.fee} coins</span>
+                         </div>
+                         <div className="flex justify-between pt-2 border-t border-border/30 font-bold text-lg">
+                             <span className="text-text-secondary">Total:</span>
+                             <span className="text-accent">{(pendingTx.amount + pendingTx.fee).toFixed(5)} coins</span>
+                         </div>
+                     </div>
+
+                     {/* Warning */}
+                     <div className="bg-danger/10 text-danger p-4 rounded-xl text-sm flex gap-3 items-start border border-danger/20">
+                         <AlertCircle className="w-5 h-5 shrink-0" />
+                         <p className="font-bold">This CANNOT be reversed once confirmed by the network.</p>
+                     </div>
+
+                     {/* Actions */}
+                     <div className="flex gap-3 pt-2">
+                         <Button variant="secondary" onClick={() => setShowConfirm(false)} className="flex-1">
+                             Cancel
+                         </Button>
+                         <Button variant="danger" onClick={confirmSend} className="flex-1 bg-danger hover:bg-danger-hover text-white">
+                             Send Forever
+                         </Button>
+                     </div>
+                </motion.div>
+            </div>
+        )}
+    </AnimatePresence>
+    </div>
   );
 };
 
