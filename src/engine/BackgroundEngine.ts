@@ -2,6 +2,7 @@ import { useWalletStore } from '../stores/useWalletStore';
 import { useBlockchainStore } from '../stores/useBlockchainStore';
 import { createTransaction } from './transaction';
 import { Wallet } from './types';
+import { forkManager } from './ForkManager';
 
 interface Miner {
   name: string;
@@ -155,7 +156,7 @@ export class BackgroundEngine {
 
     const blockData = `Mined by ${winner.name}\n${txData || 'No transactions'}`;
 
-    addBlock(blockData);
+    forkManager.processBlock(blockData, winner.name);
     console.log(`[Background] Block Mined by ${winner.name}`);
 
     // Update Wallets (Remove mined txs, update balances)

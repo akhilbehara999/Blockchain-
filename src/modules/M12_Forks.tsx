@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ModuleLayout from '../components/layout/ModuleLayout';
 import ForkViz from '../components/blockchain/ForkViz';
+import ForkVisualizer from '../components/consensus/ForkVisualizer';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { Block } from '../engine/types';
@@ -231,6 +232,19 @@ const M12_Forks: React.FC = () => {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Live Network Monitor */}
+        <div className="pt-8 border-t border-white/5">
+          <h3 className="text-lg font-bold mb-4 flex items-center">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></span>
+            Live Network Monitor
+          </h3>
+          <p className="text-sm text-text-secondary mb-4">
+            Watch for natural forks occurring in the background network simulation.
+            Forks happen when two miners find blocks simultaneously (approx. 15% chance).
+          </p>
+          <ForkVisualizer />
         </div>
       </div>
     </ModuleLayout>

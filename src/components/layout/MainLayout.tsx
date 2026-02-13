@@ -9,6 +9,7 @@ import Sheet from '../ui/Sheet';
 import { useThemeStore } from '../../stores/useThemeStore';
 import Button from '../ui/Button';
 import { Moon, Sun } from 'lucide-react';
+import ReorgAlert from '../consensus/ReorgAlert';
 
 type ActiveSheet = 'modules' | 'settings' | null;
 
@@ -20,6 +21,7 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-primary-bg text-text-primary font-sans selection:bg-accent/30 selection:text-accent-foreground">
+      <ReorgAlert />
       <TopBar onToggleSidebar={() => setActiveSheet('modules')} />
 
       {!isMobile && (

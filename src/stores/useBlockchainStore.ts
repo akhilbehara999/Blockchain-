@@ -15,6 +15,7 @@ interface BlockchainState {
   resetChain: () => void;
   setDifficulty: (d: number) => void;
   selectBlock: (index: number | null) => void;
+  replaceChain: (newChain: Block[]) => void;
 }
 
 // Internal singleton instance to maintain state logic
@@ -89,5 +90,12 @@ export const useBlockchainStore = create<BlockchainState>((set, get) => ({
 
   selectBlock: (index: number | null) => {
     set({ selectedBlockIndex: index });
+  },
+
+  replaceChain: (newChain: Block[]) => {
+    const success = blockchain.replaceChain(newChain);
+    if (success) {
+      set({ blocks: [...blockchain.getChain()] });
+    }
   },
 }));
