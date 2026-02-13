@@ -37,3 +37,7 @@ export function mineBlock(block: Block, difficulty: number): Block {
   }
   return block;
 }
+
+export function calculateConfirmations(blockIndex: number, chainLength: number): number {
+  return Math.max(0, chainLength - 1 - blockIndex);
+}

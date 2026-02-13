@@ -7,7 +7,7 @@ import Button from '../ui/Button';
 import HashDisplay from './HashDisplay';
 import NonceCounter from './NonceCounter';
 import MiningAnimation from './MiningAnimation';
-import { Hammer } from 'lucide-react';
+import { Hammer, Lock } from 'lucide-react';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface BlockCardProps {
@@ -72,6 +72,28 @@ const BlockCard: React.FC<BlockCardProps> = ({
     }
   }
 
+  const confirmations = block.confirmations ?? 0;
+  const isFinalized = confirmations >= 6;
+  const isEditable = editable && !isFinalized;
+
+  const getConfirmationStyles = () => {
+    if (status !== 'valid') return '';
+
+    // Note: We enforce dark text (!text-gray-900) because the requested background colors
+    // (bg-*-100) are light, which would cause contrast issues with dark mode text colors.
+    if (confirmations >= 6) return '!bg-gray-100 !border-gray-400 !text-gray-900';
+    if (confirmations >= 3) return '!bg-green-100 !border-green-400 !text-gray-900';
+    if (confirmations >= 1) return '!bg-yellow-100 !border-yellow-400 !text-gray-900';
+    return '!bg-red-100 !border-red-400 !text-gray-900';
+  };
+
+  const getConfirmationLabel = () => {
+     if (confirmations >= 6) return 'Finalized';
+     if (confirmations >= 3) return 'Confirmed';
+     if (confirmations >= 1) return 'Weak';
+     return 'Unconfirmed';
+  };
+
   return (
     <div className="relative group" role="region" aria-label={`Block number ${block.index}, status: ${status}`}>
       <motion.div
@@ -79,14 +101,23 @@ const BlockCard: React.FC<BlockCardProps> = ({
         transition={{ duration: shouldReduceMotion ? 0 : 0.4 }}
       >
         <Card
-          className={`transition-all duration-300 border-l-4 ${getBorderColor()}`}
+          className={`transition-colors duration-500 border-l-4 ${getBorderColor()} ${getConfirmationStyles()}`}
           style={{ transitionDelay: shouldReduceMotion ? '0ms' : `${delay || 0}ms` }}
         >
             <div className="space-y-4 relative">
                 {/* Header */}
                 <div className="flex justify-between items-center">
-                    <div className="relative">
+                    <div className="relative flex items-center gap-2">
                         <Badge variant="neutral">Block #{block.index}</Badge>
+                        {status === 'valid' && (
+                            <div
+                              className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-white/50 border border-black/5 cursor-help"
+                              title={`${confirmations} confirmations. ${getConfirmationLabel()} status.`}
+                            >
+                                {isFinalized && <Lock className="w-3 h-3 text-text-secondary" />}
+                                <span className="text-text-secondary">{confirmations} conf.</span>
+                            </div>
+                        )}
                         <AnimatePresence>
                             {showAnatomy && (
                                 <AnatomyTooltip
@@ -132,15 +163,23 @@ const BlockCard: React.FC<BlockCardProps> = ({
 
                 {/* Data */}
                 <div className="space-y-1 relative">
-                    <label htmlFor={`block-${block.index}-data`} className="text-xs font-medium text-text-secondary uppercase">Data</label>
+                    <div className="flex justify-between items-center">
+                        <label htmlFor={`block-${block.index}-data`} className="text-xs font-medium text-text-secondary uppercase">Data</label>
+                        {isFinalized && status === 'valid' && (
+                            <span className="text-[10px] text-text-secondary flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                This block is immutable (6+ confirmations)
+                            </span>
+                        )}
+                    </div>
                     <textarea
                         id={`block-${block.index}-data`}
                         aria-label={`Data for block ${block.index}`}
                         value={block.data}
                         onChange={(e) => onDataChange && onDataChange(e.target.value)}
-                        readOnly={!editable}
+                        readOnly={!isEditable}
                         className={`w-full bg-tertiary-bg rounded-lg p-3 text-sm font-mono border ${
-                            editable ? 'border-border focus:border-accent focus:ring-1 focus:ring-accent' : 'border-border/50'
+                            isEditable ? 'border-border focus:border-accent focus:ring-1 focus:ring-accent' : 'border-border/50 opacity-70 cursor-not-allowed'
                         } outline-none transition-all resize-none h-24`}
                     />
                     <AnimatePresence>
