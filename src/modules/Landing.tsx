@@ -1,396 +1,453 @@
-import React, { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { motion, useScroll, useSpring } from 'framer-motion';
+import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Hash, Box, Link as LinkIcon, Network, Coins, PenTool,
-  Hammer, Users, FileCode, GitBranch, Shield, Zap, Image,
-  Globe, Wrench, BookOpen, Github, ArrowRight, CheckCircle
+  Activity, Server, Clock, Database, Radio,
+  Cpu, Hash, Zap, ArrowRight, ShieldCheck,
+  Download, CheckCircle, AlertTriangle
 } from 'lucide-react';
-import ChainView from '../components/blockchain/ChainView';
-import Button from '../components/ui/Button';
+import { useNodeIdentity } from '../context/NodeContext';
+import { useBlockchainStore } from '../stores/useBlockchainStore';
+import { useWalletStore } from '../stores/useWalletStore';
 import Card from '../components/ui/Card';
-import { useProgressStore } from '../stores/useProgressStore';
-import { Block } from '../engine/types';
-import { createBlock, calculateHash, mineBlock } from '../engine/block';
+import Button from '../components/ui/Button';
 
-// --- Types & Constants ---
-
-const MODULES = [
-  { id: 'M01', title: 'Hashing', icon: Hash, path: '/module/hash' },
-  { id: 'M02', title: 'The Block', icon: Box, path: '/module/block' },
-  { id: 'M03', title: 'Blockchain', icon: LinkIcon, path: '/module/blockchain' },
-  { id: 'M04', title: 'Distributed P2P', icon: Network, path: '/module/network' },
-  { id: 'M05', title: 'Tokens', icon: Coins, path: '/module/tokens' },
-  { id: 'M06', title: 'Signatures', icon: PenTool, path: '/module/signatures' },
-  { id: 'M07', title: 'Proof of Work', icon: Hammer, path: '/module/mining' }, // Using Hammer as requested
-  { id: 'M08', title: 'Consensus', icon: Users, path: '/module/consensus' },
-  { id: 'M09', title: 'Smart Contracts', icon: FileCode, path: '/module/smart-contracts' },
-  { id: 'M10', title: 'Merkle Trees', icon: GitBranch, path: '/module/merkletrees' },
-  { id: 'M11', title: '51% Attack', icon: Shield, path: '/module/attack51' },
-  { id: 'M12', title: 'Forks', icon: Zap, path: '/module/forks' },
-  { id: 'M13', title: 'DeFi', icon: Globe, path: '/module/defi' },
-  { id: 'M14', title: 'NFTs', icon: Image, path: '/module/nfts' },
-];
-
-const INITIAL_DEMO_BLOCKS: Block[] = [
-  mineBlock(createBlock(1, 'Genesis Block', '0'.repeat(64), 2), 2),
-  createBlock(2, 'Alice -> Bob: 50', '', 2),
-  createBlock(3, 'Bob -> Charlie: 20', '', 2),
-];
-
-// Correct linking and mine initial blocks
-INITIAL_DEMO_BLOCKS[1].previousHash = INITIAL_DEMO_BLOCKS[0].hash;
-INITIAL_DEMO_BLOCKS[1] = mineBlock(INITIAL_DEMO_BLOCKS[1], 2);
-
-INITIAL_DEMO_BLOCKS[2].previousHash = INITIAL_DEMO_BLOCKS[1].hash;
-INITIAL_DEMO_BLOCKS[2] = mineBlock(INITIAL_DEMO_BLOCKS[2], 2);
-
-// --- Components ---
-
-const HeroSection: React.FC = () => {
-  return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-primary-bg">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
-
-        {/* Floating Blocks Animation */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-15">
-          <motion.div
-            animate={{ y: [0, -20, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute left-[20%] top-[40%] w-32 h-40 border-2 border-indigo-500/30 rounded-lg bg-indigo-500/5 backdrop-blur-sm"
-          />
-           <motion.div
-            animate={{ y: [0, 20, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute left-[50%] top-[30%] w-32 h-40 border-2 border-purple-500/30 rounded-lg bg-purple-500/5 backdrop-blur-sm -translate-x-1/2"
-          />
-           <motion.div
-            animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute right-[20%] top-[50%] w-32 h-40 border-2 border-pink-500/30 rounded-lg bg-pink-500/5 backdrop-blur-sm"
-          />
-
-          {/* Connecting Lines */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <motion.path
-              d="M 25 45 L 50 35 L 75 55"
-              stroke="url(#gradient-line)"
-              strokeWidth="0.5"
-              fill="none"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 0.3 }}
-              transition={{ duration: 2, ease: "easeInOut" }}
-            />
-            <defs>
-              <linearGradient id="gradient-line" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#6366F1" />
-                <stop offset="100%" stopColor="#EC4899" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-      </div>
-
-      <div className="relative z-10 max-w-4xl px-4 text-center space-y-8">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 pb-2"
-        >
-          Learn Blockchain by Building One
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-lg md:text-2xl text-text-secondary max-w-2xl mx-auto"
-        >
-          No jargon. No crypto needed. Just interactive simulations that make it click.
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="pt-8"
-        >
-          <Link to="/module/hash">
-            <Button size="lg" className="text-lg px-8 py-6 rounded-full shadow-xl shadow-indigo-500/20 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border-none transition-all hover:scale-105">
-              Start Learning <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-          </Link>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-const LiveDemoSection: React.FC = () => {
-  const [blocks, setBlocks] = useState<Block[]>(INITIAL_DEMO_BLOCKS);
-
-  const handleBlockEdit = (index: number, newData: string) => {
-    setBlocks(prev => {
-      const newBlocks = [...prev];
-      const block = { ...newBlocks[index], data: newData };
-
-      // Recalculate hash (this will likely break the chain/validity)
-      block.hash = calculateHash(block);
-      newBlocks[index] = block;
-
-      // Update subsequent blocks linkage (but don't fix their hashes automatically to show breakage)
-      for (let i = index + 1; i < newBlocks.length; i++) {
-        newBlocks[i] = { ...newBlocks[i], previousHash: newBlocks[i - 1].hash };
-        // We do NOT recalculate hash here to demonstrate broken link unless mined
-        // Actually, if previousHash changes, the block's current hash is now invalid relative to its content including prevHash
-        // But in the simulation we usually want to show visual invalidity.
-        // The ChainView checks if `hash === calculateHash(block)`.
-        // If we only update previousHash, the old hash is definitely mismatching the new content (new prevHash).
-        // So it will show as invalid.
-      }
-
-      return newBlocks;
-    });
-  };
-
-  const handleBlockMine = (index: number) => {
-    setBlocks(prev => {
-      const newBlocks = [...prev];
-      const block = { ...newBlocks[index] };
-
-      // Mine the block
-      const minedBlock = mineBlock(block, 2); // Difficulty 2 for quick demo
-      newBlocks[index] = minedBlock;
-
-      // Propagate correct hash to next block's previousHash
-      if (index < newBlocks.length - 1) {
-        newBlocks[index + 1] = { ...newBlocks[index + 1], previousHash: minedBlock.hash };
-        // The next block is now invalid because its prevHash changed, so user must mine it too (or we could cascade, but interactive is better)
-      }
-
-      return newBlocks;
-    });
-  };
-
-  return (
-    <section className="py-24 px-4 bg-secondary-bg/30 relative border-y border-border/50">
-      <div className="max-w-6xl mx-auto space-y-12">
-        <div className="text-center space-y-4">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl font-bold"
-          >
-            Try It Right Now
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-text-secondary text-lg"
-          >
-            Go ahead — try changing the data in <span className="text-accent font-semibold">Block #2</span> and watch what happens.
-          </motion.p>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-          className="bg-primary-bg/50 rounded-2xl p-6 border border-border shadow-2xl"
-        >
-          <ChainView
-            blocks={blocks}
-            onBlockEdit={handleBlockEdit}
-            onBlockMine={handleBlockMine}
-            difficulty={2}
-          />
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-const LearningPathSection: React.FC = () => {
-  const { isModuleCompleted } = useProgressStore();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
-  });
-
-  const pathLength = useSpring(scrollYProgress, { stiffness: 400, damping: 90 });
-
-  // Generate path points dynamically based on screen width (simplified logic)
-  // For simplicity in this demo, we'll use a fixed SVG path structure that scales
-  // We'll arrange nodes in a winding snake pattern
-
-  return (
-    <section ref={containerRef} className="py-24 px-4 bg-primary-bg relative overflow-hidden">
-      <div className="max-w-4xl mx-auto text-center mb-20 space-y-4">
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-4xl font-bold"
-        >
-          Your Learning Journey
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-text-secondary text-lg"
-        >
-          14 interactive modules. Zero prerequisites.
-        </motion.p>
-      </div>
-
-      <div className="max-w-3xl mx-auto relative">
-        {/* SVG Path Background */}
-        <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-1 md:-translate-x-1/2 h-full z-0">
-             {/* Vertical line for mobile / simple desktop view */}
-            <motion.div
-                className="w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 h-full opacity-30"
-                style={{ scaleY: pathLength, transformOrigin: 'top' }}
-            />
-        </div>
-
-        <div className="space-y-12 relative z-10">
-          {MODULES.map((module, index) => {
-            const isCompleted = isModuleCompleted(module.id);
-            const isLeft = index % 2 === 0;
-
-            return (
-              <motion.div
-                key={module.id}
-                initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`flex items-center ${isLeft ? 'md:flex-row' : 'md:flex-row-reverse'} flex-row gap-8`}
-              >
-                {/* Node Marker */}
-                <div className="md:w-1/2 flex justify-end md:justify-center shrink-0">
-                    {/* Placeholder for alignment */}
-                </div>
-
-                 {/* Center Line Marker */}
-                <Link to={module.path} className="absolute left-[20px] md:left-1/2 -translate-x-1/2 z-20 group">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 transition-all duration-300
-                    ${isCompleted
-                      ? 'bg-success border-success text-primary-bg shadow-[0_0_20px_rgba(34,197,94,0.5)]'
-                      : 'bg-secondary-bg border-border group-hover:border-accent group-hover:scale-110 text-text-secondary'
-                    }`}
-                  >
-                    {isCompleted ? <CheckCircle size={20} /> : <module.icon size={20} />}
-                  </div>
-                </Link>
-
-                {/* Content Card */}
-                <div className={`pl-16 md:pl-0 md:w-1/2 ${isLeft ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'} flex-1`}>
-                    <Link to={module.path}>
-                        <div className={`p-4 rounded-xl bg-secondary-bg/50 border border-border hover:border-accent/50 hover:bg-secondary-bg transition-all cursor-pointer group`}>
-                            <h3 className="text-xl font-bold group-hover:text-accent transition-colors">{module.title}</h3>
-                            <p className="text-sm text-text-tertiary mt-1">Module {index + 1}</p>
-                        </div>
-                    </Link>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const FeaturesSection: React.FC = () => {
-  return (
-    <section className="py-24 px-4 bg-secondary-bg/20">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <FeatureCard
-                icon={Globe}
-                title="100% In Your Browser"
-                description="No servers, no signups, no tracking. Everything runs locally in your browser."
-                delay={0}
-            />
-            <FeatureCard
-                icon={Wrench}
-                title="Learn By Doing"
-                description="Every concept has a hands-on simulation. Break things, mine blocks, send tokens."
-                delay={0.1}
-            />
-            <FeatureCard
-                icon={BookOpen}
-                title="Simple Words"
-                description="Toggle between beginner-friendly and technical explanations for every concept."
-                delay={0.2}
-            />
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const FeatureCard: React.FC<{ icon: React.ElementType, title: string, description: string, delay: number }> = ({ icon: Icon, title, description, delay }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay }}
-    >
-        <Card className="h-full bg-secondary-bg/40 hover:bg-secondary-bg/60 transition-colors border-l-4 border-l-indigo-500">
-            <div className="flex flex-col items-center text-center space-y-4">
-                <div className="p-4 rounded-full bg-indigo-500/10 text-indigo-400">
-                    <Icon size={32} />
-                </div>
-                <h3 className="text-xl font-bold">{title}</h3>
-                <p className="text-text-secondary">{description}</p>
-            </div>
-        </Card>
-    </motion.div>
-);
-
-const Footer: React.FC = () => {
-  return (
-    <footer className="py-12 px-4 bg-[#050508] border-t border-white/5">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center space-x-2 text-text-secondary hover:text-white transition-colors">
-            <Github size={20} />
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="font-medium">GitHub</a>
-        </div>
-
-        <div className="flex items-center space-x-4">
-            <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-semibold border border-indigo-500/20">
-                Built with React + TypeScript
-            </span>
-        </div>
-
-        <div className="text-text-tertiary text-sm">
-            Made for learning. Not financial advice.
-        </div>
-      </div>
-    </footer>
-  );
-};
+// Types for local state
+interface NetworkEvent {
+  id: string;
+  time: string;
+  type: 'block' | 'tx' | 'peer' | 'system';
+  message: string;
+}
 
 const Landing: React.FC = () => {
+  const navigate = useNavigate();
+  const { identity } = useNodeIdentity();
+  const { blocks } = useBlockchainStore();
+  const { mempool } = useWalletStore();
+
+  // Local State for Simulation
+  const [peerCount, setPeerCount] = useState(7);
+  const [hashRate, setHashRate] = useState(142); // TH/s
+  const [lastBlockTimeStr, setLastBlockTimeStr] = useState('Just now');
+  const [networkEvents, setNetworkEvents] = useState<NetworkEvent[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [returningUser, setReturningUser] = useState<{ lastSeen: string; newBlocks: number } | null>(null);
+
+  // Refs for tracking changes without re-triggering effects excessively
+  const prevBlocksLength = useRef(blocks.length);
+  const prevMempoolLength = useRef(mempool.length);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom of logs
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [networkEvents]);
+
+  // --- 1. Returning User Logic ---
+  useEffect(() => {
+    const lastVisit = localStorage.getItem('yupp_last_visit');
+    const lastBlockCount = localStorage.getItem('yupp_last_block_count');
+    const now = new Date().toISOString();
+    const currentBlockCount = blocks.length;
+
+    if (lastVisit && lastBlockCount) {
+      const missed = Math.max(0, currentBlockCount - parseInt(lastBlockCount));
+      // Calculate human readable time diff
+      const diffMs = new Date().getTime() - new Date(lastVisit).getTime();
+      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      let timeString = '';
+      if (diffHrs > 0) timeString += `${diffHrs} hour${diffHrs > 1 ? 's' : ''} `;
+      if (diffMins > 0 || diffHrs === 0) timeString += `${diffMins} min${diffMins !== 1 ? 's' : ''}`;
+      if (timeString === '') timeString = 'less than a minute';
+
+      setReturningUser({
+        lastSeen: `${timeString} ago`,
+        newBlocks: missed
+      });
+    }
+
+    // Update storage for next visit
+    localStorage.setItem('yupp_last_visit', now);
+    localStorage.setItem('yupp_last_block_count', currentBlockCount.toString());
+  }, []); // Run once on mount
+
+  // --- 2. Live Simulation Effects ---
+
+  // Peer & Hashrate Fluctuation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Fluctuate peers +/- 1 (min 5, max 9)
+      setPeerCount(prev => {
+        const change = Math.random() > 0.5 ? 1 : -1;
+        const next = prev + change;
+        if (next < 5) return 5;
+        if (next > 9) return 9;
+        return next;
+      });
+
+      // Fluctuate Hashrate +/- 2 (min 130, max 150)
+      setHashRate(prev => {
+        const change = Math.floor(Math.random() * 5) - 2;
+        return Math.max(130, Math.min(150, prev + change));
+      });
+
+    }, 45000); // Every 45s
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Peer Connect/Disconnect Events (Visual only)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (Math.random() > 0.7) { // 30% chance every 30s
+        const isConnect = Math.random() > 0.5;
+        const peerId = Math.floor(Math.random() * 10000).toString(16).toUpperCase();
+        addEvent(
+          isConnect ? 'peer' : 'system',
+          isConnect ? `New peer connected: Node #${peerId}` : `Peer Node #${peerId} disconnected`
+        );
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Last Block Timer
+  useEffect(() => {
+    const updateTimer = () => {
+      if (blocks.length === 0) return;
+      const lastBlock = blocks[blocks.length - 1];
+      const diff = Math.floor((Date.now() - lastBlock.timestamp) / 1000);
+      setLastBlockTimeStr(`${diff}s ago`);
+    };
+
+    const interval = setInterval(updateTimer, 1000);
+    updateTimer(); // Initial call
+    return () => clearInterval(interval);
+  }, [blocks]);
+
+  // Monitor Blocks & Mempool for Logs
+  useEffect(() => {
+    // Check for new blocks
+    if (blocks.length > prevBlocksLength.current) {
+      const newBlock = blocks[blocks.length - 1];
+      // Extract miner name if possible (format: "Mined by X\n...")
+      const minerLine = newBlock.data.split('\n')[0];
+      const miner = minerLine.startsWith('Mined by') ? minerLine.replace('Mined by ', '') : 'Unknown Miner';
+
+      addEvent('block', `Block #${newBlock.index} mined by ${miner}`);
+      prevBlocksLength.current = blocks.length;
+
+      // Update storage for returning user tracking if they stay on page
+      localStorage.setItem('yupp_last_block_count', blocks.length.toString());
+    }
+
+    // Check for new transactions
+    if (mempool.length > prevMempoolLength.current) {
+      const diff = mempool.length - prevMempoolLength.current;
+      addEvent('tx', `${diff} new transaction${diff > 1 ? 's' : ''} received`);
+    }
+    prevMempoolLength.current = mempool.length;
+
+  }, [blocks, mempool]);
+
+  // Helper to add events
+  const addEvent = (type: NetworkEvent['type'], message: string) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    setNetworkEvents(prev => {
+      const newEvent: NetworkEvent = {
+        id: Math.random().toString(36).substr(2, 9),
+        time: timeStr,
+        type,
+        message
+      };
+      // Keep last 50 events
+      return [...prev.slice(-49), newEvent];
+    });
+  };
+
+  // Populate initial log with dummy data if empty
+  useEffect(() => {
+    if (networkEvents.length === 0) {
+      const initials: NetworkEvent[] = [
+        { id: '1', time: '12:03:15', type: 'system', message: 'Node initialized successfully' },
+        { id: '2', time: '12:03:18', type: 'peer', message: 'Connected to bootstrap peer 192.168.1.1' },
+        { id: '3', time: '12:03:22', type: 'peer', message: `Swarm discovery: found ${peerCount} peers` },
+      ];
+      setNetworkEvents(initials);
+    }
+  }, []);
+
+
+  // --- 3. Interaction Handlers ---
+
+  const handleJoinNetwork = () => {
+    setIsSyncing(true);
+    let progress = 0;
+
+    const interval = setInterval(() => {
+      // Random progress increment
+      progress += Math.random() * 5;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        setTimeout(() => {
+          navigate('/module/blockchain');
+        }, 800);
+      }
+      setSyncProgress(progress);
+    }, 100); // Total time approx 2-3 seconds
+  };
+
+  // --- Render ---
+
   return (
-    <div className="min-h-screen bg-primary-bg text-text-primary selection:bg-indigo-500/30">
-      <HeroSection />
-      <LiveDemoSection />
-      <LearningPathSection />
-      <FeaturesSection />
-      <Footer />
+    <div className="min-h-screen bg-primary-bg text-text-primary p-4 md:p-8 font-mono">
+      <div className="max-w-6xl mx-auto space-y-6">
+
+        {/* Header Section */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+        >
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-accent mb-1">
+              {returningUser ? `Welcome back, ${identity.getId()}` : `Welcome, ${identity.getId()}`}
+            </h1>
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <span className="flex items-center gap-1 text-success">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                </span>
+                Online
+              </span>
+              <span>•</span>
+              <span>{peerCount} peers connected</span>
+              <span>•</span>
+              <span className="text-xs opacity-70">v1.0.4-beta</span>
+            </div>
+          </div>
+
+          {returningUser && (
+            <div className="text-right text-sm text-text-tertiary bg-secondary-bg/50 px-4 py-2 rounded-lg border border-border">
+              <p>Last online: {returningUser.lastSeen}</p>
+              <p className="text-accent font-semibold">{returningUser.newBlocks} new blocks mined</p>
+            </div>
+          )}
+        </motion.header>
+
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {/* Card 1: Network Stats */}
+          <Card className="p-0 overflow-hidden border-border bg-secondary-bg/30">
+             <div className="p-4 border-b border-border bg-secondary-bg/50 flex justify-between items-center">
+                <h3 className="font-bold flex items-center gap-2"><Activity size={18} className="text-indigo-400" /> Network Status</h3>
+                <span className="text-xs px-2 py-1 bg-success/10 text-success rounded-full">Active</span>
+             </div>
+             <div className="p-6 space-y-4">
+                <div className="flex justify-between items-end">
+                    <span className="text-text-secondary text-sm">Hashrate</span>
+                    <span className="text-xl font-bold">{hashRate} TH/s</span>
+                </div>
+                <div className="w-full bg-border h-1.5 rounded-full overflow-hidden">
+                    <motion.div
+                        className="h-full bg-indigo-500"
+                        initial={{ width: '40%' }}
+                        animate={{ width: `${(hashRate / 200) * 100}%` }}
+                        transition={{ duration: 2 }}
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div>
+                        <span className="text-xs text-text-tertiary block">Difficulty</span>
+                        <span className="font-mono text-sm">2,492,011</span>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-xs text-text-tertiary block">Avg Block Time</span>
+                        <span className="font-mono text-sm">45.2s</span>
+                    </div>
+                </div>
+             </div>
+          </Card>
+
+          {/* Card 2: Chain State */}
+          <Card className="p-0 overflow-hidden border-border bg-secondary-bg/30">
+             <div className="p-4 border-b border-border bg-secondary-bg/50 flex justify-between items-center">
+                <h3 className="font-bold flex items-center gap-2"><Database size={18} className="text-purple-400" /> Blockchain Tip</h3>
+                <span className="text-xs font-mono text-text-tertiary">#{blocks.length}</span>
+             </div>
+             <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                    <span className="text-text-secondary text-sm">Current Height</span>
+                    <span className="text-3xl font-bold text-accent">#{blocks.length}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                    <span className="text-text-secondary">Last Block</span>
+                    <span className="flex items-center gap-1 font-mono text-warning">
+                        <Clock size={14} /> {lastBlockTimeStr}
+                    </span>
+                </div>
+                 <div className="flex justify-between items-center text-sm">
+                    <span className="text-text-secondary">Pending Txs</span>
+                    <span className="font-mono">{mempool.length}</span>
+                </div>
+             </div>
+          </Card>
+
+           {/* Card 3: Node Wallet */}
+           <Card className="p-0 overflow-hidden border-border bg-secondary-bg/30 md:col-span-2 lg:col-span-1">
+             <div className="p-4 border-b border-border bg-secondary-bg/50 flex justify-between items-center">
+                <h3 className="font-bold flex items-center gap-2"><ShieldCheck size={18} className="text-emerald-400" /> Your Identity</h3>
+             </div>
+             <div className="p-6 space-y-4">
+                <div>
+                    <span className="text-xs text-text-tertiary block mb-1">Public Address</span>
+                    <div className="font-mono text-xs bg-black/20 p-2 rounded border border-border break-all">
+                        {identity.getWalletAddress()}
+                    </div>
+                </div>
+                <div className="flex justify-between items-end pt-2">
+                    <span className="text-text-secondary text-sm">Balance</span>
+                    <span className="text-2xl font-bold">0.0000 ETH</span>
+                </div>
+             </div>
+          </Card>
+
+          {/* Card 4: Live Blocks Feed (Spans 2 cols on tablet, 3 on desktop) */}
+          <Card className="p-0 overflow-hidden border-border bg-secondary-bg/30 col-span-1 md:col-span-2 lg:col-span-3">
+             <div className="p-4 border-b border-border bg-secondary-bg/50 flex justify-between items-center">
+                <h3 className="font-bold flex items-center gap-2"><Server size={18} className="text-blue-400" /> Live Blocks</h3>
+                <div className="flex gap-2 text-xs">
+                     <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-indigo-500"></div> Mined</span>
+                     <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full border border-dashed border-gray-500"></div> Pending</span>
+                </div>
+             </div>
+             <div className="p-6 overflow-x-auto">
+                <div className="flex gap-4 min-w-full pb-2">
+                    <AnimatePresence>
+                        {[...blocks].reverse().slice(0, 8).map((block) => (
+                            <motion.div
+                                key={block.hash}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="flex-shrink-0 w-40 bg-primary-bg border border-border p-3 rounded-lg hover:border-accent transition-colors cursor-default"
+                            >
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-xs font-bold text-accent">#{block.index}</span>
+                                    <Hash size={12} className="text-text-tertiary" />
+                                </div>
+                                <div className="text-[10px] text-text-tertiary mb-2 font-mono truncate">
+                                    {block.hash.substring(0, 12)}...
+                                </div>
+                                <div className="text-[10px] bg-secondary-bg/50 rounded px-1.5 py-1 truncate">
+                                    {block.data.split('\n')[0].replace('Mined by ', 'By: ')}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                    {/* Placeholder for "next" block */}
+                    <div className="flex-shrink-0 w-40 border-2 border-dashed border-border p-3 rounded-lg flex flex-col items-center justify-center opacity-50">
+                        <div className="animate-spin mb-2"><Zap size={16} /></div>
+                        <span className="text-xs">Mining...</span>
+                    </div>
+                </div>
+             </div>
+          </Card>
+
+           {/* Card 5: Network Events Log (Spans full width) */}
+           <Card className="p-0 overflow-hidden border-border bg-black/40 col-span-1 md:col-span-2 lg:col-span-3 h-64 flex flex-col">
+             <div className="p-3 border-b border-white/10 flex justify-between items-center bg-black/60">
+                <h3 className="font-bold text-sm flex items-center gap-2 text-gray-300"><Radio size={16} /> Network Event Log</h3>
+             </div>
+             <div className="flex-1 overflow-y-auto p-4 space-y-1 font-mono text-xs">
+                {networkEvents.map((event) => (
+                    <motion.div
+                        key={event.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex gap-3 text-gray-400 hover:bg-white/5 p-1 rounded"
+                    >
+                        <span className="text-gray-600 select-none">[{event.time}]</span>
+                        <span className={`
+                            ${event.type === 'block' ? 'text-blue-400' : ''}
+                            ${event.type === 'tx' ? 'text-emerald-400' : ''}
+                            ${event.type === 'peer' ? 'text-yellow-400' : ''}
+                            ${event.type === 'system' ? 'text-purple-400' : ''}
+                        `}>
+                            {event.type.toUpperCase().padEnd(6, ' ')}
+                        </span>
+                        <span className="text-gray-300">{event.message}</span>
+                    </motion.div>
+                ))}
+                <div ref={logsEndRef} />
+             </div>
+          </Card>
+
+        </div>
+
+        {/* CTA Section */}
+        <div className="flex justify-center pt-8 pb-12">
+            <Button
+                onClick={handleJoinNetwork}
+                size="lg"
+                className="text-lg px-12 py-6 rounded-full shadow-xl shadow-indigo-500/20 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border-none transition-all hover:scale-105 active:scale-95"
+            >
+                {returningUser ? 'Sync & Continue' : 'Join the Network'}
+                <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+        </div>
+
+      </div>
+
+      {/* Sync Overlay */}
+      <AnimatePresence>
+        {isSyncing && (
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            >
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-primary-bg border border-border rounded-2xl p-8 max-w-md w-full shadow-2xl space-y-6"
+                >
+                    <div className="text-center space-y-2">
+                        <div className="inline-flex p-4 rounded-full bg-indigo-500/10 text-indigo-500 mb-2">
+                            <Download size={32} className="animate-bounce" />
+                        </div>
+                        <h2 className="text-2xl font-bold">Synchronizing Node</h2>
+                        <p className="text-text-secondary">Downloading blockchain history...</p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span>Block {Math.floor((syncProgress / 100) * blocks.length)} / {blocks.length}</span>
+                            <span>{Math.floor(syncProgress)}%</span>
+                        </div>
+                        <div className="w-full bg-secondary-bg h-3 rounded-full overflow-hidden border border-border">
+                            <motion.div
+                                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                                style={{ width: `${syncProgress}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-text-tertiary text-center pt-2">Verifying signatures and proof-of-work...</p>
+                    </div>
+                </motion.div>
+            </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
