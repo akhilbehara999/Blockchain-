@@ -52,3 +52,18 @@ export interface MerkleNode {
   right?: MerkleNode;
   data?: string;
 }
+
+export interface ExecutionResult {
+  success: boolean;
+  gasUsed: number;
+  gasRefunded: number;
+  cost: number;
+  revertReason?: string;
+  result?: any;
+}
+
+export interface VMStep {
+  name: string;
+  cost: number;
+  action: (state?: any) => any;
+}
