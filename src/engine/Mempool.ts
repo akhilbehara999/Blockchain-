@@ -7,6 +7,11 @@ export class Mempool {
   // If mempool has >30 transactions, low-fee ones wait longer (effectively deprioritized by sort)
   // private readonly MEMPOOL_LIMIT = 30;
 
+  setTransactions(txs: Transaction[]): void {
+    this.transactions = [...txs];
+    this.sort();
+  }
+
   addTransaction(tx: Transaction): void {
     // Check if transaction already exists (by signature)
     const existingIndex = this.transactions.findIndex(t => t.signature === tx.signature);

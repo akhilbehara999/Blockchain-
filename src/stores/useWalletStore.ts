@@ -11,6 +11,7 @@ interface WalletState {
 
   initializeWallets: () => void;
   createWallet: (name: string, balance: number) => void;
+  restoreState: (wallets: Wallet[], mempool: Transaction[]) => void;
   sendTransaction: (fromName: string, toName: string, amount: number, fee?: number) => void;
   speedUpTransaction: (signature: string, newFee: number) => void;
   cancelTransaction: (signature: string, newFee: number) => void;
@@ -45,6 +46,15 @@ export const useWalletStore = create<WalletState>((set) => ({
   createWallet: (name: string, balance: number) => {
     walletManager.createWallet(name, balance);
     set({ wallets: walletManager.getAllWallets() });
+  },
+
+  restoreState: (wallets: Wallet[], mempool: Transaction[]) => {
+    walletManager.setWallets(wallets);
+    mempoolInstance.setTransactions(mempool);
+    set({
+      wallets: walletManager.getAllWallets(),
+      mempool: mempoolInstance.getAllPending()
+    });
   },
 
   sendTransaction: (fromName: string, toName: string, amount: number, fee: number = 0) => {

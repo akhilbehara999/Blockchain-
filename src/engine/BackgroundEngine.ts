@@ -4,7 +4,7 @@ import { createTransaction } from './transaction';
 import { Wallet } from './types';
 import { forkManager } from './ForkManager';
 
-interface Miner {
+export interface Miner {
   name: string;
   hashRate: number; // Probability weight
 }
@@ -56,6 +56,55 @@ export class BackgroundEngine {
 
   public getSimulatedMiners(): Miner[] {
     return this.simulatedMiners;
+  }
+
+  public getState() {
+      return {
+          miners: this.simulatedMiners,
+          peerWallets: this.simulatedWalletNames
+      };
+  }
+
+  public restoreState(state: { miners: Miner[], peerWallets: string[] }) {
+      if (state.miners) this.simulatedMiners = state.miners;
+      if (state.peerWallets) this.simulatedWalletNames = state.peerWallets;
+  }
+
+  public fastForward(seconds: number): { blocksMined: number } {
+      // Limit fast forward to avoid hanging (max 500 blocks)
+      const MAX_BLOCKS = 500;
+      let blocksToMine = Math.floor(seconds / 30);
+      if (blocksToMine > MAX_BLOCKS) blocksToMine = MAX_BLOCKS;
+
+      if (blocksToMine <= 0) return { blocksMined: 0 };
+
+      console.log(`[FastForward] Simulating ${blocksToMine} blocks...`);
+      const { difficulty, setDifficulty } = useBlockchainStore.getState();
+
+      // Save current difficulty
+      const previousDifficulty = difficulty;
+
+      // Lower difficulty for instant mining
+      // 1 is usually enough to be very fast but valid
+      setDifficulty(1);
+
+      let blocksMined = 0;
+
+      // We'll run the loop synchronously
+      for (let i = 0; i < blocksToMine; i++) {
+          // Generate some transactions
+          // Spike with 2-5 txs
+          const txCount = Math.floor(Math.random() * 4) + 2;
+          for(let j=0; j<txCount; j++) {
+              this.createRandomTransaction();
+          }
+
+          this.mineBlock();
+          blocksMined++;
+      }
+
+      setDifficulty(previousDifficulty); // Restore
+      return { blocksMined };
   }
 
   // --- Event Engine Hooks ---
@@ -126,7 +175,7 @@ export class BackgroundEngine {
     loop();
   }
 
-  private createRandomTransaction() {
+  public createRandomTransaction() {
     const { mempool } = useWalletStore.getState();
     const candidates = this.getPeerWallets();
 
@@ -168,7 +217,7 @@ export class BackgroundEngine {
     }, delay);
   }
 
-  private mineBlock() {
+  public mineBlock() {
     const { mempool, wallets } = useWalletStore.getState();
     // const { addBlock } = useBlockchainStore.getState(); // Unused here, we use forkManager
 
@@ -218,3 +267,5 @@ export class BackgroundEngine {
     }
   }
 }
+
+export const backgroundEngine = new BackgroundEngine();

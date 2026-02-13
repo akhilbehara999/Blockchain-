@@ -1,4 +1,4 @@
-import { BackgroundEngine } from './BackgroundEngine';
+import { backgroundEngine } from './BackgroundEngine';
 
 export type EventType =
   | 'PEER_CONNECT'
@@ -21,15 +21,13 @@ export interface NetworkEvent {
 type EventListener = (event: NetworkEvent) => void;
 
 export class EventEngine {
-  private backgroundEngine: BackgroundEngine;
   private isRunning: boolean = false;
   private eventTimeout: NodeJS.Timeout | null = null;
   private events: NetworkEvent[] = []; // Circular buffer logic in addEvent
   private listeners: EventListener[] = [];
   private maxEvents: number = 50;
 
-  constructor(backgroundEngine: BackgroundEngine) {
-    this.backgroundEngine = backgroundEngine;
+  constructor() {
   }
 
   public start() {
@@ -48,6 +46,14 @@ export class EventEngine {
 
   public getRecentEvents(count: number = 20): NetworkEvent[] {
     return this.events.slice(-count).reverse(); // Newest first
+  }
+
+  public getEvents(): NetworkEvent[] {
+    return [...this.events];
+  }
+
+  public restoreEvents(events: NetworkEvent[]): void {
+      this.events = events;
   }
 
   public onEvent(callback: EventListener) {
@@ -155,39 +161,39 @@ export class EventEngine {
   private applyEventEffect(event: NetworkEvent) {
     switch (event.type) {
       case 'PEER_CONNECT':
-        this.backgroundEngine.addPeer();
+        backgroundEngine.addPeer();
         break;
       case 'PEER_DISCONNECT':
-        this.backgroundEngine.removePeer();
+        backgroundEngine.removePeer();
         break;
       case 'DELAYED_BLOCK':
         // Increase delay for next block, then reset
-        this.backgroundEngine.setBlockDelayMultiplier(1.5);
+        backgroundEngine.setBlockDelayMultiplier(1.5);
         // Reset after 60s
-        setTimeout(() => this.backgroundEngine.setBlockDelayMultiplier(1.0), 60000);
+        setTimeout(() => backgroundEngine.setBlockDelayMultiplier(1.0), 60000);
         break;
       case 'ORPHAN_BLOCK':
         // Just visual for now, as simulating real orphan logic is complex
         // But we can pause mining briefly to simulate "waiting"
-        this.backgroundEngine.setBlockDelayMultiplier(2.0);
-        setTimeout(() => this.backgroundEngine.setBlockDelayMultiplier(1.0), 15000);
+        backgroundEngine.setBlockDelayMultiplier(2.0);
+        setTimeout(() => backgroundEngine.setBlockDelayMultiplier(1.0), 15000);
         break;
       case 'MEMPOOL_SPIKE':
-        this.backgroundEngine.triggerMempoolSpike();
+        backgroundEngine.triggerMempoolSpike();
         break;
       case 'DIFFICULTY_ADJUSTMENT':
         // Affect block delay to simulate difficulty impact
         if (event.message.includes('+')) {
-            this.backgroundEngine.setBlockDelayMultiplier(1.2);
+            backgroundEngine.setBlockDelayMultiplier(1.2);
         } else {
-            this.backgroundEngine.setBlockDelayMultiplier(0.8);
+            backgroundEngine.setBlockDelayMultiplier(0.8);
         }
-        setTimeout(() => this.backgroundEngine.setBlockDelayMultiplier(1.0), 60000);
+        setTimeout(() => backgroundEngine.setBlockDelayMultiplier(1.0), 60000);
         break;
       case 'HASH_RATE_CHANGE':
-        this.backgroundEngine.adjustMinerHashRates(1.15); // Increase
+        backgroundEngine.adjustMinerHashRates(1.15); // Increase
         // Reset after some time
-        setTimeout(() => this.backgroundEngine.adjustMinerHashRates(1/1.15), 60000);
+        setTimeout(() => backgroundEngine.adjustMinerHashRates(1/1.15), 60000);
         break;
     }
   }
@@ -205,3 +211,5 @@ export class EventEngine {
     this.listeners.forEach(listener => listener(event));
   }
 }
+
+export const eventEngine = new EventEngine();
