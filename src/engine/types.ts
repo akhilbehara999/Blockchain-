@@ -16,6 +16,8 @@ export interface Transaction {
   fee?: number;
   signature: string;
   timestamp: number;
+  status?: 'pending' | 'confirmed' | 'failed' | 'dropped';
+  confirmationBlock?: number;
 }
 
 export interface Wallet {

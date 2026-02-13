@@ -13,7 +13,8 @@ interface WalletState {
   createWallet: (name: string, balance: number) => void;
   sendTransaction: (fromName: string, toName: string, amount: number, fee?: number) => void;
   speedUpTransaction: (signature: string, newFee: number) => void;
-  mineMempool: () => Transaction[];
+  cancelTransaction: (signature: string, newFee: number) => void;
+  mineMempool: (blockHeight?: number) => Transaction[];
   getWalletByName: (name: string) => Wallet | undefined;
   getMempoolPosition: (signature: string) => number;
   getEstimatedConfirmationTime: (fee: number) => number;
@@ -76,7 +77,14 @@ export const useWalletStore = create<WalletState>((set) => ({
     set({ mempool: mempoolInstance.getAllPending() });
   },
 
-  mineMempool: () => {
+  cancelTransaction: (signature: string, newFee: number) => {
+    const success = mempoolInstance.cancelTransaction(signature, newFee);
+    if (success) {
+      set({ mempool: mempoolInstance.getAllPending() });
+    }
+  },
+
+  mineMempool: (blockHeight?: number) => {
     // Get top transactions for the block
     const txsToMine = mempoolInstance.getTransactionsForBlock();
 
@@ -84,6 +92,12 @@ export const useWalletStore = create<WalletState>((set) => ({
 
     // Process transactions
     txsToMine.forEach(tx => {
+      // Update status
+      tx.status = 'confirmed';
+      if (blockHeight !== undefined) {
+        tx.confirmationBlock = blockHeight;
+      }
+
       // Deduct from sender
       walletManager.updateBalance(tx.from, -tx.amount);
       // Deduct fee from sender if present

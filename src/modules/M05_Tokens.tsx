@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Check, X } from 'lucide-react';
+import { Plus, Check, X, Skull, AlertTriangle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ModuleLayout from '../components/layout/ModuleLayout';
 import WalletCard from '../components/blockchain/WalletCard';
@@ -15,6 +15,7 @@ const M05_Tokens: React.FC = () => {
   const {
     wallets,
     mempool,
+    minedTransactions,
     initializeWallets,
     createWallet,
     sendTransaction,
@@ -28,6 +29,7 @@ const M05_Tokens: React.FC = () => {
   } = useBlockchainStore();
 
   const [transactionSuccess, setTransactionSuccess] = useState<string | null>(null);
+  const [mistakeTxStatus, setMistakeTxStatus] = useState<'idle' | 'pending' | 'confirmed'>('idle');
   const [lastBlockStats, setLastBlockStats] = useState<{
       blockIndex: number;
       txCount: number;
@@ -42,6 +44,19 @@ const M05_Tokens: React.FC = () => {
     initializeWallets();
     initializeChain(1);
   }, []);
+
+  // Monitor Mistake Transaction
+  useEffect(() => {
+    if (mistakeTxStatus === 'pending') {
+       const voidWallet = wallets.find(w => w.name === '0x000...000');
+       if (voidWallet) {
+           const confirmed = minedTransactions.some(tx => tx.to === voidWallet.publicKey);
+           if (confirmed) {
+               setMistakeTxStatus('confirmed');
+           }
+       }
+    }
+  }, [minedTransactions, wallets, mistakeTxStatus]);
 
   // Ensure Charlie exists
   useEffect(() => {
@@ -63,11 +78,27 @@ const M05_Tokens: React.FC = () => {
     createWallet(nextName, 0);
   };
 
+  const handleMistakeDemo = () => {
+      let voidName = '0x000...000';
+      if (!wallets.find(w => w.name === voidName)) {
+          createWallet(voidName, 0);
+          setTimeout(() => {
+             sendTransaction('Alice', voidName, 5, 0.001);
+             setMistakeTxStatus('pending');
+             setTransactionSuccess("Transaction sent to the Void!");
+          }, 100);
+      } else {
+          sendTransaction('Alice', voidName, 5, 0.001);
+          setMistakeTxStatus('pending');
+          setTransactionSuccess("Transaction sent to the Void!");
+      }
+  };
+
   const handleMineBlock = () => {
     if (mempool.length === 0) return;
 
     // Mine transactions first to get the list of included ones
-    const minedTxs = mineMempool();
+    const minedTxs = mineMempool(blocks.length);
 
     if (minedTxs.length === 0) return;
 
@@ -231,6 +262,77 @@ const M05_Tokens: React.FC = () => {
                );
              })}
           </div>
+        </section>
+
+        {/* Mistake Demo Section */}
+        <section className="border-t border-border pt-8 mt-12">
+            <div className="bg-danger/5 border border-danger/20 rounded-2xl p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 -mt-4 -mr-4 opacity-5">
+                    <Skull className="w-64 h-64 text-danger" />
+                </div>
+
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="bg-danger/10 p-3 rounded-xl">
+                             <Skull className="w-8 h-8 text-danger" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-danger">The "Void" Experiment</h2>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8 items-center">
+                        <div className="space-y-4">
+                            <p className="text-text-secondary leading-relaxed">
+                                In a decentralized system, there is no central authority (like a bank) to reverse a transaction.
+                                If you send funds to an address that no one owns (like <code className="bg-black/30 px-1 py-0.5 rounded text-danger font-mono text-sm">0x00...00</code>),
+                                those funds are lost forever. This is known as "burning" tokens.
+                            </p>
+
+                            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                                <Button
+                                    variant="danger"
+                                    onClick={handleMistakeDemo}
+                                    className="bg-danger hover:bg-danger-hover text-white shadow-lg shadow-danger/20"
+                                    disabled={mistakeTxStatus === 'pending'}
+                                >
+                                    {mistakeTxStatus === 'pending' ? 'Sending to Void...' : 'Send 5 TKN to The Void'}
+                                </Button>
+                            </div>
+                            {mistakeTxStatus === 'pending' && (
+                                <p className="text-sm text-warning animate-pulse">
+                                    ⚠️ Transaction is pending. Mine a block to confirm its fate.
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="bg-black/20 rounded-xl p-6 border border-border/30 backdrop-blur-sm">
+                             <AnimatePresence mode="wait">
+                                 {mistakeTxStatus === 'confirmed' ? (
+                                     <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="text-center space-y-4"
+                                     >
+                                         <div className="w-16 h-16 bg-danger/20 rounded-full flex items-center justify-center mx-auto text-danger mb-4">
+                                             <AlertTriangle className="w-8 h-8" />
+                                         </div>
+                                         <h3 className="text-xl font-bold text-text-primary">Funds Lost Forever</h3>
+                                         <p className="text-sm text-text-secondary">
+                                             Those coins are gone forever. No one controls that address.
+                                             In real Bitcoin, millions of dollars have been lost this way.
+                                             This is the cost of having no central authority.
+                                         </p>
+                                     </motion.div>
+                                 ) : (
+                                     <div className="text-center text-text-tertiary py-8">
+                                         <p className="mb-2">Status Monitor</p>
+                                         <div className="text-4xl font-mono opacity-20">0x00...00</div>
+                                     </div>
+                                 )}
+                             </AnimatePresence>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
       </div>

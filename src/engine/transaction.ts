@@ -18,6 +18,7 @@ export function createTransaction(from: string, to: string, amount: number, priv
     fee,
     signature: '',
     timestamp,
+    status: 'pending',
   };
 
   const key = ec.keyFromPrivate(privateKey);
@@ -37,4 +38,8 @@ export function verifyTransaction(tx: Transaction, publicKey: string): boolean {
     dataToVerify = tx.from + tx.to + tx.amount.toString() + tx.timestamp.toString();
   }
   return key.verify(dataToVerify, tx.signature);
+}
+
+export function isIrreversible(tx: Transaction): boolean {
+  return tx.status === 'confirmed';
 }

@@ -19,8 +19,30 @@ export class Mempool {
       return;
     }
 
+    tx.status = 'pending';
     this.transactions.push(tx);
     this.sort();
+  }
+
+  cancelTransaction(signature: string, newFee: number): boolean {
+    const index = this.transactions.findIndex(t => t.signature === signature);
+    if (index !== -1) {
+      const tx = this.transactions[index];
+      // Must have higher fee
+      if (newFee > (tx.fee || 0)) {
+        // Replace with 0-value self-transfer (RBF cancel)
+        this.transactions[index] = {
+          ...tx,
+          to: tx.from, // Send to self
+          amount: 0,   // 0 value
+          fee: newFee,
+          status: 'pending' // Ensure it's pending
+        };
+        this.sort();
+        return true;
+      }
+    }
+    return false;
   }
 
   // Sort by fee (desc), then by timestamp (asc)
