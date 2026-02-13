@@ -13,6 +13,7 @@ export class BackgroundEngine {
   private _isRunning: boolean = false;
   private txTimeout: NodeJS.Timeout | null = null;
   private miningTimeout: NodeJS.Timeout | null = null;
+  private blockDelayMultiplier: number = 1.0;
 
   private simulatedMiners: Miner[] = [
     { name: 'Miner_Alpha', hashRate: 50 },
@@ -56,6 +57,50 @@ export class BackgroundEngine {
   public getSimulatedMiners(): Miner[] {
     return this.simulatedMiners;
   }
+
+  // --- Event Engine Hooks ---
+
+  public addPeer(name?: string) {
+    const id = Math.floor(Math.random() * 10000).toString(16).toUpperCase();
+    const newName = name || `Node_${id}`;
+    if (!this.simulatedWalletNames.includes(newName)) {
+      this.simulatedWalletNames.push(newName);
+      // Initialize wallet
+      const { createWallet } = useWalletStore.getState();
+      createWallet(newName, 100);
+      console.log(`[Background] Added peer ${newName}`);
+    }
+    return newName;
+  }
+
+  public removePeer() {
+    if (this.simulatedWalletNames.length <= 2) return; // Keep at least 2
+    const index = Math.floor(Math.random() * this.simulatedWalletNames.length);
+    const removed = this.simulatedWalletNames.splice(index, 1)[0];
+    console.log(`[Background] Removed peer ${removed}`);
+    return removed;
+  }
+
+  public setBlockDelayMultiplier(multiplier: number) {
+    this.blockDelayMultiplier = multiplier;
+    console.log(`[Background] Block delay multiplier set to ${multiplier}`);
+  }
+
+  public triggerMempoolSpike(count: number = 15) {
+      for (let i = 0; i < count; i++) {
+          this.createRandomTransaction();
+      }
+      console.log(`[Background] Triggered mempool spike of ${count} txs`);
+  }
+
+  public adjustMinerHashRates(factor: number) {
+      this.simulatedMiners.forEach(m => {
+          m.hashRate = Math.max(1, Math.floor(m.hashRate * factor));
+      });
+      console.log(`[Background] Adjusted hash rates by factor ${factor}`);
+  }
+
+  // --- End Event Engine Hooks ---
 
   private initializeWallets() {
     const { wallets, createWallet } = useWalletStore.getState();
@@ -114,7 +159,7 @@ export class BackgroundEngine {
 
     // Exponential distribution
     // Avg 45s (between 30 and 60 roughly)
-    const avgTime = 45000;
+    const avgTime = 45000 * this.blockDelayMultiplier;
     const delay = -Math.log(Math.random()) * avgTime;
 
     this.miningTimeout = setTimeout(() => {
@@ -125,7 +170,7 @@ export class BackgroundEngine {
 
   private mineBlock() {
     const { mempool, wallets } = useWalletStore.getState();
-    const { addBlock } = useBlockchainStore.getState();
+    // const { addBlock } = useBlockchainStore.getState(); // Unused here, we use forkManager
 
     // Sort by fee (descending)
     const sortedMempool = [...mempool].sort((a, b) => (b.fee || 0) - (a.fee || 0));
