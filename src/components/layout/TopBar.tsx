@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useThemeStore } from '../../stores/useThemeStore';
 import { useProgress } from '../../context/ProgressContext';
-import { Moon, Sun, Lock, Home, Map, Box, Flag } from 'lucide-react';
+import { Moon, Sun, Lock, Home, Map, Box, Flag, CheckCircle } from 'lucide-react';
 import Button from '../ui/Button';
 
 const TopBar: React.FC = () => {
@@ -44,10 +44,19 @@ const TopBar: React.FC = () => {
           `}
         >
           <Map className="w-4 h-4 md:mr-2" />
-          <span className="hidden md:inline">Journey</span>
-          <span className="ml-2 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded">
-            Step {currentStep}/8
-          </span>
+          <span className="hidden md:inline mr-2">Journey</span>
+
+          <div className="flex flex-col w-20">
+            <div className="flex justify-between items-center text-[10px] leading-tight">
+               <span className="text-indigo-600 dark:text-indigo-400 font-semibold">Step {currentStep}/8</span>
+            </div>
+            <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full mt-0.5 overflow-hidden">
+              <div
+                className="h-full bg-indigo-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${(currentStep / 8) * 100}%` }}
+              />
+            </div>
+          </div>
         </NavLink>
 
         <NavLink
@@ -56,10 +65,16 @@ const TopBar: React.FC = () => {
           className={({ isActive }) => `
             flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors
             ${isActive ? 'bg-secondary-bg text-indigo-500' : 'text-text-secondary hover:text-text-primary hover:bg-secondary-bg/50'}
-            ${!sandboxUnlocked ? 'opacity-50 cursor-not-allowed' : ''}
+            ${!sandboxUnlocked ? 'opacity-60 cursor-not-allowed' : ''}
           `}
         >
-          {sandboxUnlocked ? <Box className="w-4 h-4 md:mr-2" /> : <Lock className="w-4 h-4 md:mr-2" />}
+          {sandboxUnlocked ? (
+            <div className="w-4 h-4 md:mr-2 rounded-full bg-green-500 flex items-center justify-center">
+               <CheckCircle className="w-3 h-3 text-white" />
+            </div>
+          ) : (
+            <Lock className="w-4 h-4 md:mr-2 text-gray-400" />
+          )}
           <span className="hidden md:inline">Sandbox</span>
         </NavLink>
 
@@ -69,10 +84,16 @@ const TopBar: React.FC = () => {
           className={({ isActive }) => `
             flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors
             ${isActive ? 'bg-secondary-bg text-indigo-500' : 'text-text-secondary hover:text-text-primary hover:bg-secondary-bg/50'}
-            ${!challengesUnlocked ? 'opacity-50 cursor-not-allowed' : ''}
+            ${!challengesUnlocked ? 'opacity-60 cursor-not-allowed' : ''}
           `}
         >
-          {challengesUnlocked ? <Flag className="w-4 h-4 md:mr-2" /> : <Lock className="w-4 h-4 md:mr-2" />}
+          {challengesUnlocked ? (
+            <div className="w-4 h-4 md:mr-2 rounded-full bg-green-500 flex items-center justify-center">
+              <CheckCircle className="w-3 h-3 text-white" />
+            </div>
+          ) : (
+            <Lock className="w-4 h-4 md:mr-2 text-gray-400" />
+          )}
           <span className="hidden md:inline">Challenges</span>
         </NavLink>
 
