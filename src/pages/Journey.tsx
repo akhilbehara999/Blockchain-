@@ -37,8 +37,12 @@ const Journey: React.FC = () => {
   const stepNum = parseInt(step, 10);
 
   // Validation
-  if (isNaN(stepNum) || stepNum < 1 || stepNum > 8) {
-    return <Navigate to={`/journey/${highestStep}`} replace />;
+  if (isNaN(stepNum) || stepNum < 1) {
+    return <Navigate to={`/journey/1`} replace />;
+  }
+
+  if (stepNum > 8) {
+     return <Navigate to="/sandbox" replace />;
   }
 
   const isUnlocked = isStepUnlocked(stepNum);
@@ -47,9 +51,12 @@ const Journey: React.FC = () => {
   return (
     <JourneyLayout currentStep={stepNum}>
       <div className="relative min-h-[400px]">
-        <StepLock isLocked={!isUnlocked} />
-        {/* Even if locked, we might render the component blurrily or just not render it content */}
-        <StepComponent />
+        <StepLock isLocked={!isUnlocked} targetStep={stepNum} />
+
+        {/* We render the component with blur and disabled interaction if locked */}
+        <div className={!isUnlocked ? 'filter blur-sm pointer-events-none select-none opacity-50 transition-all duration-500' : 'transition-all duration-500'}>
+           {StepComponent ? <StepComponent /> : <div className="p-10 text-center">Step content not found</div>}
+        </div>
       </div>
     </JourneyLayout>
   );

@@ -28,8 +28,9 @@ const NetworkConnect: React.FC<NetworkConnectProps> = ({ onComplete }) => {
       { delay: 3500, action: () => setLogs(p => [...p, "Generating wallet..."]) },
       { delay: 4500, action: () => {
           // Use the identity we just created
-          if (currentId) {
-             setLogs(p => [...p, `Wallet ${currentId.getWalletAddress().substring(0, 10)}... created ✅`]);
+          const id = currentId;
+          if (id) {
+             setLogs(p => [...p, `Wallet ${id.getWalletAddress().substring(0, 10)}... created ✅`]);
           }
       }},
       { delay: 5500, action: () => {
