@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StateManager } from '../engine/StateManager';
 import { backgroundEngine } from '../engine/BackgroundEngine';
-import { Loader2, CheckCircle2, AlertCircle, Clock, Zap, FileText } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Zap, FileText } from 'lucide-react';
 
 interface SessionRestorationProps {
   children: React.ReactNode;

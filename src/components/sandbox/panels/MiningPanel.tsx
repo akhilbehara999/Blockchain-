@@ -1,0 +1,12 @@
+import React from 'react';
+
+const MiningPanel: React.FC = () => {
+  return (
+    <div className="h-full bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4">
+      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Mining</h3>
+      <div className="text-gray-500 dark:text-gray-400">Mining controls coming soon...</div>
+    </div>
+  );
+};
+
+export default MiningPanel;

@@ -2,10 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import BlockCard from '../BlockCard';
-import { Block } from '../../engine/types';
+import { Block } from '../../../engine/types';
 
 // Mock useReducedMotion
-vi.mock('../../hooks/useReducedMotion', () => ({
+vi.mock('../../../hooks/useReducedMotion', () => ({
   useReducedMotion: () => false,
 }));
 
