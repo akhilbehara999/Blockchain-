@@ -3,6 +3,7 @@ import Router from './Router';
 import { useThemeStore } from '../stores/useThemeStore';
 import { SessionRestoration } from '../components/SessionRestoration';
 import { StateManager } from '../engine/StateManager';
+import { ProgressProvider } from '../context/ProgressContext';
 
 const App: React.FC = () => {
   const theme = useThemeStore((state) => state.theme);
@@ -35,9 +36,11 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <SessionRestoration>
-        <Router />
-    </SessionRestoration>
+    <ProgressProvider>
+      <SessionRestoration>
+          <Router />
+      </SessionRestoration>
+    </ProgressProvider>
   );
 };
 
