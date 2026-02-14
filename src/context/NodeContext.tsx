@@ -2,8 +2,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { NodeIdentity } from '../engine/NodeIdentity';
 
 interface NodeContextType {
-  identity: NodeIdentity;
+  identity: NodeIdentity | null;
   welcomeMessage: string | null;
+  createIdentity: () => NodeIdentity;
 }
 
 const NodeContext = createContext<NodeContextType | undefined>(undefined);
@@ -17,11 +18,26 @@ export const useNodeIdentity = () => {
 };
 
 export const NodeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Use state initializer to ensure getOrCreate is called once
-  const [identity] = useState(() => NodeIdentity.getOrCreate());
+  // Use state initializer to check for existing identity
+  const [identity, setIdentity] = useState<NodeIdentity | null>(() => {
+    const stored = localStorage.getItem('yupp_node_identity');
+    if (stored) {
+      return NodeIdentity.getOrCreate();
+    }
+    return null;
+  });
+
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
 
+  const createIdentity = () => {
+      const newIdentity = NodeIdentity.getOrCreate();
+      setIdentity(newIdentity);
+      return newIdentity;
+  };
+
   useEffect(() => {
+    if (!identity) return;
+
     // Logic to set welcome message
     // Check if identity was created very recently (within last 2 seconds) to handle React Strict Mode double-invocation
     const isRecent = (new Date().getTime() - identity.getFirstSeen().getTime()) < 2000;
@@ -41,7 +57,7 @@ export const NodeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [identity]);
 
   return (
-    <NodeContext.Provider value={{ identity, welcomeMessage }}>
+    <NodeContext.Provider value={{ identity, welcomeMessage, createIdentity }}>
       {children}
       {welcomeMessage && (
         <div
