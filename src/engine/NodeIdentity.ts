@@ -1,3 +1,4 @@
+import { generateKeyPair } from './wallet';
 
 export interface NodeIdentityData {
   id: string;
@@ -30,19 +31,15 @@ export class NodeIdentity {
     }
 
     // Generate new identity
-    const randomBytes = new Uint8Array(32);
+    const { publicKey, privateKey } = generateKeyPair();
+
+    // Generate a random ID for the node
+    const randomBytes = new Uint8Array(4);
     crypto.getRandomValues(randomBytes);
     const randomHex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const privateKeyBytes = new Uint8Array(32);
-    crypto.getRandomValues(privateKeyBytes);
-    const privateKey = Array.from(privateKeyBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const publicKeyBytes = new Uint8Array(33);
-    crypto.getRandomValues(publicKeyBytes);
-    const publicKey = Array.from(publicKeyBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-
     const id = `Node #${randomHex.substring(0, 4).toUpperCase()}`;
+
+    // Derive address from public key (first 40 chars)
     const walletAddress = `0x${publicKey.substring(0, 40)}`;
 
     const data: NodeIdentityData = {

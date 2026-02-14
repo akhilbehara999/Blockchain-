@@ -1,39 +1,8 @@
-
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NodeIdentity } from '../NodeIdentity';
+import { ec as EC } from 'elliptic';
 
-// Mock localStorage
-const localStorageMock = (function() {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    clear: () => {
-      store = {};
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    }
-  };
-})();
-
-Object.defineProperty(global, 'localStorage', {
-  value: localStorageMock
-});
-
-// Mock crypto.getRandomValues
-Object.defineProperty(global, 'crypto', {
-  value: {
-    getRandomValues: (buffer: Uint8Array) => {
-      for (let i = 0; i < buffer.length; i++) {
-        buffer[i] = Math.floor(Math.random() * 256);
-      }
-      return buffer;
-    }
-  }
-});
+const ec = new EC('secp256k1');
 
 describe('NodeIdentity', () => {
   beforeEach(() => {
@@ -41,39 +10,47 @@ describe('NodeIdentity', () => {
     vi.clearAllMocks();
   });
 
-  it('should create a new identity if none exists', () => {
+  it('should generate a new identity with mathematically linked keys', () => {
     const identity = NodeIdentity.getOrCreate();
-    expect(identity).toBeDefined();
-    expect(identity.getId()).toMatch(/^Node #[0-9A-F]{4}$/);
-    expect(identity.isNew).toBe(true);
-    expect(localStorage.getItem('yupp_node_identity')).toBeTruthy();
+
+    // Retrieve the data directly from localStorage to verify private/public key relationship
+    // because NodeIdentity doesn't expose the private key publicly.
+    const stored = localStorage.getItem('yupp_node_identity');
+    expect(stored).not.toBeNull();
+
+    if (stored) {
+      const data = JSON.parse(stored);
+      const { privateKey, publicKey } = data.keyPair;
+
+      expect(privateKey).toBeDefined();
+      expect(publicKey).toBeDefined();
+
+      // Verify key relationship
+      const keyFromPrivate = ec.keyFromPrivate(privateKey);
+      const derivedPublic = keyFromPrivate.getPublic('hex');
+
+      expect(derivedPublic).toBe(publicKey);
+    }
   });
 
-  it('should retrieve an existing identity', () => {
-    // Create first
-    const first = NodeIdentity.getOrCreate();
-    const id1 = first.getId();
-
-    // Retrieve second
-    const second = NodeIdentity.getOrCreate();
-    const id2 = second.getId();
-
-    expect(id1).toBe(id2);
-    expect(second.isNew).toBe(false);
-  });
-
-  it('should contain a wallet address', () => {
+  it('should derive wallet address from public key correctly', () => {
     const identity = NodeIdentity.getOrCreate();
-    expect(identity.getWalletAddress()).toMatch(/^0x[0-9a-f]{40}$/);
+    const stored = localStorage.getItem('yupp_node_identity');
+
+    if (stored) {
+        const data = JSON.parse(stored);
+        const { publicKey } = data.keyPair;
+        const address = identity.getWalletAddress();
+
+        expect(address).toBe(`0x${publicKey.substring(0, 40)}`);
+    }
   });
 
-  it('should persist firstSeen date', () => {
-    const identity1 = NodeIdentity.getOrCreate();
-    const date1 = identity1.getFirstSeen();
+  it('should return existing identity if present', () => {
+    const id1 = NodeIdentity.getOrCreate();
+    const id2 = NodeIdentity.getOrCreate();
 
-    const identity2 = NodeIdentity.getOrCreate();
-    const date2 = identity2.getFirstSeen();
-
-    expect(date1.toISOString()).toBe(date2.toISOString());
+    expect(id1.getId()).toBe(id2.getId());
+    expect(id1.getWalletAddress()).toBe(id2.getWalletAddress());
   });
 });

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, CheckCircle, Terminal, Wifi } from 'lucide-react';
-import { useNodeIdentity } from '../../context/NodeContext';
+import { ArrowRight, Terminal, Wifi } from 'lucide-react';
 import Button from '../ui/Button';
 
 interface NetworkConnectProps {
@@ -10,28 +9,19 @@ interface NetworkConnectProps {
 const NetworkConnect: React.FC<NetworkConnectProps> = ({ onComplete }) => {
   const [logs, setLogs] = useState<string[]>([]);
   const [isComplete, setIsComplete] = useState(false);
-  const { createIdentity, identity } = useNodeIdentity();
 
   useEffect(() => {
     const timeoutIds: NodeJS.Timeout[] = [];
-    let currentId = identity;
 
     const sequence = [
       { delay: 500, action: () => setLogs(p => [...p, "Connecting to network..."]) },
-      { delay: 1500, action: () => setLogs(p => [...p, "Generating your node identity..."]) },
+      { delay: 1500, action: () => setLogs(p => [...p, "Initializing node environment..."]) },
       { delay: 2500, action: () => {
-          // Use context to create identity so global state updates
-          const newId = createIdentity();
-          currentId = newId;
-          setLogs(p => [...p, `${newId.getId()} created ✅`]);
+          setLogs(p => [...p, "Environment ready ✅"]);
       }},
-      { delay: 3500, action: () => setLogs(p => [...p, "Generating wallet..."]) },
+      { delay: 3500, action: () => setLogs(p => [...p, "Loading wallet module..."]) },
       { delay: 4500, action: () => {
-          // Use the identity we just created
-          const id = currentId;
-          if (id) {
-             setLogs(p => [...p, `Wallet ${id.getWalletAddress().substring(0, 10)}... created ✅`]);
-          }
+           setLogs(p => [...p, "Wallet module ready ✅"]);
       }},
       { delay: 5500, action: () => {
           setLogs(p => [...p, "Ready to begin."]);
@@ -47,7 +37,7 @@ const NetworkConnect: React.FC<NetworkConnectProps> = ({ onComplete }) => {
     return () => {
       timeoutIds.forEach(clearTimeout);
     };
-  }, []); // createIdentity is stable from context
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md text-white font-mono p-6 animate-in fade-in duration-300">
