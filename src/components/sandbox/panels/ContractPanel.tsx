@@ -117,21 +117,21 @@ const ContractPanel: React.FC = () => {
     if (selectedContract.name === 'SimpleStorage') {
         if (selectedFunction === 'setValue') {
             const val = parseInt(args[0]);
-            steps = [{ cost: 5000, action: (s) => ({ ...s, value: val }) }];
+            steps = [{ name: 'STORE', cost: 5000, action: (s) => ({ ...s, value: val }) }];
         } else if (selectedFunction === 'getValue') {
-            steps = [{ cost: 1000, action: (s) => { setResult(`Output: ${s.value}`); return s; } }];
+            steps = [{ name: 'LOAD', cost: 1000, action: (s) => { setResult(`Output: ${s.value}`); return s; } }];
         }
     } else if (selectedContract.name === 'Counter') {
         if (selectedFunction === 'increment') {
-             steps = [{ cost: 2000, action: (s) => ({ ...s, count: s.count + 1 }) }];
+             steps = [{ name: 'ADD', cost: 2000, action: (s) => ({ ...s, count: s.count + 1 }) }];
         } else if (selectedFunction === 'reset') {
-             steps = [{ cost: 1500, action: (s) => ({ ...s, count: 0 }) }];
+             steps = [{ name: 'ZERO', cost: 1500, action: (s) => ({ ...s, count: 0 }) }];
         }
     } else if (selectedContract.name === 'MyToken') {
         if (selectedFunction === 'transfer') {
              const to = args[0];
              const amount = parseInt(args[1]);
-             steps = [{ cost: 8000, action: (s) => {
+             steps = [{ name: 'TRANSFER', cost: 8000, action: (s) => {
                  // Simplified logic
                  // Assume sender is 'owner' for sandbox
                  if (s.balances['owner'] >= amount) {
@@ -148,7 +148,7 @@ const ContractPanel: React.FC = () => {
              }}];
         } else if (selectedFunction === 'mint') {
              const amount = parseInt(args[0]);
-             steps = [{ cost: 5000, action: (s) => ({
+             steps = [{ name: 'MINT', cost: 5000, action: (s) => ({
                  ...s,
                  totalSupply: s.totalSupply + amount,
                  balances: { ...s.balances, 'owner': s.balances['owner'] + amount }

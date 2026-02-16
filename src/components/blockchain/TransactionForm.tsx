@@ -7,6 +7,8 @@ import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { useWalletStore } from '../../stores/useWalletStore';
+import { useToast } from '../../context/ToastContext';
+import { useSound } from '../../context/SoundContext';
 
 interface TransactionFormProps {
   wallets: Wallet[];
@@ -16,6 +18,8 @@ interface TransactionFormProps {
 
 const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit, showHistory = true }) => {
   const { mempool, minedTransactions, getEstimatedConfirmationTime, cancelTransaction } = useWalletStore();
+  const { addToast } = useToast();
+  const { playSound } = useSound();
   const [from, setFrom] = useState(wallets[0]?.name || '');
   const [to, setTo] = useState(wallets[1]?.name || '');
   const [amount, setAmount] = useState<string>('');
@@ -105,6 +109,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit, sh
   const confirmSend = () => {
       if (pendingTx) {
           onSubmit(pendingTx.from, pendingTx.to, pendingTx.amount, pendingTx.fee);
+          addToast(`Transaction sent! ${pendingTx.amount} TKN`, 'success');
+          playSound('click'); // Or whoosh
           setShowConfirm(false);
           setPendingTx(null);
           setAmount('');
@@ -267,13 +273,20 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit, sh
     </Card>
 
     {/* Recent Activity */}
-    {showHistory && myTransactions.length > 0 && (
+    {showHistory && (
         <div className="max-w-2xl mx-auto space-y-4">
             <h3 className="text-xl font-bold text-text-primary flex items-center gap-2">
                 <History className="w-5 h-5" />
                 Recent Activity
             </h3>
-            <div className="space-y-3">
+            {myTransactions.length === 0 ? (
+                <div className="bg-secondary-bg/30 border border-border rounded-xl p-8 text-center text-text-secondary flex flex-col items-center">
+                    <History className="w-12 h-12 mb-3 opacity-20" />
+                    <p className="font-medium">No recent transactions</p>
+                    <p className="text-xs opacity-60">Send tokens to see history here</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
                 {myTransactions.map(tx => {
                     const isConfirmed = tx.status === 'confirmed';
                     const isPending = tx.status === 'pending';
@@ -347,7 +360,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ wallets, onSubmit, sh
                         </div>
                     );
                 })}
-            </div>
+                </div>
+            )}
         </div>
     )}
 

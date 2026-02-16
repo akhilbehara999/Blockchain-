@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useWalletStore } from '../../stores/useWalletStore';
-import { useProgress } from '../../context/ProgressContext';
+import { useWalletStore } from '../../../stores/useWalletStore';
+import { useProgress } from '../../../context/ProgressContext';
 import { RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import Button from '../../ui/Button';
+import Button from '../../../components/ui/Button';
 
 const DoubleSpendChallenge: React.FC = () => {
   const { challenges, updateChallengeProgress } = useProgress();

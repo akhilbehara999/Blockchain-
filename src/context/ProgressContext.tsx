@@ -31,6 +31,7 @@ interface ProgressContextType extends ProgressState {
   isJourneyComplete: () => boolean;
   resetProgress: () => void;
   getMasteryScore: () => number;
+  getRank: () => string;
   updateChallengeProgress: (id: keyof ChallengesState, data: Partial<ChallengeProgress>) => void;
   addMasteryPoints: (points: number) => void;
 }
@@ -87,10 +88,16 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
     localStorage.setItem('yupp_progress', JSON.stringify(state));
   }, [state]);
 
+  const calculateRank = (score: number) => {
+    if (score < 50) return 'Novice';
+    if (score < 100) return 'Learner';
+    if (score < 200) return 'Expert';
+    return 'Master';
+  };
+
   const completeStep = (step: number) => {
     setState((prev) => {
       // If already completed, do nothing unless we want to update score/achievements
-      // But for unlocking logic, we check if it's already in completedSteps
       if (prev.completedSteps.includes(step)) {
           return prev;
       }
@@ -98,13 +105,7 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
       const newCompletedSteps = [...prev.completedSteps, step].sort((a, b) => a - b);
 
       // Determine if journey is complete (assuming steps 1-8)
-      // We check if all steps 1-8 are in completedSteps
       const allStepsCompleted = [1, 2, 3, 4, 5, 6, 7, 8].every(s => newCompletedSteps.includes(s));
-
-      // Calculate the next step to show as current
-      // If I completed step 1, current should be 2.
-      // If I completed step 3 (but not 2 - shouldn't happen usually but possible if we allow jumping back),
-      // generally currentStep follows the highest consecutive completed step + 1.
 
       let nextStep = 1;
       for (let i = 1; i <= 8; i++) {
@@ -114,7 +115,10 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
               break;
           }
       }
-      if (nextStep > 8) nextStep = 8; // Cap at 8 or whatever UI expects
+      if (nextStep > 8) nextStep = 8;
+
+      // Award 10 points per step
+      const newScore = prev.masteryScore + 10;
 
       return {
         ...prev,
@@ -123,6 +127,7 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
         journeyComplete: allStepsCompleted,
         sandboxUnlocked: allStepsCompleted,
         challengesUnlocked: allStepsCompleted,
+        masteryScore: newScore,
       };
     });
   };
@@ -139,18 +144,31 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const getMasteryScore = () => state.masteryScore;
+  const getRank = () => calculateRank(state.masteryScore);
 
   const updateChallengeProgress = (id: keyof ChallengesState, data: Partial<ChallengeProgress>) => {
-    setState((prev) => ({
-      ...prev,
-      challenges: {
-        ...prev.challenges,
-        [id]: {
-          ...prev.challenges[id],
-          ...data,
+    setState((prev) => {
+      const wasCompleted = prev.challenges[id].completed;
+      const isNowCompleted = data.completed ?? wasCompleted;
+
+      let newScore = prev.masteryScore;
+      // Award 15 points if newly completed
+      if (!wasCompleted && isNowCompleted) {
+        newScore += 15;
+      }
+
+      return {
+        ...prev,
+        masteryScore: newScore,
+        challenges: {
+          ...prev.challenges,
+          [id]: {
+            ...prev.challenges[id],
+            ...data,
+          },
         },
-      },
-    }));
+      };
+    });
   };
 
   const addMasteryPoints = (points: number) => {
@@ -169,6 +187,7 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
         isJourneyComplete,
         resetProgress,
         getMasteryScore,
+        getRank,
         updateChallengeProgress,
         addMasteryPoints,
       }}

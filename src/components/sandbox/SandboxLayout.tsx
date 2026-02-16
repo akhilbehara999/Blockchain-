@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import SandboxToolbar from './SandboxToolbar';
 import ChainPanel from './panels/ChainPanel';
 import MiningPanel from './panels/MiningPanel';
@@ -7,11 +7,48 @@ import MempoolPanel from './panels/MempoolPanel';
 import NetworkPanel from './panels/NetworkPanel';
 import ContractPanel from './panels/ContractPanel';
 import EventLogPanel from './panels/EventLogPanel';
-import Tabs from '../ui/Tabs'; // Assuming Tabs is in ui/Tabs
+import Tabs from '../ui/Tabs';
 import { Box, Hammer, Wallet, Layers, Globe, FileCode, Terminal } from 'lucide-react';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { useSandboxStore } from '../../stores/useSandboxStore';
+import { useBackground } from '../../context/BackgroundContext';
+import { useToast } from '../../context/ToastContext';
+import { useSound } from '../../context/SoundContext';
 
 const SandboxLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('chain');
+  const { mode, setMode } = useSandboxStore();
+  const { engine } = useBackground();
+  const { addToast } = useToast();
+  const { playSound } = useSound();
+
+  // Refs for scrolling
+  const miningRef = useRef<HTMLDivElement>(null);
+  const walletRef = useRef<HTMLDivElement>(null);
+
+  useKeyboardShortcuts({
+    'm': () => {
+        setActiveTab('mining');
+        miningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        addToast('Switched to Mining', 'info', 1000);
+    },
+    't': () => {
+        setActiveTab('wallet');
+        walletRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        addToast('Switched to Wallet', 'info', 1000);
+    },
+    'g': () => {
+        const newMode = mode === 'god' ? 'node' : 'god';
+        setMode(newMode);
+        addToast(`Switched to ${newMode === 'god' ? 'God' : 'Node'} Mode`, 'info', 2000);
+        playSound('click');
+    },
+    ' ': () => {
+        const isRunning = engine.toggle();
+        addToast(isRunning ? 'Simulation Resumed' : 'Simulation Paused', 'info', 2000);
+        playSound('click');
+    }
+  });
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
@@ -47,12 +84,6 @@ const SandboxLayout: React.FC = () => {
       </div>
 
       {/* Desktop View (Dashboard Grid) - Visible lg and above */}
-      {/*
-          Grid Layout Strategy:
-          - 3 Columns
-          - 3 Rows (Top: Chain/Mining, Middle: Wallet/Mempool/Contract, Bottom: Network/Events)
-          - Use min-heights to ensure usability on smaller desktop screens, allow scrolling if needed.
-      */}
       <div className="hidden lg:block flex-1 overflow-y-auto p-6">
         <div className="grid grid-cols-3 gap-6 auto-rows-min max-w-[1600px] mx-auto">
 
@@ -60,12 +91,12 @@ const SandboxLayout: React.FC = () => {
             <div className="col-span-2 h-[350px]">
                 <ChainPanel />
             </div>
-            <div className="col-span-1 h-[350px]">
+            <div className="col-span-1 h-[350px]" ref={miningRef}>
                 <MiningPanel />
             </div>
 
             {/* Middle Row */}
-            <div className="col-span-1 h-[450px]">
+            <div className="col-span-1 h-[450px]" ref={walletRef}>
                 <WalletPanel />
             </div>
             <div className="col-span-1 h-[450px]">

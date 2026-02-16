@@ -62,6 +62,18 @@ const ChainView: React.FC<ChainViewProps> = ({ blocks, onBlockEdit, onBlockMine,
     });
   }, [blocks, difficulty]);
 
+  if (blocks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[500px] text-gray-400">
+         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4 animate-pulse">
+            <span className="text-2xl">⏳</span>
+         </div>
+         <p className="text-lg font-medium">Waiting for the first block to be mined...</p>
+         <p className="text-sm opacity-60 mt-2">The blockchain is currently empty.</p>
+      </div>
+    );
+  }
+
   return (
     <div
       role="list"

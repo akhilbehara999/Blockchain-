@@ -60,6 +60,10 @@ export class NodeIdentity {
     return this.data.id;
   }
 
+  getPublicKey(): string {
+    return this.data.keyPair.publicKey;
+  }
+
   getWalletAddress(): string {
     return this.data.walletAddress;
   }
