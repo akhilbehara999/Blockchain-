@@ -29,12 +29,9 @@ describe('useWalletStore', () => {
   });
 
   it('should not send transaction with insufficient funds', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     useWalletStore.getState().sendTransaction('Bob', 'Alice', 1000); // Bob has 50
     const { mempool } = useWalletStore.getState();
     expect(mempool).toHaveLength(0);
-    expect(consoleSpy).toHaveBeenCalledWith('Insufficient funds');
-    consoleSpy.mockRestore();
   });
 
   it('should mine mempool', () => {

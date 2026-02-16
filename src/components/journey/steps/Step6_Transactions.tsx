@@ -4,7 +4,7 @@ import { useBlockchainStore } from '../../../stores/useBlockchainStore';
 import { useProgress } from '../../../context/ProgressContext';
 import { backgroundEngine } from '../../../engine/BackgroundEngine';
 import { FEE_LEVELS } from '../../../engine/transaction';
-import { Clock, Send, AlertTriangle, CheckCircle, Lock, Coins, TrendingUp, User } from 'lucide-react';
+import { Clock, Send, CheckCircle, Lock, Coins, TrendingUp, User } from 'lucide-react';
 import { Wallet } from '../../../engine/types';
 
 // Stages of the lesson

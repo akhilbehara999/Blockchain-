@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
 import { calculateHash } from '../../../engine/block';
 import { Block } from '../../../engine/types';
-import { Link, AlertTriangle, ArrowRight, Lock, Unlock, RefreshCw, Check, X, FileText, Hash } from 'lucide-react';
+import { Link, AlertTriangle, ArrowRight, Lock, RefreshCw, Check, X, FileText, Hash } from 'lucide-react';
 
 interface ChainBlock extends Block {
   isSealed: boolean;
@@ -136,7 +136,7 @@ const Step4_Chain: React.FC = () => {
        // Block 2 `currentHash` is the "actual" hash of Block 2.
        // Block 3 `previousHash` is what Block 3 *thinks* previous is.
 
-       const isLinkBroken = currBlock.previousHash !== prevBlock.currentHash; // or sealedHash?
+       // const isLinkBroken = currBlock.previousHash !== prevBlock.currentHash; // or sealedHash?
        // If Block 2 is tampered, `currentHash` changes. `sealedHash` remains old (until re-sealed).
        // Visually, the block itself is "Broken" (tampered) if current != sealed.
        // The *Chain* is broken if next block's prevHash doesn't match prev block's *valid* hash.

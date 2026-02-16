@@ -1,11 +1,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
+
 import Step2_Hashing from '../Step2_Hashing';
 import * as ProgressContext from '../../../../context/ProgressContext';
 
 // Mock crypto
-const mockDigest = vi.fn().mockImplementation(async (algo, data) => {
+const mockDigest = vi.fn().mockImplementation(async (_algo, data) => {
     // Return a dummy buffer based on input string content to simulate hashing
     const text = new TextDecoder().decode(data);
     let hash = 'hash-' + text;

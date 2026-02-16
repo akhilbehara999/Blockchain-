@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Network, Users, Wifi, WifiOff, Globe, Activity, Plus, Trash2, Server } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Network, Users, Globe, Activity, Plus, Trash2, Server } from 'lucide-react';
 import { backgroundEngine } from '../../../engine/BackgroundEngine';
 import { useSandboxStore } from '../../../stores/useSandboxStore';
-import { useBlockchainStore } from '../../../stores/useBlockchainStore';
-import { NodeIdentity } from '../../../engine/NodeIdentity';
+
+
 import { Wallet } from '../../../engine/types';
 
 const NetworkPanel: React.FC = () => {

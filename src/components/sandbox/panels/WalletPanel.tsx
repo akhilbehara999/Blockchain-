@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet as WalletIcon, Send, History, RefreshCw, AlertTriangle, ArrowRight, Coins } from 'lucide-react';
+import { Wallet as WalletIcon, Send, History, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useWalletStore } from '../../../stores/useWalletStore';
 import { useSandboxStore } from '../../../stores/useSandboxStore';
-import { backgroundEngine } from '../../../engine/BackgroundEngine';
+
 import { FEE_LEVELS } from '../../../engine/transaction';
 import { NodeIdentity } from '../../../engine/NodeIdentity';
-import { Wallet } from '../../../engine/types';
+
 
 const WalletPanel: React.FC = () => {
   const mode = useSandboxStore(state => state.mode);
@@ -48,11 +48,11 @@ const WalletPanel: React.FC = () => {
       return wallets.find(w => w.name === sender);
   }, [wallets, sender]);
 
-  const availableWallets = useMemo(() => {
-      if (mode === 'god') return wallets;
-      const userId = NodeIdentity.getOrCreate().getId();
-      return wallets.filter(w => w.name === userId || w.name === 'You');
-  }, [wallets, mode]);
+  // const availableWallets = useMemo(() => {
+  //     if (mode === 'god') return wallets;
+  //     const userId = NodeIdentity.getOrCreate().getId();
+  //     return wallets.filter(w => w.name === userId || w.name === 'You');
+  // }, [wallets, mode]);
 
   const peers = useMemo(() => {
       return wallets.filter(w => w.name !== sender);

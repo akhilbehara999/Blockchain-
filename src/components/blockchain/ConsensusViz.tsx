@@ -107,6 +107,14 @@ const PoWTab: React.FC = () => {
     setRoundStats(null);
   }, [attackMode]);
 
+  const simulationIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
+    };
+  }, []);
+
   const runSimulation = () => {
     setIsSimulating(true);
     setWinner(null);
@@ -116,7 +124,7 @@ const PoWTab: React.FC = () => {
     setMiners(prev => prev.map(m => ({ ...m, progress: 0 })));
 
     // Simulate duration based on inverse of total hashrate (simplified)
-    const totalHashRate = miners.reduce((acc, m) => acc + m.hashRate, 0);
+    const totalHashRate = Math.max(1, miners.reduce((acc, m) => acc + m.hashRate, 0));
     const difficulty = 4; // Virtual difficulty
 
     // Use engine for result
@@ -153,6 +161,7 @@ const PoWTab: React.FC = () => {
         finishSimulation(result);
       }
     }, 50);
+    simulationIntervalRef.current = interval;
   };
 
   const finishSimulation = (result: { winner: string; attempts: Record<string, number>; timeMs: number }) => {
@@ -330,12 +339,23 @@ const PoSTab: React.FC = () => {
     setValidators(prev => prev.map(v => v.id === id ? { ...v, stake: val } : v));
   };
 
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+      return () => {
+          if (timerRef.current) {
+              clearTimeout(timerRef.current);
+              clearInterval(timerRef.current);
+          }
+      };
+  }, []);
+
   const spinWheel = () => {
     setIsSpinning(true);
     setSelectedValidator(null);
 
     // Simulate spin duration
-    setTimeout(() => {
+    const timer = setTimeout(() => {
        const result = simulatePoS(validators);
        setSelectedValidator(result.selected);
        setIsSpinning(false);
@@ -345,6 +365,7 @@ const PoSTab: React.FC = () => {
          v.name === result.selected ? { ...v, wins: v.wins + 1 } : v
        ));
     }, 1500);
+    timerRef.current = timer;
   };
 
   const runBulkSimulation = () => {
@@ -365,6 +386,7 @@ const PoSTab: React.FC = () => {
            setSimulationCount(prev => prev + maxRounds);
         }
      }, 100);
+     timerRef.current = interval;
   };
 
   return (
@@ -562,6 +584,16 @@ const DPoSTab: React.FC = () => {
     updateCandidates(newVotes);
   };
 
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+      return () => {
+          if (timerRef.current) clearTimeout(timerRef.current);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+      };
+  }, []);
+
   const runElection = () => {
     setIsElectionRunning(true);
     setCurrentProducer(null);
@@ -574,7 +606,7 @@ const DPoSTab: React.FC = () => {
     );
 
     // Animate selection
-    setTimeout(() => {
+    const timer = setTimeout(() => {
        setActiveDelegates(result.activeDelegates);
        setCandidates(prev => prev.map(c => ({
           ...c,
@@ -583,6 +615,7 @@ const DPoSTab: React.FC = () => {
 
        startBlockProduction(result.activeDelegates);
     }, 1000);
+    timerRef.current = timer;
   };
 
   const startBlockProduction = (delegates: string[]) => {
@@ -591,13 +624,15 @@ const DPoSTab: React.FC = () => {
         setCurrentProducer(delegates[index]);
         index = (index + 1) % delegates.length;
      }, 1500); // Switch every 1.5s
+     intervalRef.current = interval;
 
      // Stop after 3 full rounds (3 * 3 = 9 steps)
-     setTimeout(() => {
+     const timer = setTimeout(() => {
         clearInterval(interval);
         setIsElectionRunning(false);
         setCurrentProducer(null);
      }, 1500 * 9);
+     timerRef.current = timer;
   };
 
   return (

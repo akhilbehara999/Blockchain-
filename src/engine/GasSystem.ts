@@ -52,7 +52,7 @@ export class GasSystem {
    */
   static executeWithGas(
     operation: string,
-    args: any[],
+    _args: any[],
     gasLimit: number,
     gasPrice: number,
     actualGasUsed?: number

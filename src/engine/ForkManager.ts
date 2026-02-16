@@ -1,6 +1,6 @@
 import { useBlockchainStore } from '../stores/useBlockchainStore';
 import { useForkStore } from '../stores/useForkStore';
-import { useWalletStore } from '../stores/useWalletStore';
+
 import { Block } from './types';
 import { createBlock, mineBlock } from './block';
 
@@ -94,7 +94,7 @@ export class ForkManager {
     }
   }
 
-  private initiateFork(blockData: string, minerName: string, competingMinerName?: string) {
+  private initiateFork(blockData: string, _minerName: string, competingMinerName?: string) {
     const { blocks, addBlock } = useBlockchainStore.getState();
     const parentBlock = blocks[blocks.length - 1];
 
@@ -161,8 +161,7 @@ export class ForkManager {
     }
   }
 
-  private returnOrphansToMempool(orphans: Block[]) {
-      console.log(`[ForkManager] Processing ${orphans.length} orphan blocks`);
+  private returnOrphansToMempool(_orphans: Block[]) {
       // Since we can't fully restore transaction objects from string data in this engine,
       // we primarily rely on the visual alert to inform the user.
       // In a real implementation, we would parse and re-add to mempool.

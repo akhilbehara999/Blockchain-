@@ -16,13 +16,12 @@ const StormChallenge: React.FC = () => {
   const [isMining, setIsMining] = useState(false);
   const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
   const [reorgCount, setReorgCount] = useState(0);
+  const miningTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  // Setup Chaos
   useEffect(() => {
-      // Monitor reorgs via chain length changes?
-      // ForkManager doesn't expose event easily.
-      // We can watch blocks length/content changes.
-      // Just track balance changes.
+      return () => {
+          if (miningTimeoutRef.current) clearTimeout(miningTimeoutRef.current);
+      };
   }, []);
 
   useEffect(() => {
@@ -31,11 +30,15 @@ const StormChallenge: React.FC = () => {
           interval = setInterval(() => {
               setTimeLeft(prev => prev - 1);
           }, 1000);
-      } else if (timeLeft === 0 && isActive) {
-          endChallenge();
       }
       return () => clearInterval(interval);
   }, [isActive, timeLeft]);
+
+  useEffect(() => {
+      if (timeLeft === 0 && isActive) {
+          endChallenge();
+      }
+  }, [timeLeft, isActive]);
 
   // Track Balance
   useEffect(() => {
@@ -48,7 +51,7 @@ const StormChallenge: React.FC = () => {
          setReorgCount(prev => prev + 1);
      }
      setBalance(newBalance);
-  }, [blocks, isActive]);
+  }, [blocks, isActive, balance]);
 
   const startChallenge = () => {
       setIsActive(true);
@@ -87,11 +90,12 @@ const StormChallenge: React.FC = () => {
       setIsMining(true);
 
       // Simulate PoW delay
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
           const blockData = `Mined by User_Storm\nStorm Transaction Data`;
           forkManager.processBlock(blockData, 'User_Storm');
           setIsMining(false);
       }, 1000);
+      miningTimeoutRef.current = timeout;
   };
 
   const formatTime = (sec: number) => {

@@ -1,4 +1,5 @@
 import { generateKeyPair } from './wallet';
+import { safeParse } from '../utils';
 
 export interface NodeIdentityData {
   id: string;
@@ -23,10 +24,10 @@ export class NodeIdentity {
     const stored = localStorage.getItem('yupp_node_identity');
     if (stored) {
       try {
-        const data = JSON.parse(stored);
-        return new NodeIdentity(data, false);
-      } catch (e) {
-        console.error('Failed to parse node identity', e);
+        const data = safeParse(stored, null);
+        if (data) return new NodeIdentity(data, false);
+      } catch {
+        // Fallback to create new
       }
     }
 

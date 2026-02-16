@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { eventEngine, NetworkEvent } from '../../../engine/EventEngine';
-import { Activity, Clock, HelpCircle, Network, TrendingUp, Zap, AlertTriangle, BarChart, Server, Terminal } from 'lucide-react';
+import { Activity, Clock, HelpCircle, Network, TrendingUp, Zap, BarChart, Terminal } from 'lucide-react';
 
 const EventLogPanel: React.FC = () => {
   const [events, setEvents] = useState<NetworkEvent[]>([]);

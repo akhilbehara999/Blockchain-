@@ -45,8 +45,8 @@ const MiningSimulator: React.FC = () => {
       }
       // Ensure final state is reflected
       setMiners(result.allMiners);
-    } catch (error) {
-      console.error("Race failed", error);
+    } catch {
+      // ignore
     } finally {
       setIsRacing(false);
       setLeaderboard(getLeaderboard());

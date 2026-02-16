@@ -22,7 +22,7 @@ export class NetworkSimulator {
    * @param block - The block object (used for logging or simulation, currently unused).
    * @param callback - Function to call after the delay.
    */
-  propagateBlock(block: any, callback: () => void): void {
+  propagateBlock(_block: any, callback: () => void): void {
     const delay = this.getDelay(this.meanBlockDelay, 300, 3000);
     this.lastLatency = delay;
     setTimeout(callback, delay);
@@ -33,7 +33,7 @@ export class NetworkSimulator {
    * @param tx - The transaction object (used for logging or simulation, currently unused).
    * @param callback - Function to call after the delay.
    */
-  broadcastTransaction(tx: any, callback: () => void): void {
+  broadcastTransaction(_tx: any, callback: () => void): void {
     const delay = this.getDelay(this.meanTxDelay, 200, 1500);
     this.lastLatency = delay;
     setTimeout(callback, delay);

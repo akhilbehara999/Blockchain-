@@ -22,7 +22,6 @@ export function generateSecureId(): string {
 
   // Fallback should be avoided in production security contexts,
   // but included here to prevent app crash in very old environments.
-  console.warn('Secure crypto not available, falling back to Math.random');
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);

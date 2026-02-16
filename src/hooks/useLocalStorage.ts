@@ -1,12 +1,12 @@
 import { useState } from 'react';
+import { safeParse } from '../utils';
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.error(error);
+      return safeParse(item, initialValue);
+    } catch {
       return initialValue;
     }
   });
@@ -16,8 +16,8 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       const valueToStore = value instanceof Function ? (value as (val: T) => T)(storedValue) : value;
       setStoredValue(valueToStore);
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
-    } catch (error) {
-      console.error(error);
+    } catch {
+      // Ignore write errors
     }
   };
 

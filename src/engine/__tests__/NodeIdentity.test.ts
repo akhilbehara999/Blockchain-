@@ -11,7 +11,7 @@ describe('NodeIdentity', () => {
   });
 
   it('should generate a new identity with mathematically linked keys', () => {
-    const identity = NodeIdentity.getOrCreate();
+    NodeIdentity.getOrCreate();
 
     // Retrieve the data directly from localStorage to verify private/public key relationship
     // because NodeIdentity doesn't expose the private key publicly.

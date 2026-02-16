@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
+
 import Step1_Identity from '../Step1_Identity';
 import * as NodeContext from '../../../../context/NodeContext';
 import * as ProgressContext from '../../../../context/ProgressContext';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, BookOpen, Cpu, Trophy, Activity, Box, Users, Server, Play } from 'lucide-react';
+import { ArrowRight, BookOpen, Cpu, Trophy, Activity, Box, Users, Play } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import HeroBackground from './HeroBackground';
 import NetworkConnect from './NetworkConnect';
@@ -12,7 +12,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentStep, journeyComplete } = useProgress();
   const { blocks } = useBlockchainStore();
-  const { mempool, minedTransactions } = useWalletStore(); // minedTransactions tracks session mines
+  const { mempool } = useWalletStore(); // minedTransactions tracks session mines
   const { engine } = useBackground();
 
   const [showConnect, setShowConnect] = useState(false);

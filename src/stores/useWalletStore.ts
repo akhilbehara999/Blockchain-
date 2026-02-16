@@ -63,12 +63,10 @@ export const useWalletStore = create<WalletState>((set) => ({
     const toWallet = wallets.find(w => w.name === toName);
 
     if (!fromWallet || !toWallet) {
-      console.error('Wallet not found');
       return;
     }
 
     if (fromWallet.balance < (amount + fee)) {
-      console.error('Insufficient funds');
       return;
     }
 

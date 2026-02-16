@@ -1,3 +1,5 @@
+import { safeParse } from '../utils';
+
 export interface Miner {
   id: string;
   name: string;
@@ -63,18 +65,20 @@ function loadMiners(): Miner[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
-      // Reset runtime state
-      return parsed.map((m: Miner) => ({
-        ...m,
-        currentNonce: 0,
-        attempts: 0,
-        elapsedTime: 0,
-        status: 'idle',
-      }));
+      const parsed = safeParse<Miner[] | null>(stored, null);
+      if (parsed) {
+        // Reset runtime state
+        return parsed.map((m: Miner) => ({
+          ...m,
+          currentNonce: 0,
+          attempts: 0,
+          elapsedTime: 0,
+          status: 'idle',
+        }));
+      }
     }
-  } catch (e) {
-    console.error('Failed to load miners', e);
+  } catch {
+    // Fallback to generate new
   }
 
   const bots = generateBots();

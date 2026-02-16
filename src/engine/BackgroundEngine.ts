@@ -31,7 +31,6 @@ export class BackgroundEngine {
   public start() {
     if (this._isRunning) return;
     this._isRunning = true;
-    console.log('Background Engine Started');
 
     this.initializeWallets();
     this.startTransactionLoop();
@@ -42,7 +41,6 @@ export class BackgroundEngine {
     this._isRunning = false;
     if (this.txTimeout) clearTimeout(this.txTimeout);
     if (this.miningTimeout) clearTimeout(this.miningTimeout);
-    console.log('Background Engine Stopped');
   }
 
   public isRunning(): boolean {
@@ -87,7 +85,6 @@ export class BackgroundEngine {
 
       if (blocksToMine <= 0) return { blocksMined: 0 };
 
-      console.log(`[FastForward] Simulating ${blocksToMine} blocks...`);
       const { difficulty, setDifficulty } = useBlockchainStore.getState();
 
       // Save current difficulty
@@ -126,7 +123,6 @@ export class BackgroundEngine {
       // Initialize wallet
       const { createWallet } = useWalletStore.getState();
       createWallet(newName, 100);
-      console.log(`[Background] Added peer ${newName}`);
     }
     return newName;
   }
@@ -135,27 +131,23 @@ export class BackgroundEngine {
     if (this.simulatedWalletNames.length <= 2) return; // Keep at least 2
     const index = Math.floor(Math.random() * this.simulatedWalletNames.length);
     const removed = this.simulatedWalletNames.splice(index, 1)[0];
-    console.log(`[Background] Removed peer ${removed}`);
     return removed;
   }
 
   public setBlockDelayMultiplier(multiplier: number) {
     this.blockDelayMultiplier = multiplier;
-    console.log(`[Background] Block delay multiplier set to ${multiplier}`);
   }
 
   public triggerMempoolSpike(count: number = 15) {
       for (let i = 0; i < count; i++) {
           this.createRandomTransaction();
       }
-      console.log(`[Background] Triggered mempool spike of ${count} txs`);
   }
 
   public adjustMinerHashRates(factor: number) {
       this.simulatedMiners.forEach(m => {
           m.hashRate = Math.max(1, Math.floor(m.hashRate * factor));
       });
-      console.log(`[Background] Adjusted hash rates by factor ${factor}`);
   }
 
   // --- End Event Engine Hooks ---
@@ -209,7 +201,6 @@ export class BackgroundEngine {
 
     // Update store
     useWalletStore.setState({ mempool: [...mempool, tx] });
-    console.log(`[Background] Tx: ${sender.name} -> ${receiver.name} (${amount})`);
   }
 
   private scheduleNextBlock() {
@@ -260,7 +251,6 @@ export class BackgroundEngine {
     const blockData = `Mined by ${winner.name}\n${txData || 'No transactions'}`;
 
     forkManager.processBlock(blockData, winner.name);
-    console.log(`[Background] Block Mined by ${winner.name}`);
 
     // Update Wallets (Remove mined txs, update balances)
     // Hack: Temporarily set mempool to just txsToMine to use mineMempool logic

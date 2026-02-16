@@ -8,19 +8,35 @@ export class ContractVM {
   private currentState: any;
 
   constructor(initialState: any = {}) {
-    this.currentState = JSON.parse(JSON.stringify(initialState));
+    try {
+      this.currentState = JSON.parse(JSON.stringify(initialState));
+    } catch {
+      this.currentState = {};
+    }
   }
 
   captureState(): StateSnapshot {
-    return { state: JSON.parse(JSON.stringify(this.currentState)) };
+    try {
+      return { state: JSON.parse(JSON.stringify(this.currentState)) };
+    } catch {
+      return { state: {} };
+    }
   }
 
   restoreState(snapshot: StateSnapshot): void {
-    this.currentState = JSON.parse(JSON.stringify(snapshot.state));
+    try {
+      this.currentState = JSON.parse(JSON.stringify(snapshot.state));
+    } catch {
+      this.currentState = {};
+    }
   }
 
   setState(state: any): void {
-    this.currentState = JSON.parse(JSON.stringify(state));
+    try {
+      this.currentState = JSON.parse(JSON.stringify(state));
+    } catch {
+      this.currentState = {};
+    }
   }
 
   getState(): any {

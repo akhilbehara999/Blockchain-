@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Hammer, Play, Pause, Zap, Award, Settings } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Hammer, Play, Pause, Zap, Award } from 'lucide-react';
 import { backgroundEngine, Miner } from '../../../engine/BackgroundEngine';
 import { useBlockchainStore } from '../../../stores/useBlockchainStore';
 import { useSandboxStore } from '../../../stores/useSandboxStore';
@@ -16,7 +16,7 @@ const MiningPanel: React.FC = () => {
   const mode = useSandboxStore(state => state.mode);
   const blocks = useBlockchainStore(state => state.blocks);
   const incrementMastery = useSandboxStore(state => state.incrementMastery);
-  const { mempool, mineMempool } = useWalletStore();
+  const { mempool } = useWalletStore();
 
   const [isMining, setIsMining] = useState(false);
   const [userHashRate, setUserHashRate] = useState(25); // Default user hashrate

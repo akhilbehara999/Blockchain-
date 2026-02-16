@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { safeParse } from '../utils';
 
 export interface ChallengeProgress {
   completed: boolean;
@@ -66,20 +67,21 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
     try {
       const saved = localStorage.getItem('yupp_progress');
       if (saved) {
-        const parsed = JSON.parse(saved);
-        // Merge with defaultState to ensure new fields exist
-        return {
-          ...defaultState,
-          ...parsed,
-          challenges: {
-            ...defaultState.challenges,
-            ...(parsed.challenges || {})
-          }
-        };
+        const parsed = safeParse<Partial<ProgressState> | null>(saved, null);
+        if (parsed) {
+          // Merge with defaultState to ensure new fields exist
+          return {
+            ...defaultState,
+            ...parsed,
+            challenges: {
+              ...defaultState.challenges,
+              ...(parsed.challenges || {})
+            }
+          };
+        }
       }
       return defaultState;
-    } catch (e) {
-      console.error('Failed to parse progress from localStorage', e);
+    } catch {
       return defaultState;
     }
   });

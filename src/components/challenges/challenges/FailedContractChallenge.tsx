@@ -3,7 +3,7 @@ import { useProgress } from '../../../context/ProgressContext';
 import { ContractVM } from '../../../engine/ContractVM';
 import { VMStep } from '../../../engine/types';
 import Button from '../../../components/ui/Button';
-import { Terminal, AlertTriangle, CheckCircle, Zap, Ban, RotateCcw } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Zap, Ban, RotateCcw } from 'lucide-react';
 
 const FailedContractChallenge: React.FC = () => {
   const { challenges, updateChallengeProgress } = useProgress();

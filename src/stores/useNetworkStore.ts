@@ -37,7 +37,7 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
   },
 
   addPeer: (name: string) => {
-    const id = network.addPeer(name);
+    network.addPeer(name);
     // Sync the new peer with the longest chain from existing peers
     const currentPeers = get().peers;
     if (currentPeers.length > 0) {

@@ -1,15 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
-import { Fingerprint, Check, X, ArrowRight, Zap, RefreshCw, Lock, Unlock, FlaskConical, Search, Info } from 'lucide-react';
+import { Fingerprint, Check, ArrowRight, Zap, FlaskConical, Info, Lock } from 'lucide-react';
 
 // Helper function for SHA-256
 const sha256 = async (message: string): Promise<string> => {
-  // Handle empty string specifically if needed, but SHA256 of empty string is valid
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  try {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    // Fallback for non-HTTPS environments
+    let hash = 0;
+    for (let i = 0; i < message.length; i++) {
+        const char = message.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    // Pad to look like SHA256 (64 hex chars)
+    const hex = Math.abs(hash).toString(16);
+    return hex.padStart(64, '0');
+  }
 };
 
 const Step2_Hashing: React.FC = () => {

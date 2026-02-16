@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Box, GitBranch, Hash, Clock } from 'lucide-react';
+import { Box, GitBranch, Clock } from 'lucide-react';
 import { useBlockchainStore } from '../../../stores/useBlockchainStore';
 import { useForkStore } from '../../../stores/useForkStore';
 import { useSandboxStore } from '../../../stores/useSandboxStore';
