@@ -6,7 +6,7 @@ import { StateManager } from '../engine/StateManager';
 import { ProgressProvider } from '../context/ProgressContext';
 import { ToastProvider } from '../context/ToastContext';
 import { SoundProvider } from '../context/SoundContext';
-import ToastContainer from '../components/ui/ToastContainer';
+import ToastContainer from '../components/ui/Toast';
 import NetworkListener from '../components/network/NetworkListener';
 
 const App: React.FC = () => {
