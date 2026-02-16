@@ -1,5 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+export interface ChallengeProgress {
+  completed: boolean;
+  bestTime: number | null; // in seconds
+  attempts: number;
+}
+
+export interface ChallengesState {
+  doubleSpend: ChallengeProgress;
+  fork: ChallengeProgress;
+  crashContract: ChallengeProgress;
+  speedConfirm: ChallengeProgress;
+  storm: ChallengeProgress;
+}
+
 interface ProgressState {
   currentStep: number;
   completedSteps: number[];
@@ -8,6 +22,7 @@ interface ProgressState {
   challengesUnlocked: boolean;
   masteryScore: number;
   achievements: string[];
+  challenges: ChallengesState;
 }
 
 interface ProgressContextType extends ProgressState {
@@ -16,7 +31,15 @@ interface ProgressContextType extends ProgressState {
   isJourneyComplete: () => boolean;
   resetProgress: () => void;
   getMasteryScore: () => number;
+  updateChallengeProgress: (id: keyof ChallengesState, data: Partial<ChallengeProgress>) => void;
+  addMasteryPoints: (points: number) => void;
 }
+
+const defaultChallengeState: ChallengeProgress = {
+  completed: false,
+  bestTime: null,
+  attempts: 0,
+};
 
 const defaultState: ProgressState = {
   currentStep: 1,
@@ -26,6 +49,13 @@ const defaultState: ProgressState = {
   challengesUnlocked: false,
   masteryScore: 0,
   achievements: [],
+  challenges: {
+    doubleSpend: { ...defaultChallengeState },
+    fork: { ...defaultChallengeState },
+    crashContract: { ...defaultChallengeState },
+    speedConfirm: { ...defaultChallengeState },
+    storm: { ...defaultChallengeState },
+  },
 };
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
@@ -34,7 +64,19 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [state, setState] = useState<ProgressState>(() => {
     try {
       const saved = localStorage.getItem('yupp_progress');
-      return saved ? JSON.parse(saved) : defaultState;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Merge with defaultState to ensure new fields exist
+        return {
+          ...defaultState,
+          ...parsed,
+          challenges: {
+            ...defaultState.challenges,
+            ...(parsed.challenges || {})
+          }
+        };
+      }
+      return defaultState;
     } catch (e) {
       console.error('Failed to parse progress from localStorage', e);
       return defaultState;
@@ -98,6 +140,26 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const getMasteryScore = () => state.masteryScore;
 
+  const updateChallengeProgress = (id: keyof ChallengesState, data: Partial<ChallengeProgress>) => {
+    setState((prev) => ({
+      ...prev,
+      challenges: {
+        ...prev.challenges,
+        [id]: {
+          ...prev.challenges[id],
+          ...data,
+        },
+      },
+    }));
+  };
+
+  const addMasteryPoints = (points: number) => {
+    setState((prev) => ({
+      ...prev,
+      masteryScore: prev.masteryScore + points,
+    }));
+  };
+
   return (
     <ProgressContext.Provider
       value={{
@@ -107,6 +169,8 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
         isJourneyComplete,
         resetProgress,
         getMasteryScore,
+        updateChallengeProgress,
+        addMasteryPoints,
       }}
     >
       {children}

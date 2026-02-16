@@ -6,9 +6,10 @@ import { createBlock, mineBlock } from './block';
 
 export class ForkManager {
   private static instance: ForkManager;
-  private readonly FORK_PROBABILITY = 0.15;
+  private FORK_PROBABILITY = 0.15;
   private readonly FORK_DELAY_MIN = 2000;
   private readonly FORK_DELAY_MAX = 5000;
+  private minerAssignments: Map<string, 'A' | 'B'> = new Map();
 
   private constructor() {}
 
@@ -17,6 +18,22 @@ export class ForkManager {
       ForkManager.instance = new ForkManager();
     }
     return ForkManager.instance;
+  }
+
+  public setForkProbability(prob: number) {
+    this.FORK_PROBABILITY = prob;
+  }
+
+  public forceFork(blockData: string, minerName: string, competingMinerName?: string) {
+    this.initiateFork(blockData, minerName, competingMinerName);
+  }
+
+  public assignMinerToChain(minerName: string, chain: 'A' | 'B') {
+    this.minerAssignments.set(minerName, chain);
+  }
+
+  public clearMinerAssignments() {
+    this.minerAssignments.clear();
   }
 
   // Called by BackgroundEngine when a block is mined
@@ -41,8 +58,15 @@ export class ForkManager {
   }
 
   private handleActiveFork(blockData: string, minerName: string, activeFork: any) {
-    // Randomly choose chain to extend (50/50)
-    const targetChain = Math.random() > 0.5 ? 'A' : 'B';
+    // Check assignment
+    let targetChain: 'A' | 'B';
+
+    if (this.minerAssignments.has(minerName)) {
+      targetChain = this.minerAssignments.get(minerName)!;
+    } else {
+      // Randomly choose chain to extend (50/50)
+      targetChain = Math.random() > 0.5 ? 'A' : 'B';
+    }
 
     if (targetChain === 'A') {
       // Extend Chain A (Main Chain)
@@ -70,7 +94,7 @@ export class ForkManager {
     }
   }
 
-  private initiateFork(blockData: string, minerName: string) {
+  private initiateFork(blockData: string, minerName: string, competingMinerName?: string) {
     const { blocks, addBlock } = useBlockchainStore.getState();
     const parentBlock = blocks[blocks.length - 1];
 
@@ -85,7 +109,7 @@ export class ForkManager {
     setTimeout(() => {
         // Construct Block B
         // We need a different miner name for visual clarity
-        const competingMiner = `Miner_${Math.random().toString(36).substring(7).toUpperCase()}`;
+        const competingMiner = competingMinerName || `Miner_${Math.random().toString(36).substring(7).toUpperCase()}`;
 
         let blockBData = blockData;
         if (blockBData.includes("Mined by")) {
