@@ -49,6 +49,15 @@ export class BackgroundEngine {
     return this._isRunning;
   }
 
+  public toggle(): boolean {
+    if (this._isRunning) {
+      this.stop();
+    } else {
+      this.start();
+    }
+    return this._isRunning;
+  }
+
   public getPeerWallets(): Wallet[] {
     const { wallets } = useWalletStore.getState();
     return wallets.filter(w => this.simulatedWalletNames.includes(w.name));

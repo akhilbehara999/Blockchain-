@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useProgress } from '../../context/ProgressContext';
-import { ContractVM } from '../../engine/ContractVM';
-import { VMStep } from '../../engine/types';
-import Button from '../../ui/Button';
+import { useProgress } from '../../../context/ProgressContext';
+import { ContractVM } from '../../../engine/ContractVM';
+import { VMStep } from '../../../engine/types';
+import Button from '../../../components/ui/Button';
 import { Terminal, AlertTriangle, CheckCircle, Zap, Ban, RotateCcw } from 'lucide-react';
 
 const FailedContractChallenge: React.FC = () => {
@@ -30,6 +30,7 @@ const FailedContractChallenge: React.FC = () => {
       const steps: VMStep[] = [
           // Step 1: Check Amount > 0
           {
+              name: 'REQUIRE_POS',
               cost: 1000,
               action: () => {
                   if (amount <= 0) throw new Error("Require failed: Amount must be positive");
@@ -37,6 +38,7 @@ const FailedContractChallenge: React.FC = () => {
           },
           // Step 2: Check Overflow (Artificial limit)
           {
+              name: 'REQUIRE_LIMIT',
               cost: 1000,
               action: () => {
                   if (amount > 100) throw new Error("Overflow: Amount exceeds limit (100)");
@@ -45,6 +47,7 @@ const FailedContractChallenge: React.FC = () => {
           // Step 3: Heavy Computation (Simulate loop)
           // Cost proportional to amount: 500 gas per unit
           {
+              name: 'LOOP_WORK',
               cost: Math.max(0, amount * 500),
               action: () => {
                   // Burn gas simulation
@@ -52,6 +55,7 @@ const FailedContractChallenge: React.FC = () => {
           },
           // Step 4: Finalize
           {
+              name: 'UPDATE_BAL',
               cost: 5000,
               action: (state) => {
                   return { ...state, balance: state.balance - amount };

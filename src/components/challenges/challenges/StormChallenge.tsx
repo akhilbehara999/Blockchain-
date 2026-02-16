@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useProgress } from '../../context/ProgressContext';
-import { useBlockchainStore } from '../../stores/useBlockchainStore';
-import { forkManager } from '../../engine/ForkManager';
-import { backgroundEngine } from '../../engine/BackgroundEngine';
-import Button from '../../ui/Button';
+import { useProgress } from '../../../context/ProgressContext';
+import { useBlockchainStore } from '../../../stores/useBlockchainStore';
+import { forkManager } from '../../../engine/ForkManager';
+import { backgroundEngine } from '../../../engine/BackgroundEngine';
+import Button from '../../../components/ui/Button';
 import { CloudLightning, Zap, AlertTriangle, ShieldCheck, RefreshCw } from 'lucide-react';
 
 const StormChallenge: React.FC = () => {

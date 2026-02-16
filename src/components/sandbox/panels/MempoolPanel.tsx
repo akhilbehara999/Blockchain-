@@ -14,7 +14,7 @@ const MempoolPanel: React.FC = () => {
   const userPubKey = useMemo(() => {
     try {
         const id = NodeIdentity.getOrCreate();
-        return id.data.keyPair.publicKey;
+        return id.getPublicKey();
     } catch {
         return '';
     }

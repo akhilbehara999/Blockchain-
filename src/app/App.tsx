@@ -4,6 +4,10 @@ import { useThemeStore } from '../stores/useThemeStore';
 import { SessionRestoration } from '../components/SessionRestoration';
 import { StateManager } from '../engine/StateManager';
 import { ProgressProvider } from '../context/ProgressContext';
+import { ToastProvider } from '../context/ToastContext';
+import { SoundProvider } from '../context/SoundContext';
+import ToastContainer from '../components/ui/ToastContainer';
+import NetworkListener from '../components/network/NetworkListener';
 
 const App: React.FC = () => {
   const theme = useThemeStore((state) => state.theme);
@@ -37,9 +41,15 @@ const App: React.FC = () => {
 
   return (
     <ProgressProvider>
-      <SessionRestoration>
-          <Router />
-      </SessionRestoration>
+      <ToastProvider>
+        <SoundProvider>
+          <SessionRestoration>
+            <NetworkListener />
+            <Router />
+            <ToastContainer />
+          </SessionRestoration>
+        </SoundProvider>
+      </ToastProvider>
     </ProgressProvider>
   );
 };

@@ -102,8 +102,9 @@ const EventLog: React.FC = () => {
 
                 <div className="overflow-y-auto p-2 space-y-2 flex-1 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
                     {events.length === 0 && (
-                        <div className="text-center py-8 text-gray-400 text-sm">
-                            Waiting for network activity...
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-400 space-y-2">
+                            <Radio className="w-8 h-8 opacity-20" />
+                            <span className="text-sm font-medium">Network is quiet... for now</span>
                         </div>
                     )}
                     <AnimatePresence initial={false}>

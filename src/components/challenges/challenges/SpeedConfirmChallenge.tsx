@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useProgress } from '../../context/ProgressContext';
-import { useWalletStore } from '../../stores/useWalletStore';
-import { backgroundEngine } from '../../engine/BackgroundEngine';
-import Button from '../../ui/Button';
+import { useProgress } from '../../../context/ProgressContext';
+import { useWalletStore } from '../../../stores/useWalletStore';
+import { backgroundEngine } from '../../../engine/BackgroundEngine';
+import Button from '../../../components/ui/Button';
 import { Timer, Zap, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
-import { FEE_LEVELS } from '../../engine/transaction';
+import { FEE_LEVELS } from '../../../engine/transaction';
 
 const SpeedConfirmChallenge: React.FC = () => {
   const { challenges, updateChallengeProgress } = useProgress();
@@ -232,7 +232,7 @@ const SpeedConfirmChallenge: React.FC = () => {
                         ) : (
                             <div className="text-red-500 font-bold flex flex-col items-center">
                                 <AlertCircle className="w-8 h-8 mb-2" />
-                                <span>Too Slow! (> 30s)</span>
+                                <span>Too Slow! (&gt; 30s)</span>
                             </div>
                         )}
                         <Button onClick={reset} variant="secondary" className="mt-4">

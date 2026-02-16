@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { startMiningRace, getLeaderboard, Miner, MinerLeaderboard } from '../../engine/miner';
+import { useToast } from '../../context/ToastContext';
+import { useSound } from '../../context/SoundContext';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Slider from '../ui/Slider';
@@ -13,6 +15,8 @@ const MiningSimulator: React.FC = () => {
   const [difficulty, setDifficulty] = useState(3);
   const [userHashRate, setUserHashRate] = useState(50);
   const [winner, setWinner] = useState<Miner | null>(null);
+  const { addToast } = useToast();
+  const { playSound } = useSound();
 
   useEffect(() => {
     // Initial load
@@ -33,6 +37,12 @@ const MiningSimulator: React.FC = () => {
       });
 
       setWinner(result.winner);
+      if (result.winner.isUser) {
+          addToast('🏆 You mined the block! +50 TKN', 'success', 5000);
+          playSound('success');
+      } else {
+          playSound('error'); // Or warning
+      }
       // Ensure final state is reflected
       setMiners(result.allMiners);
     } catch (error) {
