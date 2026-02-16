@@ -100,22 +100,29 @@ export const useWalletStore = create<WalletState>((set) => ({
 
     if (txsToMine.length === 0) return [];
 
+    const processedTxs: Transaction[] = [];
+
     // Process transactions
     txsToMine.forEach(tx => {
-      // Update status
-      tx.status = 'confirmed';
-      if (blockHeight !== undefined) {
-        tx.confirmationBlock = blockHeight;
-      }
+      const senderWallet = walletManager.getWallet(tx.from);
+      const totalCost = tx.amount + (tx.fee || 0);
 
-      // Deduct from sender
-      walletManager.updateBalance(tx.from, -tx.amount);
-      // Deduct fee from sender if present
-      if (tx.fee) {
-        walletManager.updateBalance(tx.from, -tx.fee);
+      if (senderWallet && senderWallet.balance >= totalCost) {
+        // Valid
+        tx.status = 'confirmed';
+        if (blockHeight !== undefined) {
+          tx.confirmationBlock = blockHeight;
+        }
+
+        // Deduct from sender
+        walletManager.updateBalance(tx.from, -totalCost);
+        // Add to receiver
+        walletManager.updateBalance(tx.to, tx.amount);
+      } else {
+        // Invalid - Insufficient funds at mining time (e.g. Double Spend)
+        tx.status = 'failed';
       }
-      // Add to receiver
-      walletManager.updateBalance(tx.to, tx.amount);
+      processedTxs.push(tx);
     });
 
     // Remove mined transactions from mempool
@@ -123,11 +130,11 @@ export const useWalletStore = create<WalletState>((set) => ({
 
     set((state) => ({
       wallets: walletManager.getAllWallets(),
-      minedTransactions: [...state.minedTransactions, ...txsToMine],
+      minedTransactions: [...state.minedTransactions, ...processedTxs],
       mempool: mempoolInstance.getAllPending()
     }));
 
-    return txsToMine;
+    return processedTxs;
   },
 
   getWalletByName: (name: string) => {
