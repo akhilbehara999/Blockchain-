@@ -2,45 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .glass {
-    @apply bg-opacity-50 backdrop-blur-xl;
-    background-color: rgba(255, 255, 255, 0.05);
+@layer base {
+  :root {
+    /* Legacy color mapping for light mode */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #64748b;
+    --primary-bg: #ffffff;
+    --secondary-bg: #f8fafc;
+    --tertiary-bg: #f1f5f9;
+    --border: #e2e8f0;
   }
 
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#6366F1] to-[#A855F7];
+  .dark {
+    /* Legacy color mapping for dark mode */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --primary-bg: #0f172a;
+    --secondary-bg: #1e293b;
+    --tertiary-bg: #334155;
+    --border: #475569;
   }
 
-  .glow {
-    box-shadow: 0 0 10px #6366F1;
+  html {
+    @apply antialiased scroll-smooth;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
-  .hash-font {
+  body {
+    @apply bg-surface-secondary text-gray-800 font-sans;
+    @apply dark:bg-surface-dark-primary dark:text-gray-200;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display font-bold tracking-tight;
+  }
+
+  h1 { @apply text-4xl md:text-5xl; }
+  h2 { @apply text-3xl md:text-4xl; }
+  h3 { @apply text-2xl md:text-3xl; }
+  h4 { @apply text-xl md:text-2xl; }
+
+  code, pre, .mono {
     @apply font-mono;
   }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full hover:bg-gray-400;
+    @apply dark:bg-gray-600 dark:hover:bg-gray-500;
+  }
+
+  /* Selection color */
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #13131A;
-}
-::-webkit-scrollbar-thumb {
-  background: #2A2A3C;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #6366F1;
+@layer components {
+  .glass {
+    @apply bg-white/60 backdrop-blur-lg border border-white/20;
+    @apply dark:bg-gray-900/60 dark:border-gray-700/30;
+  }
+
+  .panel {
+    @apply bg-white rounded-2xl shadow-panel border border-surface-border p-5;
+    @apply dark:bg-surface-dark-secondary dark:border-surface-dark-border;
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+  .status-dot-valid { @apply bg-status-valid animate-pulse-subtle; }
+  .status-dot-warning { @apply bg-status-warning animate-pulse-subtle; }
+  .status-dot-error { @apply bg-status-error; }
+  .status-dot-locked { @apply bg-status-locked; }
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-::selection {
-  background-color: #6366F1;
-  color: #F8FAFC;
+@layer utilities {
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-500 to-brand-400;
+  }
 }
