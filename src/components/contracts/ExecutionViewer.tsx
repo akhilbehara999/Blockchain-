@@ -11,7 +11,6 @@ interface ExecutionViewerProps {
   gasLimit: number;
   status: 'pending' | 'success' | 'failed';
   result?: ExecutionResult;
-  error?: string;
   onClose?: () => void;
 }
 
@@ -22,7 +21,6 @@ const ExecutionViewer: React.FC<ExecutionViewerProps> = ({
   gasLimit,
   status,
   result,
-  error,
   onClose
 }) => {
   const gasPercentage = Math.min(100, (gasUsed / gasLimit) * 100);

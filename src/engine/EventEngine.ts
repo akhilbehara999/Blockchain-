@@ -33,7 +33,6 @@ export class EventEngine {
   public start() {
     if (this.isRunning) return;
     this.isRunning = true;
-    console.log('Event Engine Started');
 
     this.scheduleNextEvent();
   }
@@ -41,7 +40,6 @@ export class EventEngine {
   public stop() {
     this.isRunning = false;
     if (this.eventTimeout) clearTimeout(this.eventTimeout);
-    console.log('Event Engine Stopped');
   }
 
   public getRecentEvents(count: number = 20): NetworkEvent[] {
@@ -204,7 +202,6 @@ export class EventEngine {
       this.events.shift();
     }
     this.notifyListeners(event);
-    console.log(`[EventEngine] ${event.message}`);
   }
 
   private notifyListeners(event: NetworkEvent) {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNodeIdentity } from '../../../context/NodeContext';
 import { useProgress } from '../../../context/ProgressContext';
-import { Lock, Unlock, Copy, ArrowRight, Check, X, Shield, Key, FileDigit, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { safeParse } from '../../../utils';
+import { Unlock, Copy, ArrowRight, Check, X, Shield, Key, FileDigit, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
 const Step1_Identity: React.FC = () => {
   const { identity, createIdentity } = useNodeIdentity();
@@ -64,10 +65,10 @@ const Step1_Identity: React.FC = () => {
     try {
       const stored = localStorage.getItem('yupp_node_identity');
       if (stored) {
-          const data = JSON.parse(stored);
-          return data.keyPair || { publicKey: '', privateKey: '' };
+          const data = safeParse<{ keyPair: { publicKey: string; privateKey: string } } | null>(stored, null);
+          if (data) return data.keyPair || { publicKey: '', privateKey: '' };
       }
-    } catch (e) { console.error(e); }
+    } catch { /* ignore */ }
     return { publicKey: '', privateKey: '' };
   };
 

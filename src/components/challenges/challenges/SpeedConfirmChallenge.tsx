@@ -3,12 +3,12 @@ import { useProgress } from '../../../context/ProgressContext';
 import { useWalletStore } from '../../../stores/useWalletStore';
 import { backgroundEngine } from '../../../engine/BackgroundEngine';
 import Button from '../../../components/ui/Button';
-import { Timer, Zap, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import { Zap, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
 import { FEE_LEVELS } from '../../../engine/transaction';
 
 const SpeedConfirmChallenge: React.FC = () => {
   const { challenges, updateChallengeProgress } = useProgress();
-  const { sendTransaction, mempool, minedTransactions, wallets } = useWalletStore();
+  const { sendTransaction, minedTransactions, wallets } = useWalletStore();
 
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);

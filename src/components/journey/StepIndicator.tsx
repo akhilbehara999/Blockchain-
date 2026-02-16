@@ -52,7 +52,6 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep }) => {
           // Line Styles (Line connects THIS step to NEXT step)
           let lineElement = null;
           if (!isLast) {
-             const nextStepNum = stepNum + 1;
              // Line is green if current step is completed
              const isLineGreen = completedSteps.includes(stepNum);
 

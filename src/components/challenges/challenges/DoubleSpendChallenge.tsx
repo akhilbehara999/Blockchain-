@@ -6,7 +6,7 @@ import Button from '../../../components/ui/Button';
 
 const DoubleSpendChallenge: React.FC = () => {
   const { challenges, updateChallengeProgress } = useProgress();
-  const { createWallet, sendTransaction, wallets, mempool, minedTransactions, initializeWallets } = useWalletStore();
+  const { createWallet, sendTransaction, wallets, minedTransactions, initializeWallets } = useWalletStore();
 
   const [aliceTx, setAliceTx] = useState<string | null>(null);
   const [bobTx, setBobTx] = useState<string | null>(null);

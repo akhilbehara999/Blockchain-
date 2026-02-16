@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForkStore } from '../../stores/useForkStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, RefreshCw, X, ArrowRight } from 'lucide-react';
+import { AlertTriangle, RefreshCw, ArrowRight } from 'lucide-react';
 import Button from '../ui/Button';
 
 const ReorgAlert: React.FC = () => {

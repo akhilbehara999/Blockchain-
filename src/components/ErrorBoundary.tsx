@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ReactNode } from 'react';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import { RefreshCw } from 'lucide-react';
@@ -21,8 +21,8 @@ class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+  public componentDidCatch(_error: Error, _errorInfo: React.ErrorInfo) {
+    // Error logged to state
   }
 
   public render() {

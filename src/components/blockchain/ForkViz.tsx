@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Block } from '../../engine/types';
-import { ArrowRight, GitBranch, AlertTriangle } from 'lucide-react';
 
 interface ForkVizProps {
   chain: Block[];

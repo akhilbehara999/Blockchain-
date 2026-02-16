@@ -3,6 +3,7 @@ import { useWalletStore } from '../stores/useWalletStore';
 import { backgroundEngine, Miner } from './BackgroundEngine';
 import { eventEngine, NetworkEvent } from './EventEngine';
 import { Block, Transaction, Wallet } from './types';
+import { safeParse } from '../utils';
 
 interface SimulationState {
   blocks: Block[];
@@ -41,8 +42,7 @@ export class StateManager {
       localStorage.setItem(this.STORAGE_KEYS.LAST_ACTIVE, lastActive.toString());
 
       this.checkQuota();
-    } catch (e) {
-      console.error('Failed to save state to localStorage', e);
+    } catch {
       // Emergency cleanup
       localStorage.removeItem(this.STORAGE_KEYS.MEMPOOL);
       localStorage.removeItem(this.STORAGE_KEYS.EVENTS);
@@ -61,15 +61,14 @@ export class StateManager {
       if (!blocksStr || !walletsStr) return null;
 
       return {
-        blocks: JSON.parse(blocksStr),
-        wallets: JSON.parse(walletsStr),
-        mempool: mempoolStr ? JSON.parse(mempoolStr) : [],
-        backgroundState: backgroundStr ? JSON.parse(backgroundStr) : { miners: [], peerWallets: [] },
-        events: eventsStr ? JSON.parse(eventsStr) : [],
+        blocks: safeParse(blocksStr, []),
+        wallets: safeParse(walletsStr, []),
+        mempool: safeParse(mempoolStr, []),
+        backgroundState: safeParse(backgroundStr, { miners: [], peerWallets: [] }),
+        events: safeParse(eventsStr, []),
         lastActive: lastActiveStr ? parseInt(lastActiveStr, 10) : Date.now(),
       };
-    } catch (e) {
-      console.error('Failed to load state', e);
+    } catch {
       return null;
     }
   }
@@ -111,7 +110,6 @@ export class StateManager {
     }
 
     if (total > this.STORAGE_QUOTA_THRESHOLD) {
-        console.warn('LocalStorage is near quota. Pruning events and mempool.');
         localStorage.setItem(this.STORAGE_KEYS.EVENTS, '[]');
         localStorage.setItem(this.STORAGE_KEYS.MEMPOOL, '[]');
     }

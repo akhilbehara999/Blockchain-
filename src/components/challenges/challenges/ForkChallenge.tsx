@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
 import { useBlockchainStore } from '../../../stores/useBlockchainStore';
 import { useForkStore } from '../../../stores/useForkStore';
@@ -13,9 +13,10 @@ const ForkChallenge: React.FC = () => {
 
   const [stage, setStage] = useState<'setup' | 'forked' | 'resolved'>('setup');
   const [prediction, setPrediction] = useState<'A' | 'B' | null>(null);
-  const [miningInterval, setMiningInterval] = useState<NodeJS.Timeout | null>(null);
   const [result, setResult] = useState<'A' | 'B' | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>("");
+
+  const miningIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Setup
@@ -25,7 +26,7 @@ const ForkChallenge: React.FC = () => {
     forkManager.assignMinerToChain('Miner_Beta', 'B');
 
     return () => {
-      if (miningInterval) clearInterval(miningInterval);
+      if (miningIntervalRef.current) clearInterval(miningIntervalRef.current);
       backgroundEngine.start();
       forkManager.clearMinerAssignments();
     };
@@ -46,7 +47,7 @@ const ForkChallenge: React.FC = () => {
   }, [activeFork, stage]);
 
   const handleResolution = () => {
-      if (miningInterval) clearInterval(miningInterval);
+      if (miningIntervalRef.current) clearInterval(miningIntervalRef.current);
       setStage('resolved');
 
       // Check head of chain
@@ -95,7 +96,7 @@ const ForkChallenge: React.FC = () => {
 
       }, 1500); // Fast blocks every 1.5s
 
-      setMiningInterval(interval);
+      miningIntervalRef.current = interval;
   };
 
   const handleStart = () => {
@@ -112,7 +113,7 @@ const ForkChallenge: React.FC = () => {
       setPrediction(null);
       setResult(null);
       setStatusMessage("");
-      if (miningInterval) clearInterval(miningInterval);
+      if (miningIntervalRef.current) clearInterval(miningIntervalRef.current);
 
       // Wait for engine to settle?
       // Just clear assignments again to be safe

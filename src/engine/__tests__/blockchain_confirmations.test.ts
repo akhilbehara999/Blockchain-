@@ -71,7 +71,6 @@ describe('Blockchain Confirmations', () => {
     expect(blockchain.getChain()[1].data).toBe(block1Data);
 
     // Block 2 (2): 8-1-2 = 5 (Not finalized).
-    const block2Data = blockchain.getChain()[2].data;
     blockchain.editBlockData(2, 'Tampered Data');
     // Should change (assuming editBlockData works for non-finalized)
     expect(blockchain.getChain()[2].data).toBe('Tampered Data');

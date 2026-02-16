@@ -168,8 +168,7 @@ const Step8_Contracts: React.FC = () => {
         });
         onComplete(false);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       onComplete(false);
     } finally {
       setIsExecuting(false);

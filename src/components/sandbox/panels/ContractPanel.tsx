@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FileCode, Play, Plus, Zap, AlertTriangle, Terminal, Code, Cpu, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileCode, Play, Plus, Zap, Code, Cpu, RefreshCw } from 'lucide-react';
 import { useSandboxStore, DeployedContract } from '../../../stores/useSandboxStore';
 import { useWalletStore } from '../../../stores/useWalletStore';
 import { ContractVM } from '../../../engine/ContractVM';

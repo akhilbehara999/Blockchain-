@@ -5,6 +5,8 @@ import MainLayout from '../components/layout/MainLayout';
 import ErrorBoundary from '../components/ErrorBoundary';
 import Skeleton from '../components/ui/Skeleton';
 import PageTransition from '../components/layout/PageTransition';
+import RouteGuard from '../components/RouteGuard';
+import NotFound from '../pages/NotFound';
 
 // Lazy load pages
 const Landing = React.lazy(() => import('../pages/Landing'));
@@ -33,14 +35,35 @@ const AnimatedRoutes: React.FC = () => {
 
         {/* Main application routes with layout */}
         <Route element={<MainLayout />}>
-          <Route path="/journey" element={<PageTransition mode="slide"><Journey /></PageTransition>} />
-          <Route path="/journey/:step" element={<PageTransition mode="slide"><Journey /></PageTransition>} />
-          <Route path="/sandbox" element={<PageTransition><Sandbox /></PageTransition>} />
-          <Route path="/challenges" element={<PageTransition><Challenges /></PageTransition>} />
+          <Route path="/journey" element={<Navigate to="/journey/1" replace />} />
+          <Route
+            path="/journey/:step"
+            element={
+              <RouteGuard type="journey">
+                <PageTransition mode="slide"><Journey /></PageTransition>
+              </RouteGuard>
+            }
+          />
+          <Route
+            path="/sandbox"
+            element={
+              <RouteGuard type="sandbox">
+                <PageTransition><Sandbox /></PageTransition>
+              </RouteGuard>
+            }
+          />
+          <Route
+            path="/challenges"
+            element={
+              <RouteGuard type="challenges">
+                <PageTransition><Challenges /></PageTransition>
+              </RouteGuard>
+            }
+          />
         </Route>
 
         {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
   );
