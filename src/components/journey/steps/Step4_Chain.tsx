@@ -2,28 +2,40 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
 import { calculateHash } from '../../../engine/block';
 import { Block } from '../../../engine/types';
-import { Link, AlertTriangle, ArrowRight, Lock, RefreshCw, Check, X, FileText, Hash } from 'lucide-react';
+import { Link, AlertTriangle, ArrowRight, Lock, RefreshCw, Check, X, FileText, Hash as HashIcon, ArrowDown } from 'lucide-react';
+import Card from '../../ui/Card';
+import Button from '../../ui/Button';
+import Badge from '../../ui/Badge';
+import Hash from '../../ui/Hash';
+import { useInView } from '../../../hooks/useInView';
+import { useNavigate } from 'react-router-dom';
 
 interface ChainBlock extends Block {
   isSealed: boolean;
-  sealedHash: string; // The hash stored when sealed
-  currentHash: string; // The hash calculated from current data
+  sealedHash: string;
+  currentHash: string;
   status: 'valid' | 'invalid' | 'broken_link';
 }
 
 const Step4_Chain: React.FC = () => {
   const { completeStep } = useProgress();
+  const navigate = useNavigate();
 
   // State
   const [blocks, setBlocks] = useState<ChainBlock[]>([]);
   const [phase, setPhase] = useState<'intro' | 'build' | 'tamper' | 'fix' | 'complete'>('intro');
-  const [tamperStep, setTamperStep] = useState(0); // 0: none, 1: block 2 broken, 2: block 3 broken
+  const [tamperStep, setTamperStep] = useState(0);
 
-  const chainRef = useRef<HTMLDivElement>(null);
-  const tamperRef = useRef<HTMLDivElement>(null);
-  const fixRef = useRef<HTMLDivElement>(null);
+  // InView hooks
+  const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
+  const [storyRef, storyVisible] = useInView({ threshold: 0.1 });
+  const [chainRef, chainVisible] = useInView({ threshold: 0.1 });
+  const [tamperRef, tamperVisible] = useInView({ threshold: 0.1 });
+  const [fixRef, fixVisible] = useInView({ threshold: 0.1 });
+  const [completionRef, completionVisible] = useInView({ threshold: 0.1 });
 
-  // Initialize empty blocks or genesis if needed, but phase 'intro' handles it.
+  // Scroll ref for auto-scrolling
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Helper to create a new block
   const createNewBlock = (index: number, previousHash: string) => {
@@ -41,7 +53,7 @@ const Step4_Chain: React.FC = () => {
 
     return {
       ...tempBlock,
-      hash, // Initial valid hash
+      hash,
       sealedHash: hash,
       currentHash: hash,
       isSealed: true,
@@ -58,18 +70,24 @@ const Step4_Chain: React.FC = () => {
     }
 
     const newBlock = createNewBlock(index, prevHash);
-    setBlocks([...blocks, newBlock]);
+    setBlocks(prev => [...prev, newBlock]);
+
+    // Scroll to right
+    setTimeout(() => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({ left: scrollContainerRef.current.scrollWidth, behavior: 'smooth' });
+        }
+    }, 100);
 
     // Automatically advance phase if 3 blocks built
     if (index === 2) {
       setTimeout(() => {
         setPhase('tamper');
-        tamperRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 1000);
     }
   };
 
-  // Update block data (for tampering)
+  // Update block data
   const updateBlockData = (index: number, newData: string) => {
     const newBlocks = [...blocks];
     const block = newBlocks[index];
@@ -78,24 +96,22 @@ const Step4_Chain: React.FC = () => {
     // Recalculate current hash
     const tempBlock: Block = {
       ...block,
-      hash: '', // Reset for calculation
+      hash: '',
     };
     block.currentHash = calculateHash(tempBlock);
 
-    // If data changed from initial, status changes
+    // Check validity
     if (block.currentHash !== block.sealedHash) {
       block.status = 'invalid';
-      // Trigger cascade animation if in tamper phase
       if (phase === 'tamper' && index === 1 && tamperStep === 0) {
         setTamperStep(1);
         setTimeout(() => {
-           setTamperStep(2); // Cascade to next block
+           setTamperStep(2);
         }, 500);
       }
     } else {
       block.status = 'valid';
       if (phase === 'tamper' && index === 1 && block.currentHash === block.sealedHash) {
-          // Reverted manually?
           setTamperStep(0);
       }
     }
@@ -103,15 +119,8 @@ const Step4_Chain: React.FC = () => {
     setBlocks(newBlocks);
   };
 
-  // Check for broken links (Cascade Effect)
+  // Check for broken links
   useEffect(() => {
-    // We only update visual status based on links here
-    // This runs on every render/block update
-
-    // Create a copy to update status without mutating directly (though setBlocks needed if we change state)
-    // Actually, we can derive status during render or update it here.
-    // Let's update state to reflect chain validity.
-
     let updated = false;
     const newBlocks = [...blocks];
 
@@ -119,31 +128,14 @@ const Step4_Chain: React.FC = () => {
        const prevBlock = newBlocks[i-1];
        const currBlock = newBlocks[i];
 
-       // Link check: Does current block's previousHash match previous block's sealedHash?
-       // Note: In tamper phase, user breaks Block 2. Block 2 hash changes (currentHash != sealedHash).
-       // But Block 3 previousHash points to Block 2's OLD sealedHash (which is what is stored in Block 3).
-       // The "Real" check is: If we re-calculated Block 3 based on Block 2's NEW hash, it would change.
-       // BUT, the prompt says: "Step 2: Block 3's Previous Hash no longer matches -> Block 3 shows BROKEN".
-       // This implies we are comparing Block 3's stored `previousHash` with Block 2's *current* hash (or the one it *should* have?).
+       // Link logic: currBlock.previousHash SHOULD match prevBlock.currentHash?
+       // In a real blockchain, next block stores Hash(PrevBlock).
+       // If PrevBlock changes, Hash(PrevBlock) changes.
+       // So NextBlock.previousHash != Hash(PrevBlock).
 
-       // Actually, in a blockchain, the link is: Block 3 contains "prevHash".
-       // Verify: prevHash == Hash(Block 2).
-       // If Block 2 data changes -> Hash(Block 2) changes.
-       // So prevHash != Hash(Block 2).
-       // So the link is broken.
-
-       // In our model:
-       // Block 2 `currentHash` is the "actual" hash of Block 2.
-       // Block 3 `previousHash` is what Block 3 *thinks* previous is.
-
-       // const isLinkBroken = currBlock.previousHash !== prevBlock.currentHash; // or sealedHash?
-       // If Block 2 is tampered, `currentHash` changes. `sealedHash` remains old (until re-sealed).
-       // Visually, the block itself is "Broken" (tampered) if current != sealed.
-       // The *Chain* is broken if next block's prevHash doesn't match prev block's *valid* hash.
-
-       // Let's define "Broken Link":
-       // If Prev Block is tampered (current != sealed), then effectively the link is invalid because the referenced hash is no longer valid for the data.
-       // OR simply: currentBlock.previousHash !== prevBlock.currentHash.
+       // Here:
+       // prevBlock.currentHash is the actual hash of previous block.
+       // currBlock.previousHash is the stored reference.
 
        if (currBlock.previousHash !== prevBlock.currentHash) {
          if (currBlock.status !== 'broken_link') {
@@ -151,13 +143,14 @@ const Step4_Chain: React.FC = () => {
             updated = true;
          }
        } else {
-         // If link is fine, check internal validity
+         // If link is valid, check if block itself is valid (internal seal)
          if (currBlock.currentHash !== currBlock.sealedHash) {
             if (currBlock.status !== 'invalid') {
                 currBlock.status = 'invalid';
                 updated = true;
             }
          } else {
+            // Only valid if both link and seal are good
             if (currBlock.status !== 'valid') {
                 currBlock.status = 'valid';
                 updated = true;
@@ -170,33 +163,26 @@ const Step4_Chain: React.FC = () => {
        setBlocks(newBlocks);
     }
 
-    // Check for Fix Completion
     if (phase === 'tamper' && tamperStep === 2) {
-       // Enable fix phase
        setPhase('fix');
     }
 
-    // Check for Final Completion (All valid)
     if (phase === 'fix') {
        const allValid = newBlocks.every(b => b.status === 'valid');
-       if (allValid) {
+       if (allValid && newBlocks.length === 3) {
           setPhase('complete');
           completeStep(4);
        }
     }
-
   }, [blocks, phase, tamperStep, completeStep]);
 
-  // Fix Action: Re-seal a block
+  // Fix Action: Re-seal
   const sealBlock = (index: number) => {
      const newBlocks = [...blocks];
      const block = newBlocks[index];
-
-     // Update sealed hash to current hash
      block.sealedHash = block.currentHash;
      block.hash = block.currentHash;
-     block.status = 'valid'; // Temporarily valid, but might break next link if not updated
-
+     // Status update happens in useEffect
      setBlocks(newBlocks);
   };
 
@@ -207,263 +193,231 @@ const Step4_Chain: React.FC = () => {
      const prevBlock = newBlocks[index - 1];
      const currBlock = newBlocks[index];
 
-     currBlock.previousHash = prevBlock.currentHash; // or sealedHash, should be same if prev is fixed
+     currBlock.previousHash = prevBlock.currentHash;
 
-     // Recalculate current hash because prevHash changed
+     // Recalculate because body changed
      const tempBlock: Block = {
         ...currBlock,
-        previousHash: currBlock.previousHash, // updated
+        previousHash: currBlock.previousHash,
         hash: '',
      };
      currBlock.currentHash = calculateHash(tempBlock);
-
-     // It is now tampered (internal mismatch) until re-sealed
-     currBlock.status = 'invalid';
 
      setBlocks(newBlocks);
   };
 
   return (
-    <div className="space-y-12 pb-20">
+    <div className="space-y-12 md:space-y-16 pb-20">
 
-      {/* SECTION 1 — THE HOOK */}
-      <section className="max-w-4xl mx-auto text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-4">
-          <Link className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-        </div>
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">The Chain That Cannot Lie</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          One block is just a sealed envelope. But what if we chain them together?
+      {/* SECTION 1 — HEADER */}
+      <div ref={headerRef} className={`space-y-4 ${headerVisible ? 'animate-fade-up' : 'opacity-0'}`}>
+        <Badge variant="info">Step 4 of 8</Badge>
+        <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">The Chain That Cannot Lie</h1>
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl">
+          One block is just a sealed envelope. But what happens if we chain them together?
         </p>
+      </div>
 
-        {phase === 'intro' && (
-          <div className="pt-8">
-            <button
-              onClick={() => setPhase('build')}
-              className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center gap-2 mx-auto"
-            >
-              Start Building the Chain <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
-        )}
-      </section>
+      {/* SECTION 2 — STORY */}
+      <div ref={storyRef} className={storyVisible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="glass" className="max-w-prose">
+          <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+             We make each block include the <b>hash of the previous block</b>.
+             This creates an unbreakable chain. If you change a block in the past, its hash changes.
+             Then the next block's "Previous Hash" link breaks. Then <i>its</i> hash changes...
+             <br/><br/>
+             It's a domino effect that alerts the whole network.
+          </p>
+          {phase === 'intro' && (
+              <Button onClick={() => setPhase('build')} className="mt-6" icon={<ArrowRight className="w-4 h-4"/>}>
+                  Start Building the Chain
+              </Button>
+          )}
+        </Card>
+      </div>
 
-      {/* SECTION 2 — BUILD & CHAIN DISPLAY */}
+      {/* SECTION 3 — CHAIN VISUALIZER */}
       {phase !== 'intro' && (
-        <section ref={chainRef} className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8">
-           <div className="flex justify-between items-center">
+        <div ref={chainRef} className={chainVisible ? 'animate-fade-up' : 'opacity-0'}>
+           <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold flex items-center gap-2">
-                <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
+                <Link className="w-6 h-6 text-brand-500" />
                 The Blockchain
               </h2>
               {phase === 'build' && blocks.length < 3 && (
-                 <button
-                    onClick={addBlock}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium flex items-center gap-2 transition-all"
-                 >
-                    <Link className="w-4 h-4" /> Add Block {blocks.length + 1}
-                 </button>
+                 <Button size="sm" onClick={addBlock} icon={<Link className="w-4 h-4"/>}>
+                    Add Block {blocks.length + 1}
+                 </Button>
               )}
            </div>
 
-           {/* Chain Visualizer */}
-           <div className="flex flex-col md:flex-row gap-4 items-start overflow-x-auto pb-4 px-2">
+           {/* Scrollable Container */}
+           <div
+                ref={scrollContainerRef}
+                className="flex flex-col md:flex-row gap-4 items-start overflow-x-auto pb-6 px-2 -mx-2 snap-x"
+           >
               {blocks.map((block, i) => (
                  <React.Fragment key={block.index}>
-                    {/* Arrow between blocks */}
+                    {/* Arrow */}
                     {i > 0 && (
-                       <div className="hidden md:flex flex-col justify-center items-center self-center text-gray-400 dark:text-gray-600 px-2">
-                          <ArrowRight className={`w-8 h-8 ${
-                             block.status === 'broken_link' ? 'text-red-500 animate-pulse' : 'text-gray-400'
-                          }`} />
+                       <div className="hidden md:flex flex-col justify-center items-center self-center text-gray-400 dark:text-gray-600 px-2 shrink-0">
+                          <ArrowRight className={`w-8 h-8 ${block.status === 'broken_link' ? 'text-status-error animate-pulse' : ''}`} />
+                       </div>
+                    )}
+                    {/* Mobile Arrow */}
+                    {i > 0 && (
+                       <div className="md:hidden flex justify-center w-full py-2 text-gray-400 dark:text-gray-600">
+                          <ArrowDown className={`w-8 h-8 ${block.status === 'broken_link' ? 'text-status-error animate-pulse' : ''}`} />
                        </div>
                     )}
 
                     {/* Block Card */}
-                    <div className={`flex-shrink-0 w-full md:w-80 rounded-xl border-2 transition-all duration-300 shadow-sm relative ${
-                       block.status === 'valid'
-                         ? 'border-green-500 bg-white dark:bg-gray-900'
-                         : block.status === 'broken_link'
-                            ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                            : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10'
-                    }`}>
-                       {/* Header */}
-                       <div className={`px-4 py-2 border-b flex justify-between items-center ${
-                          block.status === 'valid'
-                             ? 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800'
-                             : block.status === 'broken_link'
-                                ? 'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800'
-                                : 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800'
-                       }`}>
-                          <span className="font-mono font-bold text-sm">BLOCK #{block.index + 1}</span>
-                          {block.status === 'valid' ? (
-                             <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-                          ) : (
-                             <X className="w-4 h-4 text-red-600 dark:text-red-400" />
-                          )}
-                       </div>
+                    <Card
+                        variant="elevated"
+                        className={`min-w-full md:min-w-[320px] max-w-full md:max-w-[320px] snap-center transition-all duration-300 ${
+                            block.status === 'valid' ? 'border-status-valid' :
+                            block.status === 'broken_link' ? 'border-status-error shadow-red-500/20' :
+                            'border-status-warning shadow-yellow-500/20'
+                        }`}
+                        status={block.status === 'valid' ? 'valid' : block.status === 'broken_link' ? 'error' : 'warning'}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="font-mono font-bold text-sm">BLOCK #{block.index + 1}</span>
+                            {block.status === 'valid' ? <Check className="w-4 h-4 text-status-valid"/> : <X className="w-4 h-4 text-status-error"/>}
+                        </div>
 
-                       <div className="p-4 space-y-4">
-                          {/* Previous Hash */}
-                          <div className="space-y-1">
-                             <label className="text-[10px] uppercase font-bold text-gray-500">Previous Hash</label>
-                             <div className={`font-mono text-[10px] break-all p-2 rounded border ${
-                                block.status === 'broken_link'
-                                   ? 'bg-red-100 dark:bg-red-900/20 border-red-300 text-red-800'
-                                   : 'bg-gray-100 dark:bg-gray-800 border-gray-200 text-gray-500'
-                             }`}>
-                                {block.previousHash.substring(0, 20)}...
-                             </div>
-                             {/* Fix Button for Broken Link */}
-                             {phase === 'fix' && block.status === 'broken_link' && (
-                                <button
-                                   onClick={() => updatePreviousHash(i)}
-                                   className="w-full mt-2 py-1 px-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded flex items-center justify-center gap-1 transition-colors"
-                                >
-                                   <RefreshCw className="w-3 h-3" /> Update Previous Hash
-                                </button>
-                             )}
-                          </div>
+                        <div className="space-y-4">
+                            {/* Previous Hash */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-500">Previous Hash</label>
+                                <div className={`font-mono text-[10px] break-all p-2 rounded border ${
+                                    block.status === 'broken_link'
+                                    ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-700'
+                                    : 'bg-surface-tertiary dark:bg-surface-dark-tertiary border-surface-border dark:border-surface-dark-border text-gray-500'
+                                }`}>
+                                    {block.previousHash.substring(0, 20)}...
+                                </div>
+                                {phase === 'fix' && block.status === 'broken_link' && (
+                                    <Button size="sm" variant="primary" fullWidth onClick={() => updatePreviousHash(i)} icon={<RefreshCw className="w-3 h-3"/>} className="text-xs h-8">
+                                        Fix Link
+                                    </Button>
+                                )}
+                            </div>
 
-                          {/* Data */}
-                          <div className="space-y-1">
-                             <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
-                                <FileText className="w-3 h-3" /> Data
-                             </label>
-                             <textarea
-                                value={block.data}
-                                onChange={(e) => updateBlockData(i, e.target.value)}
-                                disabled={phase !== 'tamper' && !(phase === 'fix' && block.status !== 'valid')}
-                                className={`w-full p-2 text-sm rounded border focus:ring-2 outline-none font-mono resize-none ${
-                                   phase === 'tamper' && i === 1
-                                      ? 'border-indigo-300 focus:border-indigo-500 ring-2 ring-indigo-100'
-                                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
-                                }`}
-                                rows={2}
-                             />
-                          </div>
+                            {/* Data */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
+                                    <FileText className="w-3 h-3" /> Data
+                                </label>
+                                <textarea
+                                    value={block.data}
+                                    onChange={(e) => updateBlockData(i, e.target.value)}
+                                    disabled={phase !== 'tamper' && !(phase === 'fix' && block.status !== 'valid')}
+                                    className={`w-full p-2 text-sm rounded-lg border-2 outline-none font-mono resize-none transition-all ${
+                                        phase === 'tamper' && i === 1
+                                        ? 'border-brand-300 focus:border-brand-500 ring-4 ring-brand-50 dark:ring-brand-900/10'
+                                        : 'border-surface-border dark:border-surface-dark-border bg-transparent'
+                                    }`}
+                                    rows={2}
+                                />
+                            </div>
 
-                          {/* Hash */}
-                          <div className="space-y-1">
-                             <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
-                                <Hash className="w-3 h-3" /> Hash
-                             </label>
-                             <div className={`font-mono text-[10px] break-all p-2 rounded border transition-colors ${
-                                block.status === 'invalid'
-                                   ? 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 text-yellow-800'
-                                   : 'bg-green-50 dark:bg-green-900/10 border-green-200 text-green-700'
-                             }`}>
-                                {block.currentHash.substring(0, 20)}...
-                             </div>
-
-                             {/* Re-seal Button */}
-                             {phase === 'fix' && block.status === 'invalid' && (
-                                <button
-                                   onClick={() => sealBlock(i)}
-                                   className="w-full mt-2 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded flex items-center justify-center gap-2 transition-colors animate-pulse"
-                                >
-                                   <Lock className="w-3 h-3" /> Re-Seal Block
-                                </button>
-                             )}
-                          </div>
-                       </div>
-
-                       {/* Mobile Arrow */}
-                       <div className="md:hidden flex justify-center pb-2 text-gray-400">
-                          <ArrowRight className="w-6 h-6 rotate-90" />
-                       </div>
-                    </div>
+                            {/* Current Hash */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
+                                    <HashIcon className="w-3 h-3" /> Hash
+                                </label>
+                                <div className={`font-mono text-[10px] break-all p-2 rounded border transition-colors ${
+                                    block.status === 'invalid'
+                                    ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 text-yellow-700'
+                                    : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-700'
+                                }`}>
+                                    {block.currentHash.substring(0, 20)}...
+                                </div>
+                                {phase === 'fix' && block.status === 'invalid' && (
+                                    <Button size="sm" variant="primary" fullWidth onClick={() => sealBlock(i)} icon={<Lock className="w-3 h-3"/>} className="text-xs h-8 animate-pulse">
+                                        Re-Seal
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
                  </React.Fragment>
               ))}
            </div>
-        </section>
+        </div>
       )}
 
-      {/* SECTION 3 — TAMPER INSTRUCTIONS */}
+      {/* SECTION 4 — TAMPER INSTRUCTIONS */}
       {phase === 'tamper' && (
-         <section ref={tamperRef} className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8">
-            <div className="bg-white dark:bg-gray-900 border border-red-200 dark:border-red-800 rounded-xl p-6 shadow-sm">
-               <div className="flex items-start gap-4">
-                  <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full text-red-600 dark:text-red-400">
-                     <AlertTriangle className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-4">
-                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">Tamper with History</h3>
-                     <p className="text-gray-600 dark:text-gray-300">
-                        Try to change the data in <b>Block #2</b>. Watch how it affects Block #3.
-                     </p>
-
-                     {tamperStep > 0 && (
-                        <div className="space-y-2 text-sm">
-                           <div className={`flex items-center gap-2 ${tamperStep >= 1 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
-                              <span className="w-6 h-6 rounded-full bg-current flex items-center justify-center text-white text-xs">1</span>
-                              Block 2 Hash Changed (Invalid Seal)
-                           </div>
-                           <div className={`flex items-center gap-2 ${tamperStep >= 2 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
-                              <span className="w-6 h-6 rounded-full bg-current flex items-center justify-center text-white text-xs">2</span>
-                              Block 3 Previous Hash Mismatch (Broken Link)
-                           </div>
-                           {tamperStep === 2 && (
-                              <div className="pt-2 text-red-700 dark:text-red-300 font-medium animate-pulse">
-                                 🚨 CASCADE EFFECT CONFIRMED! The chain is broken.
-                              </div>
-                           )}
-                        </div>
-                     )}
-                  </div>
-               </div>
-            </div>
-         </section>
+         <div ref={tamperRef} className={tamperVisible ? 'animate-fade-up' : 'opacity-0'}>
+             <Card variant="outlined" status="warning">
+                 <div className="flex items-start gap-4">
+                     <div className="p-3 bg-status-warning/10 text-status-warning rounded-full shrink-0">
+                         <AlertTriangle className="w-6 h-6" />
+                     </div>
+                     <div className="space-y-4">
+                         <h3 className="text-xl font-bold">Tamper with History</h3>
+                         <p className="text-gray-600 dark:text-gray-300">
+                             Try to change the data in <b>Block #2</b>. Watch how it affects Block #3.
+                         </p>
+                         {tamperStep > 0 && (
+                             <div className="space-y-2 text-sm">
+                                 <div className={`flex items-center gap-2 ${tamperStep >= 1 ? 'text-status-error font-bold' : 'text-gray-400'}`}>
+                                     <Badge variant="error" size="sm" className="w-5 h-5 flex items-center justify-center p-0 rounded-full">1</Badge>
+                                     Block 2 Hash Changed (Invalid Seal)
+                                 </div>
+                                 <div className={`flex items-center gap-2 ${tamperStep >= 2 ? 'text-status-error font-bold' : 'text-gray-400'}`}>
+                                     <Badge variant="error" size="sm" className="w-5 h-5 flex items-center justify-center p-0 rounded-full">2</Badge>
+                                     Block 3 Previous Hash Mismatch (Broken Link)
+                                 </div>
+                             </div>
+                         )}
+                     </div>
+                 </div>
+             </Card>
+         </div>
       )}
 
-      {/* SECTION 4 — FIX INSTRUCTIONS */}
+      {/* SECTION 5 — FIX INSTRUCTIONS */}
       {phase === 'fix' && (
-         <section ref={fixRef} className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8">
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-6 shadow-sm">
-               <h3 className="text-xl font-bold text-indigo-900 dark:text-indigo-100 mb-4 flex items-center gap-2">
-                  <RefreshCw className="w-5 h-5" />
-                  Can you fix the chain?
-               </h3>
-               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                  To restore validity, you must re-seal every block after the change.
-               </p>
-               <ol className="space-y-2 list-decimal list-inside text-gray-600 dark:text-gray-400 text-sm">
-                  <li><b>Re-Seal Block 2</b> to update its valid hash.</li>
-                  <li><b>Update Block 3's Previous Hash</b> to match Block 2's new hash.</li>
-                  <li><b>Re-Seal Block 3</b> because its data (previous hash) changed.</li>
-               </ol>
-            </div>
-         </section>
+         <div ref={fixRef} className={fixVisible ? 'animate-fade-up' : 'opacity-0'}>
+             <Card variant="outlined" status="info">
+                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                     <RefreshCw className="w-5 h-5 text-brand-500" />
+                     Can you fix the chain?
+                 </h3>
+                 <p className="mb-4 text-gray-600 dark:text-gray-300">
+                     To restore validity, you must re-seal every block after the change.
+                 </p>
+                 <ol className="space-y-2 list-decimal list-inside text-sm text-gray-600 dark:text-gray-400">
+                     <li><b>Re-Seal Block 2</b> to update its valid hash.</li>
+                     <li><b>Update Block 3's Previous Hash</b> to match Block 2's new hash.</li>
+                     <li><b>Re-Seal Block 3</b> because its data (previous hash) changed.</li>
+                 </ol>
+             </Card>
+         </div>
       )}
 
-      {/* SECTION 5 — COMPLETION */}
+      {/* SECTION 6 — COMPLETION */}
       {phase === 'complete' && (
-         <section className="max-w-3xl mx-auto animate-in fade-in zoom-in-95 duration-500">
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-8 text-center space-y-6">
-               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto text-green-600 dark:text-green-400">
-                  <Check className="w-8 h-8" />
-               </div>
-               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Chain Restored!</h2>
-               <p className="text-lg text-gray-600 dark:text-gray-300">
-                  You successfully fixed the chain. But notice: changing just 1 block required you to redo 2 blocks.
-               </p>
-               <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 text-left text-sm space-y-2 max-w-lg mx-auto">
-                  <p>In a real blockchain like Bitcoin:</p>
-                  <ul className="space-y-1 list-disc list-inside text-gray-600 dark:text-gray-400">
-                     <li>There are 800,000+ blocks.</li>
-                     <li>"Re-sealing" (Mining) takes massive energy (Step 5).</li>
-                     <li>To cheat, you'd have to outpace the entire world's computers.</li>
-                  </ul>
-               </div>
-
-               <button
-                  onClick={() => completeStep(4)}
-                  className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center gap-2 mx-auto"
-               >
-                  Complete Step 4 <ArrowRight className="w-5 h-5" />
-               </button>
-            </div>
-         </section>
+         <div ref={completionRef} className={completionVisible ? 'animate-fade-up' : 'opacity-0'}>
+             <Card variant="default" status="valid">
+                 <div className="text-center space-y-6">
+                     <div className="w-16 h-16 bg-status-valid/10 text-status-valid rounded-full flex items-center justify-center mx-auto">
+                         <Check className="w-8 h-8" />
+                     </div>
+                     <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Chain Restored!</h2>
+                     <p className="text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
+                         You successfully fixed the chain. But notice: changing just 1 block required you to redo 2 blocks.
+                         In a real blockchain with millions of blocks, re-sealing (Mining) all subsequent blocks is computationally impossible.
+                     </p>
+                     <Button variant="success" size="lg" onClick={() => navigate('/journey/5')}>
+                         Continue to Step 5 →
+                     </Button>
+                 </div>
+             </Card>
+         </div>
       )}
 
     </div>
