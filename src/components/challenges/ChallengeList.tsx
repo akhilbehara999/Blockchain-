@@ -37,13 +37,15 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ onSelectChallenge }) => {
       description: string;
       difficulty: number;
       reward: number;
+      icon: string;
   }[] = [
     {
       id: 'doubleSpend',
-      title: 'Double Spend Attack',
+      title: 'Double Spend',
       description: 'Try to spend the same coins twice. Learn why the blockchain rejects conflicting transactions.',
       difficulty: 3,
       reward: 15,
+      icon: '💸'
     },
     {
       id: 'fork',
@@ -51,6 +53,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ onSelectChallenge }) => {
       description: 'Manually create a fork and watch the network resolve it using the longest chain rule.',
       difficulty: 4,
       reward: 20,
+      icon: '🔀'
     },
     {
       id: 'crashContract',
@@ -58,13 +61,15 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ onSelectChallenge }) => {
       description: 'Deploy a smart contract and trigger 3 different types of execution failures.',
       difficulty: 2,
       reward: 15,
+      icon: '💥'
     },
     {
       id: 'speedConfirm',
-      title: 'Speed Confirmation',
+      title: 'Speed Confirm',
       description: 'Get a transaction confirmed in under 30 seconds during high network congestion.',
       difficulty: 2,
       reward: 10,
+      icon: '⚡'
     },
     {
       id: 'storm',
@@ -72,11 +77,12 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ onSelectChallenge }) => {
       description: 'Maintain your balance during 5 minutes of intense network chaos, forks, and reorgs.',
       difficulty: 5,
       reward: 25,
+      icon: '🌪️'
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-500">
       {challengeData.map((c) => {
         const progress = challenges[c.id];
         const unlocked = isUnlocked(c.id);
@@ -92,6 +98,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ onSelectChallenge }) => {
             difficulty={c.difficulty}
             bestTime={progress.bestTime}
             onStart={() => onSelectChallenge(c.id)}
+            icon={c.icon}
           />
         );
       })}
