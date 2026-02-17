@@ -1,23 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNodeIdentity } from '../../../context/NodeContext';
 import { useProgress } from '../../../context/ProgressContext';
 import { safeParse } from '../../../utils';
-import { Unlock, Copy, ArrowRight, Check, X, Shield, Key, FileDigit, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Unlock, X, Key, FileDigit, RefreshCw, Eye, EyeOff, Check } from 'lucide-react';
+import Card from '../../ui/Card';
+import Button from '../../ui/Button';
+import Badge from '../../ui/Badge';
+import Hash from '../../ui/Hash';
+import { useInView } from '../../../hooks/useInView';
+import { useNavigate } from 'react-router-dom';
 
 const Step1_Identity: React.FC = () => {
   const { identity, createIdentity } = useNodeIdentity();
   const { completeStep } = useProgress();
+  const navigate = useNavigate();
 
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [guess, setGuess] = useState('');
   const [guessAttempted, setGuessAttempted] = useState(false);
   const [generated, setGenerated] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
 
-  // Scroll refs
-  const generateRef = useRef<HTMLDivElement>(null);
-  const lessonRef = useRef<HTMLDivElement>(null);
-  const completionRef = useRef<HTMLDivElement>(null);
+  // InView hooks for animations
+  const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
+  const [storyRef, storyVisible] = useInView({ threshold: 0.1 });
+  const [generateRef, generateVisible] = useInView({ threshold: 0.1 });
+  const [keysRef, keysVisible] = useInView({ threshold: 0.1 });
+  const [experimentRef, experimentVisible] = useInView({ threshold: 0.1 });
+  const [completionRef, completionVisible] = useInView({ threshold: 0.1 });
 
   useEffect(() => {
     if (identity) {
@@ -37,30 +46,14 @@ const Step1_Identity: React.FC = () => {
     setGenerated(true);
     setGuess('');
     setGuessAttempted(false);
-
-    // Smooth scroll to next section
-    setTimeout(() => {
-       lessonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
   };
 
   const handleGuess = () => {
     if (!guess.trim()) return;
     setGuessAttempted(true);
-
-    // Smooth scroll to completion
-    setTimeout(() => {
-       completionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
-  };
-
-  // Helper to get keys from localStorage since NodeIdentity doesn't expose them
+  // Helper to get keys
   const getKeys = () => {
     try {
       const stored = localStorage.getItem('yupp_node_identity');
@@ -75,216 +68,177 @@ const Step1_Identity: React.FC = () => {
   const { publicKey, privateKey } = getKeys();
 
   return (
-    <div className="space-y-16 pb-20">
+    <div className="space-y-12 md:space-y-16 pb-20">
 
-      {/* SECTION 1 — THE HOOK */}
-      <section className="space-y-6 max-w-3xl mx-auto text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-4">
-          <Shield className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-        </div>
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">You Are a Node</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300">
-          Every blockchain journey starts with an identity.
+      {/* 1. SECTION HEADER */}
+      <div ref={headerRef} className={`space-y-4 ${headerVisible ? 'animate-fade-up' : 'opacity-0'}`}>
+        <Badge variant="info">Step 1 of 8</Badge>
+        <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+          You Are a Node
+        </h1>
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl">
+          Every blockchain journey starts with an identity. No name, no face—just math.
         </p>
+      </div>
 
-        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 text-left space-y-4 max-w-2xl mx-auto shadow-sm">
-          <p className="text-lg">
-            In the real world, a bank knows who you are. Your name. Your face. Your social security.
+      {/* 2. STORY/HOOK */}
+      <div ref={storyRef} className={storyVisible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="glass" className="max-w-prose">
+          <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+            In the real world, a bank knows who you are. Your name, your face, your social security number.
+            <br /><br />
+            In blockchain, you are just a number. But not just any number—a number so large and random that
+            no one else could possibly guess it. This is your <strong>Private Key</strong>.
           </p>
-          <p className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
-            In blockchain, you are just a NUMBER. No name. No face. Just math.
-          </p>
-          <div className="pt-2 flex items-center text-gray-500 text-sm">
-            <ArrowRight className="w-4 h-4 mr-2 animate-bounce" />
-            Scroll down to create your identity
+        </Card>
+      </div>
+
+      {/* 3. INTERACTIVE SECTION: GENERATE KEYS */}
+      <div ref={generateRef} className={generateVisible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="elevated" className="space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Generate Your Identity</h3>
+            <Button
+                onClick={handleGenerate}
+                icon={<RefreshCw className={`w-4 h-4 ${!generated ? 'animate-spin' : ''}`} />}
+            >
+                {generated ? 'Regenerate Keys' : 'Generate New Keys'}
+            </Button>
           </div>
-        </div>
-      </section>
 
-      {/* SECTION 2 — GENERATE KEYPAIR */}
-      <section ref={generateRef} className="space-y-8 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-800 pt-12">
-        <div className="text-center space-y-4">
-           <h2 className="text-2xl font-bold">Step 1: Generate Your Keys</h2>
-           <button
-             onClick={handleGenerate}
-             className="inline-flex items-center px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all transform hover:-translate-y-1 hover:scale-105"
-           >
-             <RefreshCw className={`w-5 h-5 mr-2 ${generated ? '' : 'animate-spin-slow'}`} />
-             {generated ? 'Regenerate Random Keypair' : 'Generate Random Keypair'}
-           </button>
-        </div>
-
-        {generated && (
-          <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
-
-             {/* Private Key */}
-             <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-xl p-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-bold rounded-bl-xl">
-                   SECRET
-                </div>
-                <div className="flex items-center mb-3">
-                   <Key className="w-5 h-5 text-red-500 mr-2" />
-                   <h3 data-testid="private-key-heading" className="font-bold text-gray-900 dark:text-white">Private Key</h3>
-                </div>
-                <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-sm break-all flex items-center justify-between gap-4">
-                   <span className={showPrivateKey ? "text-gray-800 dark:text-gray-200" : "text-gray-400 select-none blur-sm"}>
-                      {showPrivateKey ? privateKey : "•".repeat(64)}
-                   </span>
-                   <div className="flex items-center gap-2 flex-shrink-0">
-                      <button onClick={() => setShowPrivateKey(!showPrivateKey)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500">
-                         {showPrivateKey ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
-                      </button>
-                      <button onClick={() => copyToClipboard(privateKey, 'private')} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 relative">
-                         {copied === 'private' ? <Check className="w-4 h-4 text-green-500"/> : <Copy className="w-4 h-4"/>}
-                      </button>
-                   </div>
-                </div>
-                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                   ⚠️ Never share this. It controls your funds.
-                </p>
-             </div>
-
-             {/* Public Key */}
-             <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-xl p-6">
-                <div className="flex items-center mb-3">
-                   <Unlock className="w-5 h-5 text-blue-500 mr-2" />
-                   <h3 className="font-bold text-gray-900 dark:text-white">Public Key</h3>
-                </div>
-                <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-xs break-all flex items-center justify-between gap-4">
-                   <span className="text-gray-600 dark:text-gray-300">{publicKey}</span>
-                   <button onClick={() => copyToClipboard(publicKey, 'public')} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 flex-shrink-0">
-                      {copied === 'public' ? <Check className="w-4 h-4 text-green-500"/> : <Copy className="w-4 h-4"/>}
-                   </button>
-                </div>
-                <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                   This is derived from your private key. Safe to share.
-                </p>
-             </div>
-
-             {/* Address */}
-             <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-xl p-6 relative">
-                 {/* Visual arrow connecting Public Key to Address */}
-                 <div className="absolute -top-6 left-8 w-0.5 h-6 bg-green-200 dark:bg-green-800/50"></div>
-
-                 <div className="flex items-center mb-3">
-                   <FileDigit className="w-5 h-5 text-green-500 mr-2" />
-                   <h3 className="font-bold text-gray-900 dark:text-white">Wallet Address</h3>
-                </div>
-                <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-base break-all flex items-center justify-between gap-4 shadow-inner">
-                   <span className="text-gray-800 dark:text-gray-200 font-bold">{identity?.getWalletAddress()}</span>
-                   <button onClick={() => copyToClipboard(identity?.getWalletAddress() || '', 'address')} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-500 flex-shrink-0">
-                      {copied === 'address' ? <Check className="w-4 h-4 text-green-500"/> : <Copy className="w-4 h-4"/>}
-                   </button>
-                </div>
-                 <div className="mt-4 p-3 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-sm">
-                    <div className="flex items-center gap-2 mb-2 text-gray-500">
-                        <span className="font-mono text-xs bg-red-100 dark:bg-red-900/30 text-red-600 px-1 rounded">Priv</span>
-                        <ArrowRight className="w-3 h-3" />
-                        <span className="font-mono text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-1 rounded">Pub</span>
-                        <ArrowRight className="w-3 h-3" />
-                        <span className="font-mono text-xs bg-green-100 dark:bg-green-900/30 text-green-600 px-1 rounded">Addr</span>
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-xs">
-                        Your address is mathematically derived from your public key, which comes from your private key. It's a one-way street!
-                    </p>
-                 </div>
-             </div>
-          </div>
-        )}
-      </section>
-
-      {/* SECTION 3 — THE LESSON */}
-      {generated && (
-        <section ref={lessonRef} className="space-y-6 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-800 pt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-           <h2 className="text-2xl font-bold">🧪 Experiment: Why "one-way"?</h2>
-           <div className="bg-white dark:bg-gray-800 p-8 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <p className="mb-4 text-lg">
-                  Try to reverse it. Given your address <span className="font-mono font-bold text-green-600">{identity?.getWalletAddress()}</span>, can you guess the private key?
-              </p>
-
-              <div className="flex gap-4">
-                  <input
-                    type="text"
-                    value={guess}
-                    onChange={(e) => setGuess(e.target.value)}
-                    disabled={guessAttempted}
-                    placeholder="Enter your guess here..."
-                    className="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  />
-                  <button
-                    onClick={handleGuess}
-                    disabled={guessAttempted || !guess.trim()}
-                    className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-bold disabled:opacity-50 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
-                  >
-                    Check
-                  </button>
+          {!generated && (
+              <div className="text-center py-12 text-gray-500">
+                  Click the button above to create your cryptographic identity.
               </div>
+          )}
 
-              {guessAttempted && (
-                  <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg flex items-start gap-4 animate-in zoom-in-95">
-                      <X className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
-                      <div>
-                          <h4 className="font-bold text-red-700 dark:text-red-400">Wrong (and impossible!)</h4>
-                          <p className="text-red-600 dark:text-red-300 mt-1">
-                              There are 2<sup>256</sup> possible keys. That's more than the number of atoms in the visible universe.
-                              Even with all the computers in the world, it would take billions of years to guess your key.
-                          </p>
-                          <p className="mt-3 font-medium text-gray-800 dark:text-gray-200">
-                              ✅ Lesson: Your address is public. Your private key is secure.
-                          </p>
-                      </div>
-                  </div>
-              )}
-           </div>
-        </section>
+          {generated && (
+              <div ref={keysRef} className={`grid gap-6 ${keysVisible ? 'animate-fade-up' : ''}`}>
+                 {/* Private Key */}
+                 <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
+                        <Key className="w-4 h-4" />
+                        Private Key (Secret)
+                    </div>
+                    <div className="relative group">
+                        <div className={`p-4 rounded-xl border-2 border-red-100 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 font-mono text-sm break-all transition-all duration-200 ${showPrivateKey ? 'text-gray-900 dark:text-white' : 'text-transparent blur-sm select-none'}`}>
+                            {privateKey || "Error loading key"}
+                        </div>
+                        {!showPrivateKey && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Button size="sm" variant="ghost" onClick={() => setShowPrivateKey(true)} icon={<Eye className="w-4 h-4"/>}>
+                                    Reveal Secret
+                                </Button>
+                            </div>
+                        )}
+                        {showPrivateKey && (
+                             <div className="absolute top-2 right-2 flex gap-2">
+                                <button onClick={() => setShowPrivateKey(false)} className="p-2 bg-white/50 dark:bg-black/50 rounded-lg hover:bg-white dark:hover:bg-black transition-colors">
+                                    <EyeOff className="w-4 h-4 text-gray-600 dark:text-gray-400"/>
+                                </button>
+                                <Hash value={privateKey} copyable truncate={false} className="hidden" /> {/* Using Hash just for copy logic if needed, but here we have custom UI */}
+                             </div>
+                        )}
+                    </div>
+                    {showPrivateKey && (
+                         <div className="flex justify-end">
+                            <Hash value={privateKey} copyable truncate />
+                         </div>
+                    )}
+                 </div>
+
+                 <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-2" />
+
+                 {/* Public Key */}
+                 <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
+                        <Unlock className="w-4 h-4" />
+                        Public Key (Derived from Private Key)
+                    </div>
+                    <div className="p-4 rounded-xl border-2 border-surface-border dark:border-surface-dark-border bg-surface-primary dark:bg-surface-dark-secondary">
+                        <Hash value={publicKey} truncate copyable />
+                    </div>
+                 </div>
+
+                 {/* Address */}
+                 <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
+                        <FileDigit className="w-4 h-4" />
+                        Wallet Address (Derived from Public Key)
+                    </div>
+                     <div className="p-4 rounded-xl border-2 border-green-100 dark:border-green-900/30 bg-green-50 dark:bg-green-900/10">
+                        <Hash value={identity?.getWalletAddress() || ''} copyable className="text-lg font-bold text-gray-900 dark:text-white" />
+                    </div>
+                 </div>
+              </div>
+          )}
+        </Card>
+      </div>
+
+      {/* 4. EXPERIMENT SECTION */}
+      {generated && (
+          <div ref={experimentRef} className={experimentVisible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="outlined" status="info">
+                <div className="flex items-center gap-2 mb-6">
+                    <span className="text-2xl">🧪</span>
+                    <h3 className="text-xl font-bold">Experiment: The One-Way Street</h3>
+                </div>
+
+                <p className="mb-6 text-gray-600 dark:text-gray-300">
+                    Your address is calculated from your private key. But can you go backwards?
+                    Given your address <Hash value={identity?.getWalletAddress() || ''} truncate />, try to guess the private key.
+                </p>
+
+                <div className="flex flex-col md:flex-row gap-4">
+                    <input
+                        type="text"
+                        value={guess}
+                        onChange={(e) => setGuess(e.target.value)}
+                        placeholder="Enter your guess..."
+                        className="flex-1 rounded-xl border-2 border-surface-border dark:border-surface-dark-border bg-transparent px-4 py-3 font-mono focus:border-brand-500 focus:ring-4 focus:ring-brand-100 dark:focus:ring-brand-900/30 transition-all outline-none"
+                    />
+                    <Button onClick={handleGuess} disabled={!guess.trim() || guessAttempted}>
+                        Check Guess
+                    </Button>
+                </div>
+
+                {guessAttempted && (
+                    <div className="mt-6 p-4 rounded-xl bg-status-error/10 border border-status-error/20 flex gap-4 items-start animate-fade-up">
+                        <X className="w-6 h-6 text-status-error shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="font-bold text-gray-900 dark:text-white">Impossible!</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                There are more possible private keys than atoms in the universe. Even if you had every computer on Earth guessing for a billion years, you wouldn't find it.
+                                <br/><br/>
+                                This is why your funds are safe as long as you keep your private key secret.
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </Card>
+          </div>
       )}
 
-      {/* SECTION 4 — COMPLETION */}
+      {/* 5. SUCCESS SECTION */}
       {guessAttempted && (
-        <section ref={completionRef} className="space-y-6 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-800 pt-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
-           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-8 rounded-2xl border border-indigo-100 dark:border-indigo-800 text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
-              </div>
-              <h2 className="text-3xl font-bold mb-2">Your Identity Is Ready</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-8">
-                  You are now an autonomous participant in the network.
-              </p>
-
-              <div className="inline-block bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-8 text-left min-w-[300px]">
-                  <div className="bg-gray-100 dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                      <span className="font-bold text-gray-700 dark:text-gray-300">Identity Card</span>
-                      <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                  </div>
-                  <div className="p-6 space-y-3">
-                      <div>
-                          <span className="text-xs text-gray-500 uppercase tracking-wider">Node ID</span>
-                          <div className="font-mono font-bold text-lg">{identity?.getId()}</div>
-                      </div>
-                      <div>
-                          <span className="text-xs text-gray-500 uppercase tracking-wider">Address</span>
-                          <div className="font-mono text-sm truncate">{identity?.getWalletAddress()}</div>
-                      </div>
-                      <div className="flex gap-8 pt-2">
-                           <div>
-                              <span className="text-xs text-gray-500 uppercase tracking-wider">Balance</span>
-                              <div className="font-bold">0 YUP</div>
-                           </div>
-                           <div>
-                              <span className="text-xs text-gray-500 uppercase tracking-wider">Status</span>
-                              <div className="text-green-600 dark:text-green-400 font-bold flex items-center gap-1">
-                                  🟢 Ready
-                              </div>
-                           </div>
-                      </div>
-                  </div>
-              </div>
-
-              <div className="max-w-xl mx-auto text-sm text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-black/20 p-4 rounded-lg">
-                  Next, you'll learn how blockchain protects data using something called <b>HASHING</b>.
-              </div>
-           </div>
-        </section>
+          <div ref={completionRef} className={completionVisible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="default" status="valid" className="bg-gradient-to-br from-white to-green-50 dark:from-gray-900 dark:to-green-900/20">
+                <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                    <div className="w-16 h-16 bg-status-valid/10 text-status-valid rounded-2xl flex items-center justify-center shrink-0">
+                        <Check className="w-8 h-8" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Identity Established</h3>
+                        <p className="text-gray-600 dark:text-gray-300">
+                            You now have a secure identity on the network. You are ready to start signing data.
+                        </p>
+                    </div>
+                    <Button variant="success" size="lg" onClick={() => navigate('/journey/2')} className="w-full md:w-auto">
+                        Continue to Step 2 →
+                    </Button>
+                </div>
+            </Card>
+          </div>
       )}
 
     </div>

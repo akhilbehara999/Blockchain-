@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
 import { sha256 } from '../../../engine/hash';
 import { Miner, startMiningRace } from '../../../engine/miner';
-import { Clock, Zap, Trophy, Users, AlertTriangle } from 'lucide-react';
+import { Clock, Zap, Trophy, Users, AlertTriangle, Check, ArrowRight, Pickaxe } from 'lucide-react';
+import Card from '../../ui/Card';
+import Button from '../../ui/Button';
+import Badge from '../../ui/Badge';
+import Hash from '../../ui/Hash';
+import { useInView } from '../../../hooks/useInView';
+import { useNavigate } from 'react-router-dom';
 
 // --- Constants ---
-const MANUAL_ATTEMPTS_TARGET = 10;
+const MANUAL_ATTEMPTS_TARGET = 5;
 const AUTO_MINING_TARGET_ZEROS = 4;
-const RACES_TARGET = 3;
+const RACES_TARGET = 1;
 const DIFFICULTIES_TARGET = 2;
 
 // --- Helper for formatting numbers ---
@@ -15,6 +21,7 @@ const formatNumber = (n: number) => n.toLocaleString();
 
 const Step5_Mining: React.FC = () => {
   const { completeStep } = useProgress();
+  const navigate = useNavigate();
 
   // --- State: Manual Mining ---
   const [manualNonce, setManualNonce] = useState<string>('0');
@@ -39,6 +46,15 @@ const Step5_Mining: React.FC = () => {
   const [raceWinner, setRaceWinner] = useState<Miner | null>(null);
   const [racesCompleted, setRacesCompleted] = useState<number>(0);
 
+  // InView hooks
+  const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
+  const [storyRef, storyVisible] = useInView({ threshold: 0.1 });
+  const [manualRef, manualVisible] = useInView({ threshold: 0.1 });
+  const [autoRef, autoVisible] = useInView({ threshold: 0.1 });
+  const [diffRef, diffVisible] = useInView({ threshold: 0.1 });
+  const [raceRef, raceVisible] = useInView({ threshold: 0.1 });
+  const [completionRef, completionVisible] = useInView({ threshold: 0.1 });
+
   // --- Effects ---
   useEffect(() => {
     if (manualAttempts >= MANUAL_ATTEMPTS_TARGET) {
@@ -47,9 +63,9 @@ const Step5_Mining: React.FC = () => {
   }, [manualAttempts]);
 
   // --- Handlers: Manual Mining ---
-  const handleManualHash = () => {
+  const handleManualHash = async () => {
     const data = "Alice pays Bob 5 coins";
-    const hash = sha256(data + manualNonce);
+    const hash = await sha256(data + manualNonce);
     setManualHash(hash);
     setManualAttempts(prev => prev + 1);
   };
@@ -64,15 +80,14 @@ const Step5_Mining: React.FC = () => {
     let nonce = 0;
     const startTime = performance.now();
 
-    // Use a loop with breaks to allow UI updates
-    const mineBatch = () => {
+    const mineBatch = async () => {
       const batchSize = 1000;
       let found = false;
       let hash = '';
 
       for (let i = 0; i < batchSize; i++) {
         nonce++;
-        hash = sha256(data + nonce);
+        hash = await sha256(data + nonce);
         if (hash.startsWith(targetPrefix)) {
           found = true;
           break;
@@ -107,14 +122,14 @@ const Step5_Mining: React.FC = () => {
     let nonce = 0;
     const startTime = performance.now();
 
-    const mineBatch = () => {
+    const mineBatch = async () => {
       const batchSize = 1000;
       let found = false;
       let hash = '';
 
       for (let i = 0; i < batchSize; i++) {
         nonce++;
-        hash = sha256(data + nonce);
+        hash = await sha256(data + nonce);
         if (hash.startsWith(targetPrefix)) {
           found = true;
           break;
@@ -144,7 +159,6 @@ const Step5_Mining: React.FC = () => {
     setRaceStatus('racing');
     setRaceWinner(null);
 
-    // User hash rate is simulated around 50 for balance with bots
     const result = await startMiningRace(3, 50, (miners) => {
       setRaceMiners(miners);
     });
@@ -161,369 +175,347 @@ const Step5_Mining: React.FC = () => {
     Object.keys(diffResults).length >= DIFFICULTIES_TARGET &&
     racesCompleted >= RACES_TARGET;
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-12 pb-20">
+  useEffect(() => {
+     if (isComplete) {
+         completeStep(5);
+     }
+  }, [isComplete, completeStep]);
 
-      {/* SECTION 1: THE HOOK */}
-      <section className="space-y-4">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">The Lottery You Can't Cheat</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300">
+  return (
+    <div className="space-y-12 md:space-y-16 pb-20">
+
+      {/* SECTION 1: HEADER */}
+      <div ref={headerRef} className={`space-y-4 ${headerVisible ? 'animate-fade-up' : 'opacity-0'}`}>
+        <Badge variant="info">Step 5 of 8</Badge>
+        <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">The Lottery You Can't Cheat</h1>
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl">
           Mining isn't work. It's luck.
         </p>
+      </div>
 
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-          <p className="text-lg text-blue-900 dark:text-blue-100 leading-relaxed">
-            In Step 4, you fixed a broken chain instantly by recalculating hashes.
+      {/* SECTION 2: STORY */}
+      <div ref={storyRef} className={storyVisible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="glass" className="max-w-prose">
+          <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+            In Step 4, you fixed a broken chain by recalculating hashes.
             But what if recalculating a hash was <strong>HARD</strong>?
-            What if the network required your hash to start with specific zeros, like <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">0000</code>?
+            What if the network required your hash to start with specific zeros, like <span className="font-mono bg-surface-tertiary dark:bg-surface-dark-tertiary px-1 rounded">0000</span>?
             <br/><br/>
             Most hashes don't start with zeros. You have to keep guessing random numbers (nonces) until you get lucky.
             That's exactly what <strong>MINING</strong> is.
           </p>
-        </div>
-      </section>
+        </Card>
+      </div>
 
-      {/* SECTION 2: MANUAL MINING */}
-      <section className="space-y-6">
-        <div className="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
-          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-sm">1</div>
-          <h2>Mine By Hand</h2>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Block Data</label>
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 font-mono text-sm">
-                Alice pays Bob 5 coins
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Target Difficulty</label>
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 font-mono text-sm">
-                Hash must start with "0000"
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Try a Nonce (random number)
-              </label>
-              <input
-                type="number"
-                value={manualNonce}
-                onChange={(e) => setManualNonce(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <button
-              onClick={handleManualHash}
-              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Hash It
-            </button>
-          </div>
-
-          {manualHash && (
-            <div className={`p-4 rounded-lg border ${manualHash.startsWith('0000') ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Result Hash:</span>
-                {manualHash.startsWith('0000') ? (
-                  <span className="flex items-center text-green-600 dark:text-green-400 font-bold gap-1">
-                    <Zap size={16} /> FOUND!
-                  </span>
-                ) : (
-                  <span className="text-red-600 dark:text-red-400 font-bold text-sm">❌ No zeros</span>
-                )}
-              </div>
-              <div className="font-mono text-sm break-all text-gray-800 dark:text-gray-200">
-                {manualHash}
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-            <span>Attempts: {manualAttempts} / {MANUAL_ATTEMPTS_TARGET}</span>
-            {manualAttempts >= MANUAL_ATTEMPTS_TARGET && (
-              <span className="text-green-600 dark:text-green-400 font-medium animate-pulse">
-                Getting tired? Let the computer take over! ↓
-              </span>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 3: AUTOMATED MINING */}
-      {showAutoMine && (
-        <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
-            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-sm">2</div>
-            <h2>Computer Mining</h2>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Brute Force</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Let your CPU try thousands of nonces per second.</p>
-              </div>
-              <button
-                onClick={startAutoMining}
-                disabled={autoStatus === 'mining'}
-                className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                  autoStatus === 'mining'
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {autoStatus === 'mining' ? <><Clock className="animate-spin" size={18}/> Mining...</> : <><Zap size={18}/> Start Mining</>}
-              </button>
+      {/* SECTION 3: MANUAL MINING */}
+      <div ref={manualRef} className={manualVisible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="elevated">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                    <Pickaxe className="w-5 h-5 text-brand-500" />
+                    Mine By Hand
+                </h3>
+                <Badge variant="info">{manualAttempts} / {MANUAL_ATTEMPTS_TARGET} Attempts</Badge>
             </div>
 
-            <div className="font-mono bg-gray-900 text-green-400 p-4 rounded-lg text-sm min-h-[120px]">
-              {autoStatus === 'idle' && !autoResult && <div className="text-gray-500">Waiting to start...</div>}
-
-              {(autoStatus === 'mining' || (autoStatus === 'found' && autoResult)) && (
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Nonce: {autoStatus === 'mining' ? formatNumber(autoProgress.nonce) : formatNumber(autoResult!.nonce)}</span>
-                    <span>Hash: {autoStatus === 'mining' ? autoProgress.hash.substring(0, 20) + '...' : autoResult!.hash.substring(0, 20) + '...'}</span>
-                  </div>
-                  {autoStatus === 'found' && autoResult && (
-                     <div className="mt-4 pt-4 border-t border-gray-800 text-white">
-                       <div className="flex items-center gap-2 text-green-400 font-bold text-lg mb-2">
-                         <Zap size={20} /> BLOCK FOUND!
-                       </div>
-                       <div className="grid grid-cols-3 gap-4 text-center">
-                         <div className="bg-gray-800 p-2 rounded">
-                           <div className="text-xs text-gray-400">Time</div>
-                           <div className="font-bold">{autoResult.time.toFixed(3)}s</div>
-                         </div>
-                         <div className="bg-gray-800 p-2 rounded">
-                           <div className="text-xs text-gray-400">Attempts</div>
-                           <div className="font-bold">{formatNumber(autoResult.attempts)}</div>
-                         </div>
-                         <div className="bg-gray-800 p-2 rounded">
-                           <div className="text-xs text-gray-400">Hash Rate</div>
-                           <div className="font-bold">~{formatNumber(Math.round(autoResult.attempts / autoResult.time))} H/s</div>
-                         </div>
-                       </div>
-                       <p className="mt-4 text-gray-300 text-sm">
-                         The nonce <span className="text-white font-bold">{autoResult.nonce}</span> produces a hash starting with "0000". This is your <span className="text-yellow-400 font-bold">PROOF OF WORK</span>.
-                       </p>
-                     </div>
-                  )}
+                    <label className="text-xs font-bold text-gray-500 uppercase">Block Data</label>
+                    <div className="p-3 bg-surface-tertiary dark:bg-surface-dark-tertiary rounded-xl text-gray-700 dark:text-gray-300 font-mono text-sm border border-surface-border dark:border-surface-dark-border">
+                        Alice pays Bob 5 coins
+                    </div>
                 </div>
-              )}
+                <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Target Difficulty</label>
+                    <div className="p-3 bg-surface-tertiary dark:bg-surface-dark-tertiary rounded-xl text-gray-700 dark:text-gray-300 font-mono text-sm border border-surface-border dark:border-surface-dark-border">
+                        Hash must start with "0000"
+                    </div>
+                </div>
             </div>
-          </div>
-        </section>
+
+            <div className="flex gap-4 items-end mb-6">
+                <div className="flex-1 space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Try a Nonce (random number)</label>
+                    <input
+                        type="number"
+                        value={manualNonce}
+                        onChange={(e) => setManualNonce(e.target.value)}
+                        className="w-full p-3 rounded-xl border-2 border-surface-border dark:border-surface-dark-border bg-transparent focus:border-brand-500 focus:ring-4 focus:ring-brand-100 dark:focus:ring-brand-900/30 outline-none transition-all font-mono"
+                    />
+                </div>
+                <Button onClick={handleManualHash}>Hash It</Button>
+            </div>
+
+            {manualHash && (
+                <div className={`p-4 rounded-xl border-2 transition-all ${manualHash.startsWith('0000') ? 'bg-green-50 dark:bg-green-900/10 border-status-valid' : 'bg-red-50 dark:bg-red-900/10 border-status-error'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-bold text-gray-500">Result Hash</span>
+                        {manualHash.startsWith('0000') ? (
+                            <Badge variant="success" pulse>FOUND!</Badge>
+                        ) : (
+                            <Badge variant="error">No zeros</Badge>
+                        )}
+                    </div>
+                    <Hash value={manualHash} truncate={false} className="break-all" />
+                </div>
+            )}
+        </Card>
+      </div>
+
+      {/* SECTION 4: AUTOMATED MINING */}
+      {showAutoMine && (
+        <div ref={autoRef} className={autoVisible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="elevated">
+                 <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-brand-500" />
+                        Computer Mining
+                    </h3>
+                    {autoStatus === 'found' && <Badge variant="success">Completed</Badge>}
+                </div>
+
+                <p className="mb-6 text-gray-600 dark:text-gray-300">
+                    Let your CPU try thousands of nonces per second. This is "Proof of Work".
+                </p>
+
+                <div className="bg-surface-tertiary dark:bg-surface-dark-tertiary p-6 rounded-xl font-mono text-sm border border-surface-border dark:border-surface-dark-border mb-6 min-h-[160px]">
+                     {autoStatus === 'idle' && !autoResult && <div className="text-gray-500 text-center py-8">Waiting to start...</div>}
+
+                     {(autoStatus === 'mining' || (autoStatus === 'found' && autoResult)) && (
+                        <div className="space-y-4">
+                            <div className="flex justify-between border-b border-surface-border dark:border-surface-dark-border pb-2">
+                                <span className="text-gray-500">Nonce Attempt</span>
+                                <span className="font-bold text-brand-600">{autoStatus === 'mining' ? formatNumber(autoProgress.nonce) : formatNumber(autoResult!.nonce)}</span>
+                            </div>
+                            <div className="flex justify-between border-b border-surface-border dark:border-surface-dark-border pb-2">
+                                <span className="text-gray-500">Current Hash</span>
+                                <span className="font-mono text-xs">{autoStatus === 'mining' ? autoProgress.hash.substring(0, 20) + '...' : autoResult!.hash.substring(0, 20) + '...'}</span>
+                            </div>
+
+                            {autoStatus === 'found' && autoResult && (
+                                <div className="pt-2 animate-fade-up">
+                                    <div className="flex items-center gap-2 text-status-valid font-bold text-lg mb-4">
+                                        <Zap size={20} /> BLOCK FOUND!
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4 text-center">
+                                        <div className="bg-surface-primary dark:bg-surface-dark-secondary p-2 rounded-lg border border-surface-border dark:border-surface-dark-border">
+                                            <div className="text-xs text-gray-500 uppercase">Time</div>
+                                            <div className="font-bold">{autoResult.time.toFixed(3)}s</div>
+                                        </div>
+                                        <div className="bg-surface-primary dark:bg-surface-dark-secondary p-2 rounded-lg border border-surface-border dark:border-surface-dark-border">
+                                            <div className="text-xs text-gray-500 uppercase">Attempts</div>
+                                            <div className="font-bold">{formatNumber(autoResult.attempts)}</div>
+                                        </div>
+                                        <div className="bg-surface-primary dark:bg-surface-dark-secondary p-2 rounded-lg border border-surface-border dark:border-surface-dark-border">
+                                            <div className="text-xs text-gray-500 uppercase">Hash Rate</div>
+                                            <div className="font-bold">~{formatNumber(Math.round(autoResult.attempts / autoResult.time))} H/s</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                     )}
+                </div>
+
+                <Button
+                    onClick={startAutoMining}
+                    disabled={autoStatus === 'mining' || autoStatus === 'found'}
+                    loading={autoStatus === 'mining'}
+                    fullWidth
+                    icon={<Zap className="w-4 h-4"/>}
+                >
+                    {autoStatus === 'mining' ? 'Mining...' : autoStatus === 'found' ? 'Block Found' : 'Start Mining'}
+                </Button>
+            </Card>
+        </div>
       )}
 
-      {/* SECTION 4: DIFFICULTY EXPERIMENT */}
+      {/* SECTION 5: DIFFICULTY EXPERIMENT */}
       {autoStatus === 'found' && (
-        <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-           <div className="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
-            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-sm">3</div>
-            <h2>Difficulty Experiment</h2>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-6">
-            <p className="text-gray-600 dark:text-gray-300">
-              What happens when we require MORE zeros?
-            </p>
-
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
-                <span>Easier (3 zeros)</span>
-                <span>Harder (6 zeros)</span>
-              </div>
-              <input
-                type="range"
-                min="3"
-                max="6"
-                value={difficulty}
-                onChange={(e) => setDifficulty(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
-              />
-              <div className="text-center font-bold text-lg text-indigo-600 dark:text-indigo-400">
-                Target: "{ "0".repeat(difficulty) }..."
-              </div>
-            </div>
-
-            <button
-                onClick={startDiffMining}
-                disabled={diffStatus === 'mining'}
-                className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
-                  diffStatus === 'mining'
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                }`}
-              >
-                {diffStatus === 'mining' ? <><Clock className="animate-spin" size={18}/> Mining at Difficulty {difficulty}...</> : `Mine at Difficulty ${difficulty}`}
-            </button>
-
-            {/* Results Display */}
-            <div className="space-y-2">
-              {[3, 4, 5, 6].map(d => (
-                <div key={d} className={`flex justify-between items-center p-3 rounded-lg border ${
-                  diffResults[d]
-                    ? 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-800'
-                    : 'bg-gray-50 border-gray-100 dark:bg-gray-800/50 dark:border-gray-700'
-                }`}>
-                   <div className="flex items-center gap-3">
-                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                       diffResults[d] ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'
-                     }`}>
-                       {d}
-                     </div>
-                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Zeros</span>
-                   </div>
-
-                   {diffResults[d] ? (
-                     <div className="text-right">
-                       <div className="text-sm font-bold text-gray-900 dark:text-white">{diffResults[d].time.toFixed(3)}s</div>
-                       <div className="text-xs text-gray-500">{formatNumber(diffResults[d].attempts)} attempts</div>
-                     </div>
-                   ) : (
-                     <span className="text-xs text-gray-400 italic">Not tested yet</span>
-                   )}
+        <div ref={diffRef} className={diffVisible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="outlined" status="info">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-brand-500" />
+                        Difficulty Experiment
+                    </h3>
+                    <Badge variant="info">{Object.keys(diffResults).length} / {DIFFICULTIES_TARGET} Tested</Badge>
                 </div>
-              ))}
-            </div>
 
-            {diffStatus === 'mining' && (
-               <div className="text-center text-sm text-gray-500 animate-pulse">
-                 Trying Nonce: {formatNumber(diffProgress.nonce)}...
-               </div>
-            )}
+                <p className="mb-6 text-gray-600 dark:text-gray-300">
+                    What happens when we require MORE zeros?
+                </p>
 
-             {Object.keys(diffResults).length >= DIFFICULTIES_TARGET && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 flex gap-3">
-                  <AlertTriangle className="text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    Adding just one zero makes it ~16x harder (in hex). Real Bitcoin requires ~19 leading zeros!
-                  </p>
+                <div className="space-y-6 mb-6">
+                    <div className="space-y-2">
+                         <div className="flex justify-between text-xs font-bold text-gray-500 uppercase">
+                            <span>Easier (3 zeros)</span>
+                            <span>Harder (6 zeros)</span>
+                         </div>
+                         <input
+                            type="range"
+                            min="3"
+                            max="6"
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(Number(e.target.value))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-brand-500"
+                         />
+                         <div className="text-center font-bold text-brand-600 dark:text-brand-400 font-mono bg-surface-tertiary dark:bg-surface-dark-tertiary py-2 rounded-lg">
+                            Target: "{ "0".repeat(difficulty) }..."
+                         </div>
+                    </div>
+
+                    <Button
+                        onClick={startDiffMining}
+                        disabled={diffStatus === 'mining'}
+                        loading={diffStatus === 'mining'}
+                        fullWidth
+                    >
+                         {diffStatus === 'mining' ? `Mining at Difficulty ${difficulty}...` : `Mine at Difficulty ${difficulty}`}
+                    </Button>
                 </div>
-             )}
-          </div>
-        </section>
+
+                <div className="space-y-2">
+                     {[3, 4, 5, 6].map(d => (
+                        <div key={d} className={`flex justify-between items-center p-3 rounded-xl border transition-all ${
+                            diffResults[d]
+                            ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+                            : 'bg-surface-tertiary dark:bg-surface-dark-tertiary border-surface-border dark:border-surface-dark-border opacity-60'
+                        }`}>
+                             <div className="flex items-center gap-3">
+                                 <Badge variant={diffResults[d] ? 'success' : 'default'} size="sm" className="w-6 h-6 flex items-center justify-center p-0 rounded-full">{d}</Badge>
+                                 <span className="text-sm font-medium">Zeros</span>
+                             </div>
+                             {diffResults[d] ? (
+                                 <div className="text-right">
+                                     <div className="text-sm font-bold text-gray-900 dark:text-white">{diffResults[d].time.toFixed(3)}s</div>
+                                     <div className="text-xs text-gray-500">{formatNumber(diffResults[d].attempts)} attempts</div>
+                                 </div>
+                             ) : (
+                                 <span className="text-xs text-gray-400 italic">Not tested</span>
+                             )}
+                        </div>
+                     ))}
+                </div>
+
+                {Object.keys(diffResults).length >= DIFFICULTIES_TARGET && (
+                    <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/10 p-4 rounded-xl border border-yellow-200 dark:border-yellow-800 flex gap-3 animate-fade-up">
+                        <AlertTriangle className="text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                            Adding just one zero makes it ~16x harder (in hex). Real Bitcoin requires ~19 leading zeros!
+                        </p>
+                    </div>
+                )}
+            </Card>
+        </div>
       )}
 
-      {/* SECTION 5: MINING COMPETITION */}
+      {/* SECTION 6: MINING RACE */}
       {Object.keys(diffResults).length >= DIFFICULTIES_TARGET && (
-        <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-           <div className="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
-            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-sm">4</div>
-            <h2>Mining Race</h2>
-          </div>
+        <div ref={raceRef} className={raceVisible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="outlined" status={racesCompleted >= RACES_TARGET ? 'valid' : 'info'}>
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Users className="w-5 h-5 text-brand-500" />
+                        Mining Race
+                    </h3>
+                    <Badge variant="info">{racesCompleted} / {RACES_TARGET} Races</Badge>
+                </div>
 
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-6">
-            <p className="text-gray-600 dark:text-gray-300">
-              You're not the only miner. In a real blockchain, thousands of miners race to find the block.
-              Only the winner gets paid.
-            </p>
+                <p className="mb-6 text-gray-600 dark:text-gray-300">
+                    You're not the only miner. Thousands of miners race to find the block. Only the winner gets paid.
+                </p>
 
-            <div className="space-y-3">
-               {raceMiners.map((miner) => (
-                 <div key={miner.id} className="relative">
-                   <div className="flex justify-between text-sm mb-1">
-                     <span className="font-medium flex items-center gap-2 text-gray-900 dark:text-white">
-                       <span>{miner.avatar}</span> {miner.name} {miner.isUser && "(You)"}
-                       {miner.status === 'won' && <Trophy size={14} className="text-yellow-500"/>}
-                     </span>
-                     <span className="text-xs text-gray-500">
-                       {formatNumber(miner.attempts)} hashes
-                     </span>
-                   </div>
-                   {/* Visualization of "effort" - not progress, just activity */}
-                   <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                     <div
-                       className={`h-full transition-all duration-300 ${
-                         miner.status === 'won' ? 'bg-yellow-400' :
-                         miner.status === 'lost' ? 'bg-red-400' :
-                         'bg-blue-500'
-                       }`}
-                       style={{
-                         width: raceStatus === 'idle' ? '0%' :
-                                miner.status !== 'racing' ? '100%' :
-                                `${Math.min(100, (miner.attempts / 500) * 10)}%` // Just a visual fake progress for the racing phase
-                       }}
-                     ></div>
-                   </div>
-                 </div>
-               ))}
+                <div className="space-y-4 mb-6">
+                    {raceMiners.map((miner) => (
+                        <div key={miner.id} className="relative">
+                            <div className="flex justify-between text-sm mb-1">
+                                <span className="font-medium flex items-center gap-2 text-gray-900 dark:text-white">
+                                    <span>{miner.avatar}</span> {miner.name} {miner.isUser && "(You)"}
+                                    {miner.status === 'won' && <Trophy size={14} className="text-yellow-500"/>}
+                                </span>
+                                <span className="text-xs text-gray-500">{formatNumber(miner.attempts)} hashes</span>
+                            </div>
+                            <div className="h-2 bg-surface-tertiary dark:bg-surface-dark-tertiary rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full transition-all duration-300 ${
+                                        miner.status === 'won' ? 'bg-status-warning' :
+                                        miner.status === 'lost' ? 'bg-status-error' :
+                                        'bg-brand-500'
+                                    }`}
+                                    style={{
+                                        width: raceStatus === 'idle' ? '0%' :
+                                            miner.status !== 'racing' ? '100%' :
+                                            `${Math.min(100, (miner.attempts / 500) * 10)}%`
+                                    }}
+                                ></div>
+                            </div>
+                        </div>
+                    ))}
 
-               {raceMiners.length === 0 && (
-                 <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-                   <Users className="mx-auto mb-2 opacity-50" />
-                   Ready to race?
-                 </div>
-               )}
-            </div>
+                    {raceMiners.length === 0 && (
+                        <div className="text-center py-8 text-gray-400 border-2 border-dashed border-surface-border dark:border-surface-dark-border rounded-xl">
+                            <Users className="mx-auto mb-2 opacity-50" />
+                            Ready to race?
+                        </div>
+                    )}
+                </div>
 
-            {raceWinner && (
-              <div className={`p-4 rounded-lg border flex gap-3 ${
-                raceWinner.isUser
-                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                  : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
-              }`}>
-                 <div className="text-2xl">{raceWinner.isUser ? '🎉' : '😢'}</div>
-                 <div>
-                   <h4 className={`font-bold ${raceWinner.isUser ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
-                     {raceWinner.isUser ? 'You Won!' : `${raceWinner.name} Won!`}
-                   </h4>
-                   <p className="text-sm text-gray-600 dark:text-gray-300">
-                     {raceWinner.isUser
-                       ? "You found the nonce first and got the reward! Everyone else wasted their electricity."
-                       : "Your attempts were wasted. Only the winner gets paid. This is why mining is brutal."}
-                   </p>
-                 </div>
-              </div>
-            )}
+                {raceWinner && (
+                    <div className={`p-4 rounded-xl border flex gap-3 mb-6 ${
+                        raceWinner.isUser
+                        ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+                        : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+                    }`}>
+                        <div className="text-2xl">{raceWinner.isUser ? '🎉' : '😢'}</div>
+                        <div>
+                            <h4 className={`font-bold ${raceWinner.isUser ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
+                                {raceWinner.isUser ? 'You Won!' : `${raceWinner.name} Won!`}
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                                {raceWinner.isUser
+                                ? "You found the nonce first and got the reward! Everyone else wasted their electricity."
+                                : "Your attempts were wasted. Only the winner gets paid. This is why mining is brutal."}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
-            <button
-                onClick={handleStartRace}
-                disabled={raceStatus === 'racing'}
-                className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
-                  raceStatus === 'racing'
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                }`}
-              >
-                {raceStatus === 'racing' ? <><Clock className="animate-spin" size={18}/> Racing...</> : raceMiners.length > 0 ? 'Race Again' : 'Start Race'}
-            </button>
-
-            <div className="text-center text-xs text-gray-400">
-              Races Completed: {racesCompleted} / {RACES_TARGET}
-            </div>
-          </div>
-        </section>
+                <Button
+                    onClick={handleStartRace}
+                    disabled={raceStatus === 'racing'}
+                    loading={raceStatus === 'racing'}
+                    fullWidth
+                    variant={raceStatus === 'racing' ? 'secondary' : 'primary'}
+                >
+                    {raceStatus === 'racing' ? 'Racing...' : raceMiners.length > 0 ? 'Race Again' : 'Start Race'}
+                </Button>
+            </Card>
+        </div>
       )}
 
       {/* COMPLETION */}
       {isComplete && (
-         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-full duration-500 z-50">
-           <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-             <div>
-               <h3 className="text-lg font-bold text-green-600 dark:text-green-400 flex items-center gap-2">
-                 <Zap className="fill-current" /> Step 5 Complete!
-               </h3>
-               <p className="text-sm text-gray-600 dark:text-gray-400">
-                 You've mastered mining: it's a lottery that secures the network.
-               </p>
-             </div>
-             <button
-               onClick={() => completeStep(5)}
-               className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-lg shadow-green-600/20 transition-all transform hover:scale-105"
-             >
-               Continue to Step 6: Transactions →
-             </button>
-           </div>
-         </div>
+        <div ref={completionRef} className={completionVisible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="default" status="valid">
+                <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                    <div className="w-16 h-16 bg-status-valid/10 text-status-valid rounded-2xl flex items-center justify-center shrink-0">
+                        <Check className="w-8 h-8" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Mining Mastered!</h3>
+                        <p className="text-gray-600 dark:text-gray-300">
+                            You've experienced Proof of Work firsthand. It secures the network by making history expensive to rewrite.
+                        </p>
+                    </div>
+                    <Button variant="success" size="lg" onClick={() => navigate('/journey/6')}>
+                        Continue to Step 6 →
+                    </Button>
+                </div>
+            </Card>
+        </div>
       )}
+
     </div>
   );
 };

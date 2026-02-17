@@ -1,6 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
-import { Fingerprint, Check, ArrowRight, Zap, FlaskConical, Info, Lock } from 'lucide-react';
+import { Check, FlaskConical, Info } from 'lucide-react';
+import Card from '../../ui/Card';
+import Button from '../../ui/Button';
+import Badge from '../../ui/Badge';
+import Hash from '../../ui/Hash';
+import { useInView } from '../../../hooks/useInView';
+import { useNavigate } from 'react-router-dom';
 
 // Helper function for SHA-256
 const sha256 = async (message: string): Promise<string> => {
@@ -25,6 +31,7 @@ const sha256 = async (message: string): Promise<string> => {
 
 const Step2_Hashing: React.FC = () => {
   const { completeStep } = useProgress();
+  const navigate = useNavigate();
 
   // ----- Playground Section -----
   const [playgroundInput, setPlaygroundInput] = useState('Hello World');
@@ -52,12 +59,14 @@ const Step2_Hashing: React.FC = () => {
   const [exp3Solved, setExp3Solved] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
-  // Refs for scrolling
-  const playgroundRef = useRef<HTMLDivElement>(null);
-  const exp1Ref = useRef<HTMLDivElement>(null);
-  const exp2Ref = useRef<HTMLDivElement>(null);
-  const exp3Ref = useRef<HTMLDivElement>(null);
-  const completionRef = useRef<HTMLDivElement>(null);
+  // InView hooks
+  const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
+  const [storyRef, storyVisible] = useInView({ threshold: 0.1 });
+  const [playgroundRef, playgroundVisible] = useInView({ threshold: 0.1 });
+  const [exp1Ref, exp1Visible] = useInView({ threshold: 0.1 });
+  const [exp2Ref, exp2Visible] = useInView({ threshold: 0.1 });
+  const [exp3Ref, exp3Visible] = useInView({ threshold: 0.1 });
+  const [completionRef, completionVisible] = useInView({ threshold: 0.1 });
 
   // Initial Hash Calculations
   useEffect(() => {
@@ -107,10 +116,6 @@ const Step2_Hashing: React.FC = () => {
   useEffect(() => {
     if (exp1Complete && exp2Complete && exp3Solved) {
       completeStep(2);
-      // Wait a bit before scrolling to let the user see the success message of the last experiment
-      setTimeout(() => {
-          completionRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 1000);
     }
   }, [exp1Complete, exp2Complete, exp3Solved, completeStep]);
 
@@ -139,26 +144,26 @@ const Step2_Hashing: React.FC = () => {
       for(let i=0; i<length; i++) {
           if (original[i] === modified[i]) {
               matchCount++;
-              comparison.push(<span key={i} className="text-green-600 font-bold">{original[i]}</span>);
+              comparison.push(<span key={i} className="text-status-valid font-bold">{original[i]}</span>);
           } else {
-              comparison.push(<span key={i} className="text-red-500 font-bold">{modified[i]}</span>);
+              comparison.push(<span key={i} className="text-status-error font-bold">{modified[i]}</span>);
           }
       }
       // Add remaining chars
       if (modified.length > length) {
-          comparison.push(<span key="rest" className="text-red-500 font-bold">{modified.substring(length)}</span>);
+          comparison.push(<span key="rest" className="text-status-error font-bold">{modified.substring(length)}</span>);
       }
 
       const percent = Math.round((matchCount / Math.max(original.length, modified.length)) * 100);
 
       return (
-          <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg font-mono text-xs break-all">
+          <div className="mt-4 p-4 bg-surface-tertiary dark:bg-surface-dark-tertiary rounded-xl font-mono text-xs break-all">
              <div className="mb-2 text-gray-500">Modified Hash Visualization:</div>
              <div className="mb-2">{comparison}</div>
              <div className="text-sm font-sans flex items-center gap-2">
                  <span>Similarity:</span>
-                 <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
-                     <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${percent}%` }}></div>
+                 <div className="flex-1 h-2 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
+                     <div className="h-full bg-status-valid transition-all duration-500" style={{ width: `${percent}%` }}></div>
                  </div>
                  <span className="font-bold">{percent}%</span>
              </div>
@@ -166,167 +171,144 @@ const Step2_Hashing: React.FC = () => {
       );
   };
 
-  return (
-    <div className="space-y-16 pb-20">
+  const inputClasses = "w-full p-3 rounded-xl border-2 border-surface-border dark:border-surface-dark-border bg-transparent focus:border-brand-500 focus:ring-4 focus:ring-brand-100 dark:focus:ring-brand-900/30 outline-none transition-all font-mono";
 
-      {/* SECTION 1 — THE HOOK */}
-      <section className="space-y-6 max-w-3xl mx-auto text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-4">
-          <Fingerprint className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-        </div>
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Fingerprints of Data</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300">
+  return (
+    <div className="space-y-12 md:space-y-16 pb-20">
+
+      {/* SECTION 1 — HEADER */}
+      <div ref={headerRef} className={`space-y-4 ${headerVisible ? 'animate-fade-up' : 'opacity-0'}`}>
+        <Badge variant="info">Step 2 of 8</Badge>
+        <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">Fingerprints of Data</h1>
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl">
           How blockchain knows when someone is lying.
         </p>
+      </div>
 
-        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 text-left space-y-4 max-w-2xl mx-auto shadow-sm">
-          <p className="text-lg">
-            Imagine you have a document. How do you prove no one changed it?
+      {/* SECTION 2 — STORY */}
+      <div ref={storyRef} className={storyVisible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="glass" className="max-w-prose">
+          <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+             In the physical world, we use signatures and seals to prove a document hasn't changed.
+             In blockchain, we use <b>MATH</b>.
+             <br/><br/>
+             A hash function takes ANY input—a word, a book, a transaction—and produces a unique fingerprint.
+             It's always the same length, and it always produces the same result for the same input.
           </p>
-          <p className="text-gray-600 dark:text-gray-400">
-             In the physical world, we use signatures and seals. In blockchain, we use <b>MATH</b>.
-             A hash function takes ANY input and produces a unique fingerprint. Always the same length. Always the same result for the same input.
-          </p>
-          <div className="pt-2 flex items-center text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer hover:underline" onClick={() => playgroundRef.current?.scrollIntoView({ behavior: 'smooth' })}>
-            <ArrowRight className="w-4 h-4 mr-2" />
-            Don't believe me? Try it yourself.
-          </div>
-        </div>
-      </section>
+        </Card>
+      </div>
 
-      {/* SECTION 2 — LIVE HASH PLAYGROUND */}
-      <section ref={playgroundRef} className="space-y-6 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-800 pt-12">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-            <FlaskConical className="w-6 h-6 text-indigo-500" />
-            Hash Laboratory
-        </h2>
+      {/* SECTION 3 — PLAYGROUND */}
+      <div ref={playgroundRef} className={playgroundVisible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="elevated" className="space-y-6">
+            <h3 className="text-2xl font-bold flex items-center gap-2">
+                <FlaskConical className="w-6 h-6 text-brand-500" />
+                Hash Laboratory
+            </h3>
 
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-6">
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type anything:</label>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Type anything:</label>
                 <input
                     type="text"
                     value={playgroundInput}
                     onChange={(e) => setPlaygroundInput(e.target.value)}
-                    className="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-black focus:ring-2 focus:ring-indigo-500 outline-none text-lg transition-all"
+                    className={inputClasses}
                     placeholder="Hello World"
                 />
             </div>
 
-            <div className="relative">
-                <div className="absolute -top-3 left-4 bg-white dark:bg-gray-900 px-2 text-xs font-bold text-gray-500">
-                    SHA-256 Hash (Live)
-                </div>
-                <div className="font-mono text-sm break-all p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200">
-                    {playgroundHash}
-                </div>
+            <div className="p-4 rounded-xl bg-surface-tertiary dark:bg-surface-dark-tertiary border border-surface-border dark:border-surface-dark-border">
+                <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">SHA-256 Hash Output</div>
+                <Hash value={playgroundHash} copyable truncate={false} className="text-sm md:text-base break-all" />
             </div>
 
-            <div className="grid grid-cols-3 gap-4 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+            <div className="grid grid-cols-3 gap-4 text-center text-sm p-3 bg-surface-tertiary dark:bg-surface-dark-tertiary rounded-xl">
                 <div>
                     <div className="font-bold text-gray-900 dark:text-white">{playgroundInput.length}</div>
-                    <div>Characters Typed</div>
+                    <div className="text-gray-500">Chars</div>
                 </div>
                 <div>
                     <div className="font-bold text-gray-900 dark:text-white">64</div>
-                    <div>Hash Length</div>
+                    <div className="text-gray-500">Hex Length</div>
                 </div>
                 <div>
-                    <div className="font-bold text-green-600 dark:text-green-400">~0.003ms</div>
-                    <div>Compute Time</div>
+                    <div className="font-bold text-status-valid">~0.003ms</div>
+                    <div className="text-gray-500">Time</div>
                 </div>
             </div>
-        </div>
-      </section>
+        </Card>
+      </div>
 
-      {/* SECTION 3 — EXPERIMENT 1: DETERMINISM */}
-      <section ref={exp1Ref} className="space-y-6 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-800 pt-12">
-        <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-                <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
-                Experiment: Determinism
-            </h2>
-            {exp1Complete && <span className="text-green-600 font-bold flex items-center gap-1"><Check className="w-5 h-5"/> Complete</span>}
-        </div>
+      {/* SECTION 4 — EXPERIMENT 1 */}
+      <div ref={exp1Ref} className={exp1Visible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="outlined" status={exp1Complete ? 'valid' : 'info'} className="transition-all duration-300">
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                    <Badge variant="info" size="sm" className="w-6 h-6 flex items-center justify-center p-0 rounded-full">1</Badge>
+                    <h3 className="text-xl font-bold">Experiment: Determinism</h3>
+                </div>
+                {exp1Complete && <Badge variant="success">Completed</Badge>}
+            </div>
 
-        <div className={`p-6 rounded-xl border transition-all duration-500 ${exp1Complete ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'}`}>
             <p className="mb-6 text-gray-600 dark:text-gray-300">
-                Type <span className="font-mono font-bold bg-gray-100 dark:bg-gray-800 px-1 rounded">blockchain</span> in both boxes below. Watch the hashes.
+                Type <span className="font-mono font-bold bg-surface-tertiary dark:bg-surface-dark-tertiary px-1.5 py-0.5 rounded text-brand-600">blockchain</span> in both boxes below. Watch the hashes align.
             </p>
 
             <div className="space-y-6">
-                {/* Input A */}
                 <div className="grid md:grid-cols-[1fr,2fr] gap-4 items-center">
                     <input
                         type="text"
                         value={exp1InputA}
                         onChange={(e) => setExp1InputA(e.target.value)}
                         placeholder="Type blockchain"
-                        className="p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-black focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className={inputClasses}
                     />
-                    <div className="font-mono text-xs break-all text-gray-500 bg-gray-100 dark:bg-gray-800 p-3 rounded h-full flex items-center">
-                        {exp1HashA || <span className="opacity-30">Hash will appear here...</span>}
+                    <div className="bg-surface-tertiary dark:bg-surface-dark-tertiary p-3 rounded-xl border border-surface-border dark:border-surface-dark-border overflow-hidden">
+                        <Hash value={exp1HashA} truncate />
                     </div>
                 </div>
 
-                {/* Input B */}
                 <div className="grid md:grid-cols-[1fr,2fr] gap-4 items-center">
                     <input
                         type="text"
                         value={exp1InputB}
                         onChange={(e) => setExp1InputB(e.target.value)}
                         placeholder="Type blockchain"
-                        className="p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-black focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className={inputClasses}
                     />
-                    <div className="font-mono text-xs break-all text-gray-500 bg-gray-100 dark:bg-gray-800 p-3 rounded h-full flex items-center">
-                        {exp1HashB || <span className="opacity-30">Hash will appear here...</span>}
+                    <div className="bg-surface-tertiary dark:bg-surface-dark-tertiary p-3 rounded-xl border border-surface-border dark:border-surface-dark-border overflow-hidden">
+                        <Hash value={exp1HashB} truncate />
                     </div>
                 </div>
             </div>
+        </Card>
+      </div>
 
-            {exp1Complete && (
-                <div className="mt-6 p-4 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-start gap-3 animate-in zoom-in-95">
-                    <Check className="w-5 h-5 text-green-600 mt-1" />
-                    <div>
-                        <h4 className="font-bold text-green-800 dark:text-green-300">Match! Determinism Verified.</h4>
-                        <p className="text-sm text-green-700 dark:text-green-400">
-                            Same input = Same hash. Always. This allows anyone in the world to verify data independently.
-                        </p>
-                    </div>
-                </div>
-            )}
-        </div>
-      </section>
-
-      {/* SECTION 4 — EXPERIMENT 2: AVALANCHE EFFECT */}
+      {/* SECTION 5 — EXPERIMENT 2 */}
       {exp1Complete && (
-        <section ref={exp2Ref} className="space-y-6 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-800 pt-12 animate-in fade-in slide-in-from-bottom-8">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-                    Experiment: Avalanche Effect
-                </h2>
-                {exp2Complete && <span className="text-green-600 font-bold flex items-center gap-1"><Check className="w-5 h-5"/> Complete</span>}
-            </div>
+        <div ref={exp2Ref} className={exp2Visible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="outlined" status={exp2Complete ? 'valid' : 'info'}>
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-2">
+                        <Badge variant="info" size="sm" className="w-6 h-6 flex items-center justify-center p-0 rounded-full">2</Badge>
+                        <h3 className="text-xl font-bold">Experiment: Avalanche Effect</h3>
+                    </div>
+                    {exp2Complete && <Badge variant="success">Completed</Badge>}
+                </div>
 
-            <div className={`p-6 rounded-xl border transition-all duration-500 ${exp2Complete ? 'bg-purple-50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'}`}>
                 <p className="mb-6 text-gray-600 dark:text-gray-300">
                     What happens if you change just <b>ONE</b> letter?
                 </p>
 
                 <div className="space-y-6">
-                    {/* Original */}
                     <div className="space-y-2 opacity-70">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Original Input</label>
-                        <div className="font-mono p-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-gray-700 dark:text-gray-300">
+                         <label className="text-xs font-bold text-gray-500 uppercase">Original Input</label>
+                         <div className="font-mono p-3 bg-surface-tertiary dark:bg-surface-dark-tertiary border border-surface-border dark:border-surface-dark-border rounded-xl text-gray-700 dark:text-gray-300">
                             {originalExp2Input}
-                        </div>
-                        <div className="font-mono text-xs break-all text-gray-400">
-                            {originalExp2Hash}
-                        </div>
+                         </div>
+                         <Hash value={originalExp2Hash} truncate className="text-gray-400 text-xs" />
                     </div>
 
-                    {/* Modified */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-gray-500 uppercase">Your Input (Change one letter)</label>
                         <input
@@ -334,51 +316,40 @@ const Step2_Hashing: React.FC = () => {
                             value={exp2ModifiedInput}
                             onChange={(e) => setExp2ModifiedInput(e.target.value)}
                             placeholder="Type something different..."
-                            className="w-full p-3 rounded-lg border border-purple-300 dark:border-purple-600 bg-white dark:bg-black focus:ring-2 focus:ring-purple-500 outline-none font-mono"
+                            className={inputClasses}
                         />
-                         <div className="font-mono text-xs break-all text-gray-500 bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700">
-                            {exp2ModifiedHash || <span className="opacity-30">Hash will appear here...</span>}
-                        </div>
+                         <Hash value={exp2ModifiedHash} truncate className="text-gray-500 text-xs" />
                     </div>
-                </div>
 
-                {exp2Complete && (
-                    <div className="mt-6">
-                         {renderHashComparison(originalExp2Hash, exp2ModifiedHash)}
-                         <div className="mt-4 p-4 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-start gap-3 animate-in zoom-in-95">
-                            <Zap className="w-5 h-5 text-purple-600 mt-1" />
-                            <div>
-                                <h4 className="font-bold text-purple-800 dark:text-purple-300">Avalanche Effect Detected!</h4>
-                                <p className="text-sm text-purple-700 dark:text-purple-400">
-                                    Changing a tiny part of the input completely changed the output. This makes tampering impossible to hide.
-                                </p>
-                            </div>
+                    {exp2Complete && (
+                        <div className="animate-fade-up">
+                            {renderHashComparison(originalExp2Hash, exp2ModifiedHash)}
                         </div>
-                    </div>
-                )}
-            </div>
-        </section>
+                    )}
+                </div>
+            </Card>
+        </div>
       )}
 
-      {/* SECTION 5 — EXPERIMENT 3: IRREVERSIBILITY */}
+      {/* SECTION 6 — EXPERIMENT 3 */}
       {exp2Complete && (
-        <section ref={exp3Ref} className="space-y-6 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-800 pt-12 animate-in fade-in slide-in-from-bottom-8">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
-                    Experiment: Irreversibility
-                </h2>
-                {exp3Solved && <span className="text-green-600 font-bold flex items-center gap-1"><Check className="w-5 h-5"/> Complete</span>}
-            </div>
+        <div ref={exp3Ref} className={exp3Visible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="outlined" status={exp3Solved ? 'valid' : 'info'}>
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-2">
+                        <Badge variant="info" size="sm" className="w-6 h-6 flex items-center justify-center p-0 rounded-full">3</Badge>
+                        <h3 className="text-xl font-bold">Experiment: Irreversibility</h3>
+                    </div>
+                    {exp3Solved && <Badge variant="success">Completed</Badge>}
+                </div>
 
-            <div className={`p-6 rounded-xl border transition-all duration-500 ${exp3Solved ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'}`}>
                 <p className="mb-6 text-gray-600 dark:text-gray-300">
                     I'll give you a hash. Can you find the input?
                 </p>
 
-                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg mb-6 break-all font-mono text-sm border border-gray-200 dark:border-gray-700 relative">
-                    <div className="absolute top-0 right-0 px-2 py-1 bg-gray-200 dark:bg-gray-700 text-xs font-bold rounded-bl">TARGET HASH</div>
-                    {targetHash}
+                <div className="bg-surface-tertiary dark:bg-surface-dark-tertiary p-4 rounded-xl mb-6 relative border border-surface-border dark:border-surface-dark-border">
+                    <div className="absolute top-0 right-0 px-2 py-1 bg-surface-border dark:bg-surface-dark-border text-xs font-bold rounded-bl-lg text-gray-500">TARGET HASH</div>
+                    <Hash value={targetHash} truncate={false} className="break-all" />
                 </div>
 
                 <div className="flex gap-4">
@@ -388,78 +359,58 @@ const Step2_Hashing: React.FC = () => {
                         onChange={(e) => setExp3Guess(e.target.value)}
                         disabled={exp3Solved}
                         placeholder="Enter your guess..."
-                        className="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-black focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50"
+                        className={inputClasses}
                     />
-                    <button
-                        onClick={handleExp3Guess}
-                        disabled={exp3Solved || !exp3Guess}
-                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold disabled:opacity-50 transition-colors"
-                    >
+                    <Button onClick={handleExp3Guess} disabled={exp3Solved || !exp3Guess}>
                         Check
-                    </button>
+                    </Button>
                 </div>
 
-                {/* Status Messages */}
-                <div className="mt-4 min-h-[60px]">
-                    {exp3Solved ? (
-                        <div className="p-4 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-start gap-3 animate-in zoom-in-95">
-                            <Lock className="w-5 h-5 text-blue-600 mt-1" />
-                            <div>
-                                <h4 className="font-bold text-blue-800 dark:text-blue-300">Correct! The input was "hello".</h4>
-                                <p className="text-sm text-blue-700 dark:text-blue-400">
-                                    But you only found it by guessing. There is NO formula to reverse a hash. This is why it's called a <b>One-Way Function</b>.
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="text-sm text-gray-500 flex justify-between items-center">
-                            <span>Attempts: {exp3Attempts}</span>
-                            {showHint && (
-                                <span className="text-orange-500 font-bold flex items-center gap-1 animate-pulse">
-                                    <Info className="w-4 h-4"/> Hint: It's a simple greeting. 5 letters.
-                                </span>
-                            )}
-                        </div>
-                    )}
+                <div className="mt-4 min-h-[24px]">
+                     {!exp3Solved && exp3Attempts >= 2 && showHint && (
+                        <span className="text-status-warning font-bold flex items-center gap-1 animate-pulse text-sm">
+                             <Info className="w-4 h-4"/> Hint: It's a simple greeting. 5 letters.
+                        </span>
+                     )}
                 </div>
-            </div>
-        </section>
+            </Card>
+        </div>
       )}
 
-      {/* SECTION 6 — COMPLETION */}
+      {/* SECTION 7 — COMPLETION */}
       {exp3Solved && (
-        <section ref={completionRef} className="space-y-6 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-800 pt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-8 rounded-2xl border border-indigo-100 dark:border-indigo-800 text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
-              </div>
-              <h2 className="text-3xl font-bold mb-4">Step 2 Complete!</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left mb-8">
-                  <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                      <div className="font-bold text-indigo-600 mb-1">Determinism</div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Same input always equals same output.</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                      <div className="font-bold text-purple-600 mb-1">Avalanche</div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Tiny changes create huge differences.</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                      <div className="font-bold text-blue-600 mb-1">One-Way</div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Easy to verify, impossible to reverse.</p>
-                  </div>
-              </div>
-
-              <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-xl mx-auto">
-                  You now understand the "fingerprints" of blockchain. Next, we will use these hashes to build actual <b>BLOCKS</b>.
-              </p>
-
-              {/* Navigation to next step is handled by the main layout, but we show a message here */}
-              <div className="inline-flex items-center text-indigo-600 font-bold animate-pulse">
-                  Proceed to Step 3: Building Blocks <ArrowRight className="w-5 h-5 ml-2" />
-              </div>
-           </div>
-        </section>
+        <div ref={completionRef} className={completionVisible ? 'animate-fade-up' : 'opacity-0'}>
+            <Card variant="default" status="valid">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="w-16 h-16 bg-status-valid/10 text-status-valid rounded-2xl flex items-center justify-center shrink-0">
+                        <Check className="w-8 h-8" />
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Hashing Mastered</h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-4">
+                            You've verified three key properties of cryptographic hashes: Determinism, Avalanche Effect, and One-Way nature.
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-left">
+                             <div className="bg-surface-tertiary dark:bg-surface-dark-tertiary p-3 rounded-lg">
+                                <span className="font-bold text-brand-600 block">Determinism</span>
+                                <span className="text-gray-500">Same input = Same output</span>
+                             </div>
+                             <div className="bg-surface-tertiary dark:bg-surface-dark-tertiary p-3 rounded-lg">
+                                <span className="font-bold text-purple-600 block">Avalanche</span>
+                                <span className="text-gray-500">Small change = Big difference</span>
+                             </div>
+                             <div className="bg-surface-tertiary dark:bg-surface-dark-tertiary p-3 rounded-lg">
+                                <span className="font-bold text-blue-600 block">One-Way</span>
+                                <span className="text-gray-500">Cannot be reversed</span>
+                             </div>
+                        </div>
+                    </div>
+                    <Button variant="success" size="lg" onClick={() => navigate('/journey/3')} className="w-full md:w-auto mt-6 md:mt-0">
+                        Continue to Step 3 →
+                    </Button>
+                </div>
+            </Card>
+        </div>
       )}
 
     </div>

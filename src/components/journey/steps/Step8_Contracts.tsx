@@ -4,8 +4,14 @@ import { ContractVM } from '../../../engine/ContractVM';
 import { VMStep } from '../../../engine/types';
 import {
   Code, AlertTriangle, Check, X, Flame,
-  ArrowRight, Database, Shield, Zap, Terminal, Unlock
+  ArrowRight, Database, Shield, Zap, Terminal, Unlock, Coins
 } from 'lucide-react';
+import Card from '../../ui/Card';
+import Button from '../../ui/Button';
+import Badge from '../../ui/Badge';
+import Hash from '../../ui/Hash';
+import { useInView } from '../../../hooks/useInView';
+import { useNavigate } from 'react-router-dom';
 
 type Section = 'intro' | 'deploy' | 'interact' | 'fail' | 'oog' | 'complete';
 
@@ -18,35 +24,25 @@ interface LogEntry {
 
 const Step8_Contracts: React.FC = () => {
   const { completeStep } = useProgress();
+  const navigate = useNavigate();
   const [section, setSection] = useState<Section>('intro');
   const [contractAddress, setContractAddress] = useState<string | null>(null);
   const [contractBalance, setContractBalance] = useState(0);
-  const [userBalance, setUserBalance] = useState(10); // Simulated user balance
+  const [userBalance, setUserBalance] = useState(10);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [gasMeter, setGasMeter] = useState({ current: 0, max: 0 });
   const [error, setError] = useState<string | null>(null);
 
-  // Scroll refs
-  const deployRef = useRef<HTMLDivElement>(null);
-  const interactRef = useRef<HTMLDivElement>(null);
-  const completeRef = useRef<HTMLDivElement>(null);
+  // InView hooks
+  const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
+  const [storyRef, storyVisible] = useInView({ threshold: 0.1 });
+  const [deployRef, deployVisible] = useInView({ threshold: 0.1 });
+  const [interactRef, interactVisible] = useInView({ threshold: 0.1 });
+  const [completeRef, completeVisible] = useInView({ threshold: 0.1 });
 
   // VM Instance
   const vmRef = useRef<ContractVM>(new ContractVM({ balance: 0 }));
-
-  // Scroll helper
-  const scrollTo = (ref: React.RefObject<HTMLDivElement>) => {
-    setTimeout(() => {
-      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
-
-  useEffect(() => {
-    if (section === 'deploy') scrollTo(deployRef);
-    if (section === 'interact') scrollTo(interactRef);
-    if (section === 'complete') scrollTo(completeRef);
-  }, [section]);
 
   // Contract Logic Definitions
   const DEPLOY_STEPS: VMStep[] = [
@@ -110,7 +106,6 @@ const Step8_Contracts: React.FC = () => {
     setError(null);
     setGasMeter({ current: 0, max: gasLimit });
 
-    // Initialize logs
     const initialLogs = steps.map((s, i) => ({
       step: i + 1,
       name: s.name,
@@ -119,7 +114,7 @@ const Step8_Contracts: React.FC = () => {
     }));
     setLogs(initialLogs);
 
-    const gasPrice = 0.00000001; // Simplified gas price
+    const gasPrice = 0.00000001;
 
     try {
       const result = await vmRef.current.execute(
@@ -127,7 +122,6 @@ const Step8_Contracts: React.FC = () => {
         gasLimit,
         gasPrice,
         (index, stepGas, totalGas) => {
-          // Update logs and gas meter progressively
           setGasMeter(prev => ({ ...prev, current: totalGas }));
           setLogs(prev => {
             const newLogs = [...prev];
@@ -140,29 +134,19 @@ const Step8_Contracts: React.FC = () => {
       );
 
       if (result.success) {
-        // Update local state from VM
         const newState = vmRef.current.getState();
         setContractBalance(newState.balance);
         onComplete(true);
       } else {
-        // Handle failure (revert or OOG)
         setError(result.revertReason || 'Transaction failed');
         setLogs(prev => {
             const newLogs = [...prev];
-            // Find first pending and mark as failed
             const firstPendingIdx = newLogs.findIndex(l => l.status === 'pending');
             if (firstPendingIdx !== -1) {
                 newLogs[firstPendingIdx].status = 'failed';
-                // Subsequent are reverted
                 for(let i=firstPendingIdx+1; i<newLogs.length; i++) {
                     newLogs[i].status = 'reverted';
                 }
-            } else {
-                // If all marked success but result failed (maybe last step?), mark last as failed
-                // But normally execute throws before callback if step fails?
-                // Wait, ContractVM execute logic: loops steps, if error catches.
-                // onStep is called AFTER step success. So if step fails, onStep NOT called for it.
-                // So pending index logic is correct.
             }
             return newLogs;
         });
@@ -189,7 +173,7 @@ const Step8_Contracts: React.FC = () => {
     if (userBalance < 3) return;
     setUserBalance(prev => prev - 3);
     runExecution(getDepositSteps(3), 100000, (success) => {
-      if (!success) setUserBalance(prev => prev + 3); // Refund if failed (logic error, not gas)
+      if (!success) setUserBalance(prev => prev + 3);
     });
   };
 
@@ -200,23 +184,16 @@ const Step8_Contracts: React.FC = () => {
   };
 
   const handleFailTest = () => {
-    // Attempt to withdraw 5 (when balance is likely 1 after +3 -2)
-    // We don't deduct user balance first because we expect fail
     runExecution(getWithdrawSteps(5), 100000, (success) => {
       if (!success) {
-        // This is expected
         setTimeout(() => setSection('oog'), 2000);
       }
     });
   };
 
   const handleOOGTest = () => {
-    // Attempt deposit with insufficient gas
-    // Steps: Check(2100) + Update(45000) = 47100
-    // Limit: 20000
     runExecution(getDepositSteps(1), 20000, (success) => {
       if (!success) {
-        // Expected OOG
         setTimeout(() => {
             setSection('complete');
             completeStep(8);
@@ -225,69 +202,48 @@ const Step8_Contracts: React.FC = () => {
     });
   };
 
-  // UI Helpers
-  const GasBar = () => (
-    <div className="w-full bg-gray-200 dark:bg-gray-700 h-4 rounded-full overflow-hidden mt-2 relative">
-      <div
-        className={`h-full transition-all duration-300 ${error && error === 'Out of gas' ? 'bg-red-500' : 'bg-blue-500'}`}
-        style={{ width: `${Math.min((gasMeter.current / Math.max(gasMeter.max, 1)) * 100, 100)}%` }}
-      />
-      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300 z-10">
-         {Math.round(gasMeter.current).toLocaleString()} / {gasMeter.max.toLocaleString()} Gas
-      </div>
-    </div>
-  );
-
   return (
-    <div className="space-y-16 pb-20 max-w-4xl mx-auto">
+    <div className="space-y-12 md:space-y-16 pb-20 max-w-4xl mx-auto">
 
-      {/* SECTION 1 — THE HOOK */}
-      <section className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="inline-flex items-center justify-center p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full mb-4">
-          <Code className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-        </div>
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Code Is Law</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300">
+      {/* SECTION 1: HEADER */}
+      <div ref={headerRef} className={`space-y-4 ${headerVisible ? 'animate-fade-up' : 'opacity-0'}`}>
+        <Badge variant="info">Step 8 of 8</Badge>
+        <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">Code Is Law</h1>
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl">
           When programs run on the blockchain, nobody can stop them.
         </p>
+      </div>
 
-        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 text-left space-y-4 max-w-2xl mx-auto shadow-sm">
-          <p className="text-lg">
+      {/* SECTION 2: STORY */}
+      <div ref={storyRef} className={storyVisible ? 'animate-fade-up' : 'opacity-0'}>
+        <Card variant="glass" className="max-w-prose">
+          <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
             Everything you've done so far — sending coins, mining — is just moving numbers around.
+            <br/><br/>
+            But what if the blockchain could <span className="font-bold text-brand-600 dark:text-brand-400">RUN PROGRAMS</span>?
+            Programs that nobody can stop, censor, or change? That's a Smart Contract.
           </p>
-          <p className="text-lg">
-            But what if the blockchain could <span className="font-bold text-purple-600 dark:text-purple-400">RUN PROGRAMS</span>?
-            Programs that nobody can stop, censor, or change?
-          </p>
-          <div className="pt-2 flex items-center text-gray-500 text-sm justify-center">
-            <ArrowRight className="w-4 h-4 mr-2" />
-            That's a Smart Contract. Let's deploy one.
-          </div>
-        </div>
+          {section === 'intro' && (
+              <Button onClick={() => setSection('deploy')} className="mt-6" icon={<Terminal className="w-4 h-4"/>}>
+                  Deploy a Contract
+              </Button>
+          )}
+        </Card>
+      </div>
 
-        {section === 'intro' && (
-          <button
-            onClick={() => setSection('deploy')}
-            className="mt-8 px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/30 transition-all transform hover:-translate-y-1 hover:scale-105"
-          >
-            Start Coding
-          </button>
-        )}
-      </section>
-
-      {/* SECTION 2 — DEPLOY */}
+      {/* SECTION 3: DEPLOY */}
       {(section === 'deploy' || section === 'interact' || section === 'fail' || section === 'oog' || section === 'complete') && (
-        <section ref={deployRef} className="space-y-8 border-t border-gray-200 dark:border-gray-800 pt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-           <h2 className="text-2xl font-bold flex items-center gap-2">
+        <div ref={deployRef} className={deployVisible ? 'animate-fade-up' : 'opacity-0'}>
+           <div className="flex items-center gap-2 mb-6">
              <Terminal className="w-6 h-6 text-gray-500" />
-             Your First Contract: PiggyBank
-           </h2>
+             <h2 className="text-2xl font-bold">Your First Contract: PiggyBank</h2>
+           </div>
 
            <div className="grid md:grid-cols-2 gap-8">
               {/* Code Display */}
               <div className="bg-gray-900 text-gray-100 p-6 rounded-xl font-mono text-sm shadow-xl overflow-hidden border border-gray-700 relative group">
                   <div className="absolute top-0 right-0 p-2 bg-gray-800 text-xs text-gray-400 rounded-bl-lg">Solidity</div>
-                  <pre className="language-solidity">
+                  <pre className="language-solidity overflow-x-auto">
 {`contract PiggyBank {
   uint256 public balance = 0;
 
@@ -301,14 +257,13 @@ const Step8_Contracts: React.FC = () => {
   }
 }`}
                   </pre>
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent pointer-events-none"></div>
               </div>
 
               {/* Deployment Controls */}
               <div className="space-y-6">
-                 <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <h3 className="font-bold text-lg mb-4">Deployment Estimate</h3>
-                    <div className="space-y-3 text-sm">
+                 <Card variant="elevated" className="space-y-4">
+                    <h3 className="font-bold text-lg">Deployment Estimate</h3>
+                    <div className="space-y-2 text-sm">
                        <div className="flex justify-between">
                           <span className="text-gray-500">Gas Required</span>
                           <span className="font-mono">500,000</span>
@@ -317,22 +272,23 @@ const Step8_Contracts: React.FC = () => {
                           <span className="text-gray-500">Gas Price</span>
                           <span className="font-mono">0.00001 coins</span>
                        </div>
-                       <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between font-bold">
+                       <div className="border-t border-surface-border dark:border-surface-dark-border pt-2 flex justify-between font-bold">
                           <span>Total Cost</span>
                           <span>5.0 coins</span>
                        </div>
                     </div>
-                 </div>
+                 </Card>
 
                  {!contractAddress ? (
-                   <button
+                   <Button
                      onClick={handleDeploy}
                      disabled={isExecuting}
-                     className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                     loading={isExecuting}
+                     fullWidth
+                     icon={<Zap className="w-4 h-4"/>}
                    >
-                     {isExecuting ? <Flame className="w-5 h-5 animate-pulse text-orange-400" /> : <Zap className="w-5 h-5" />}
                      {isExecuting ? 'Deploying...' : 'Deploy Contract'}
-                   </button>
+                   </Button>
                  ) : (
                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center gap-3 text-green-700 dark:text-green-400">
                       <Check className="w-6 h-6" />
@@ -344,112 +300,115 @@ const Step8_Contracts: React.FC = () => {
                  )}
               </div>
            </div>
-        </section>
+        </div>
       )}
 
-      {/* SECTION 3 — INTERACT */}
+      {/* SECTION 4: INTERACT */}
       {(section === 'interact' || section === 'fail' || section === 'oog' || section === 'complete') && (
-        <section ref={interactRef} className="space-y-8 border-t border-gray-200 dark:border-gray-800 pt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-           <h2 className="text-2xl font-bold flex items-center gap-2">
-             <Database className="w-6 h-6 text-blue-500" />
-             Interact & State
-           </h2>
+        <div ref={interactRef} className={interactVisible ? 'animate-fade-up' : 'opacity-0'}>
+           <div className="flex items-center gap-2 mb-6">
+             <Database className="w-6 h-6 text-brand-500" />
+             <h2 className="text-2xl font-bold">Interact & State</h2>
+           </div>
 
-           <div className="grid md:grid-cols-3 gap-6">
+           <div className="grid md:grid-cols-3 gap-6 mb-6">
               {/* User Wallet */}
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-2 bg-gray-100 dark:bg-gray-700 rounded-bl-xl text-xs font-bold text-gray-500">YOU</div>
+              <Card variant="elevated" className="relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-2 bg-surface-tertiary dark:bg-surface-dark-tertiary rounded-bl-xl text-xs font-bold text-gray-500">YOU</div>
                  <div className="text-sm text-gray-500 mb-1">Your Balance</div>
                  <div className="text-3xl font-bold font-mono">{userBalance} YUP</div>
-              </div>
+              </Card>
 
               {/* Action Area */}
-              <div className="md:col-span-2 bg-gray-50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+              <Card variant="outlined" className="md:col-span-2 flex flex-col justify-center">
                  {section === 'interact' && (
                    <div className="flex gap-4">
-                      <button
+                      <Button
                         onClick={handleDeposit}
                         disabled={isExecuting || userBalance < 3}
-                        className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all disabled:opacity-50"
+                        fullWidth
                       >
                         Deposit 3 YUP
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={handleWithdraw}
                         disabled={isExecuting || contractBalance < 2}
-                        className="flex-1 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition-all disabled:opacity-50"
+                        fullWidth
+                        variant="secondary"
                       >
                         Withdraw 2 YUP
-                      </button>
+                      </Button>
                    </div>
                  )}
 
                  {section === 'fail' && (
                     <div className="text-center space-y-4">
-                       <p className="font-bold text-red-600 dark:text-red-400 flex items-center justify-center gap-2">
+                       <p className="font-bold text-status-error flex items-center justify-center gap-2">
                           <AlertTriangle className="w-5 h-5" />
                           Experiment: Break the Rules
                        </p>
                        <p className="text-sm text-gray-600 dark:text-gray-300">
                           You have {contractBalance} YUP in the contract. Try to withdraw 5.
                        </p>
-                       <button
+                       <Button
                         onClick={handleFailTest}
                         disabled={isExecuting}
-                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-all disabled:opacity-50 animate-pulse"
+                        fullWidth
+                        variant="danger"
                       >
                         Withdraw 5 YUP (Illegal)
-                      </button>
+                      </Button>
                     </div>
                  )}
 
                  {section === 'oog' && (
                     <div className="text-center space-y-4">
-                       <p className="font-bold text-orange-600 dark:text-orange-400 flex items-center justify-center gap-2">
+                       <p className="font-bold text-status-warning flex items-center justify-center gap-2">
                           <Flame className="w-5 h-5" />
                           Experiment: Out of Gas
                        </p>
                        <p className="text-sm text-gray-600 dark:text-gray-300">
                           Operation needs ~47,000 gas. We'll give it only 20,000.
                        </p>
-                       <button
+                       <Button
                         onClick={handleOOGTest}
                         disabled={isExecuting}
-                        className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition-all disabled:opacity-50"
+                        fullWidth
+                        variant="warning"
                       >
                         Execute with Low Gas
-                      </button>
+                      </Button>
                     </div>
                  )}
 
                  {section === 'complete' && (
-                    <div className="text-center text-gray-500 py-4">
+                    <div className="text-center text-gray-500 py-2">
                        Interaction complete.
                     </div>
                  )}
-              </div>
+              </Card>
            </div>
 
            {/* Contract State */}
-           <div className="bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-xl border border-indigo-200 dark:border-indigo-800 flex items-center justify-between">
+           <Card variant="elevated" className="flex items-center justify-between mb-6 bg-brand-50 dark:bg-brand-900/10 border-brand-200 dark:border-brand-800">
               <div className="flex items-center gap-4">
-                 <div className="p-3 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg">
-                    <Database className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                 <div className="p-3 bg-brand-100 dark:bg-brand-900/40 rounded-lg text-brand-600 dark:text-brand-400">
+                    <Database className="w-6 h-6" />
                  </div>
                  <div>
-                    <div className="text-sm text-indigo-800 dark:text-indigo-300 font-bold">Smart Contract Storage</div>
-                    <div className="text-xs font-mono text-indigo-600 dark:text-indigo-400">{contractAddress || 'Not Deployed'}</div>
+                    <div className="text-sm text-brand-800 dark:text-brand-300 font-bold">Smart Contract Storage</div>
+                    <div className="text-xs font-mono text-brand-600 dark:text-brand-400">{contractAddress || 'Not Deployed'}</div>
                  </div>
               </div>
               <div className="text-right">
-                 <div className="text-xs text-indigo-500 uppercase font-bold">Balance</div>
-                 <div className="text-2xl font-mono font-bold text-indigo-900 dark:text-indigo-100">{contractBalance} YUP</div>
+                 <div className="text-xs text-brand-500 uppercase font-bold">Balance</div>
+                 <div className="text-2xl font-mono font-bold text-brand-900 dark:text-brand-100">{contractBalance} YUP</div>
               </div>
-           </div>
+           </Card>
 
-           {/* Execution Logs & Gas Meter */}
+           {/* Execution Logs */}
            {(isExecuting || logs.length > 0) && (
-              <div className="bg-gray-100 dark:bg-black/30 p-6 rounded-xl border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-300">
+              <Card variant="outlined" className="bg-surface-tertiary dark:bg-black/30">
                  <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-sm uppercase text-gray-500">Execution Log</h3>
                     <div className="text-xs font-mono text-gray-400">VM Trace</div>
@@ -457,11 +416,11 @@ const Step8_Contracts: React.FC = () => {
 
                  <div className="space-y-2 mb-4">
                     {logs.map((log, i) => (
-                       <div key={i} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 text-sm">
+                       <div key={i} className="flex items-center justify-between p-2 bg-surface-primary dark:bg-surface-dark-secondary rounded border border-surface-border dark:border-surface-dark-border text-sm">
                           <div className="flex items-center gap-2">
-                             {log.status === 'pending' && <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-blue-500 animate-spin" />}
-                             {log.status === 'success' && <Check className="w-4 h-4 text-green-500" />}
-                             {log.status === 'failed' && <X className="w-4 h-4 text-red-500" />}
+                             {log.status === 'pending' && <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-brand-500 animate-spin" />}
+                             {log.status === 'success' && <Check className="w-4 h-4 text-status-valid" />}
+                             {log.status === 'failed' && <X className="w-4 h-4 text-status-error" />}
                              {log.status === 'reverted' && <div className="w-4 h-4 text-gray-400 text-[10px] flex items-center justify-center">↩️</div>}
                              <span className={log.status === 'reverted' ? 'text-gray-400 line-through' : ''}>{log.name}</span>
                           </div>
@@ -480,53 +439,47 @@ const Step8_Contracts: React.FC = () => {
                  )}
 
                  <div className="text-xs font-bold text-gray-500 uppercase mb-1">Gas Meter</div>
-                 <GasBar />
-                 <div className="text-xs text-center mt-2 text-gray-400">
-                    {error === 'Out of gas' ? 'Transaction ran out of fuel. State reverted.' : 'Gas consumed for operations.'}
+                 <div className="w-full bg-gray-200 dark:bg-gray-700 h-4 rounded-full overflow-hidden mt-2 relative">
+                    <div
+                        className={`h-full transition-all duration-300 ${error && error === 'Out of gas' ? 'bg-status-error' : 'bg-brand-500'}`}
+                        style={{ width: `${Math.min((gasMeter.current / Math.max(gasMeter.max, 1)) * 100, 100)}%` }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300 z-10">
+                        {Math.round(gasMeter.current).toLocaleString()} / {gasMeter.max.toLocaleString()} Gas
+                    </div>
                  </div>
-              </div>
+              </Card>
            )}
 
-           {/* Transition Logic for next steps */}
-           {section === 'interact' && (
-             // Logic: We need to wait for user to do BOTH deposit and withdraw?
-             // Or just do deposit then withdraw then move on.
-             // The logic:
-             // Start: User 10, Contract 0
-             // Dep 3: User 7, Contract 3
-             // With 2: User 9, Contract 1
-             contractBalance === 1 && userBalance === 9 ? (
-               <div className="text-center animate-in fade-in slide-in-from-bottom-2">
-                  <p className="text-green-600 dark:text-green-400 font-bold mb-2">Transaction Successful!</p>
-                  <button
+           {/* Transition Logic */}
+           {section === 'interact' && contractBalance === 1 && userBalance === 9 && (
+               <div className="text-center mt-6 animate-fade-up">
+                  <p className="text-status-valid font-bold mb-4">Transaction Successful!</p>
+                  <Button
                     onClick={() => {
                         setSection('fail');
                         setLogs([]);
                         setError(null);
                         setGasMeter({current: 0, max: 0});
                     }}
-                    className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full text-sm font-bold hover:scale-105 transition-transform"
+                    variant="primary"
                   >
                     Next Experiment →
-                  </button>
+                  </Button>
                </div>
-             ) : null
            )}
-        </section>
+        </div>
       )}
 
-      {/* SECTION 4 — COMPLETE */}
+      {/* SECTION 5: COMPLETE */}
       {section === 'complete' && (
-        <section ref={completeRef} className="space-y-8 border-t border-gray-200 dark:border-gray-800 pt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-           <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-8 rounded-3xl border border-green-100 dark:border-green-800 text-center shadow-2xl">
-              <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <div className="relative">
-                    <Check className="w-10 h-10 text-green-500" />
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
-                  </div>
+        <div ref={completeRef} className={completeVisible ? 'animate-fade-up' : 'opacity-0'}>
+           <Card variant="default" status="valid" className="text-center p-8">
+              <div className="w-20 h-20 bg-surface-primary dark:bg-surface-dark-secondary rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg border-2 border-status-valid">
+                  <Check className="w-10 h-10 text-status-valid" />
               </div>
 
-              <h2 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-400">
+              <h2 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-brand-500 to-purple-500">
                  JOURNEY COMPLETE!
               </h2>
 
@@ -534,37 +487,25 @@ const Step8_Contracts: React.FC = () => {
                  You have mastered the fundamentals of blockchain. From identity to mining, from consensus to code.
               </p>
 
-              <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-10 text-left">
-                  <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-4">
-                     <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                        <Unlock className="w-6 h-6 text-green-600 dark:text-green-400" />
-                     </div>
-                     <div>
-                        <div className="font-bold text-lg">Sandbox Unlocked</div>
-                        <div className="text-sm text-gray-500">Free play mode enabled</div>
-                     </div>
-                  </div>
-                  <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-4">
-                     <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                        <Shield className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                     </div>
-                     <div>
-                        <div className="font-bold text-lg">Challenges Unlocked</div>
-                        <div className="text-sm text-gray-500">Test your skills</div>
-                     </div>
-                  </div>
-              </div>
-
               <div className="flex justify-center gap-4">
-                  <a href="/sandbox" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-xl transition-transform hover:scale-105 flex items-center gap-2">
-                     Enter Sandbox <ArrowRight className="w-5 h-5" />
-                  </a>
-                  <a href="/challenges" className="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl font-bold shadow-md transition-transform hover:scale-105">
+                  <Button
+                     onClick={() => navigate('/sandbox')}
+                     size="lg"
+                     icon={<Unlock className="w-5 h-5" />}
+                  >
+                     Enter Sandbox
+                  </Button>
+                  <Button
+                     onClick={() => navigate('/challenges')}
+                     size="lg"
+                     variant="secondary"
+                     icon={<Shield className="w-5 h-5" />}
+                  >
                      View Challenges
-                  </a>
+                  </Button>
               </div>
-           </div>
-        </section>
+           </Card>
+        </div>
       )}
 
     </div>
