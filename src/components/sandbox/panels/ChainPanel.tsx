@@ -1,42 +1,72 @@
 import React, { useRef, useEffect } from 'react';
-import { Box, GitBranch, Clock } from 'lucide-react';
+import { Box, GitBranch, Clock, Lock, CheckCircle2 } from 'lucide-react';
 import { useBlockchainStore } from '../../../stores/useBlockchainStore';
 import { useForkStore } from '../../../stores/useForkStore';
 import { useSandboxStore } from '../../../stores/useSandboxStore';
 import { Block } from '../../../engine/types';
+import SandboxPanel from '../SandboxPanel';
 
-const BlockCard: React.FC<{ block: Block; isSmall?: boolean; type?: 'main' | 'orphan' | 'competitor' }> = ({ block, isSmall, type = 'main' }) => {
-  const bgColor =
-    type === 'main' ? 'bg-white dark:bg-gray-800' :
-    type === 'competitor' ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' :
-    'bg-gray-100 dark:bg-gray-700';
+const BlockCard: React.FC<{ block: Block; height: number; type?: 'main' | 'orphan' | 'competitor' }> = ({ block, height, type = 'main' }) => {
+  const confirmations = height - block.index + 1;
+  const isNew = confirmations === 1;
+  const isFinalized = confirmations >= 6; // Bitcoin standard, loosely applied
 
-  const borderColor =
-    type === 'main' ? 'border-gray-200 dark:border-gray-700' :
-    type === 'competitor' ? 'border-orange-300 dark:border-orange-700' :
-    'border-gray-300 dark:border-gray-600';
+  let statusColor = "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800";
+  let statusIndicator = null;
+  let shadowClass = "shadow-sm";
+
+  if (type === 'competitor') {
+      statusColor = "border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20";
+  } else if (isNew) {
+      statusColor = "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20";
+      shadowClass = "shadow-[0_0_15px_-3px_rgba(74,222,128,0.5)]";
+      statusIndicator = <span className="animate-pulse w-2 h-2 rounded-full bg-green-500 mr-2"></span>;
+  } else if (isFinalized) {
+      statusColor = "border-indigo-100 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-900/10";
+      statusIndicator = <Lock className="w-3 h-3 text-indigo-400 mr-2" />;
+  } else {
+      statusColor = "border-blue-100 dark:border-blue-900 bg-white dark:bg-gray-800";
+      statusIndicator = <CheckCircle2 className="w-3 h-3 text-blue-400 mr-2" />;
+  }
 
   return (
     <div className={`
-      flex flex-col shrink-0 rounded-lg border shadow-sm p-3 transition-all hover:shadow-md
-      ${bgColor} ${borderColor}
-      ${isSmall ? 'w-32 h-24 text-xs' : 'w-48 h-32'}
+      flex flex-col shrink-0 rounded-xl border p-4 transition-all duration-300 hover:shadow-md hover:-translate-y-1 w-64 h-40
+      ${statusColor} ${shadowClass}
+      ${isNew ? 'animate-in zoom-in-95 duration-500' : ''}
     `}>
-      <div className="flex justify-between items-start mb-2">
-        <span className="font-mono font-bold text-gray-500 dark:text-gray-400">#{block.index}</span>
-        {type === 'competitor' && <GitBranch className="w-3 h-3 text-orange-500" />}
-      </div>
-      <div className="flex-1 overflow-hidden">
-        <div className="font-mono text-[10px] text-gray-400 truncate mb-1" title={block.hash}>
-            {block.hash.substring(0, 10)}...
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center">
+            {statusIndicator}
+            <span className="font-mono font-bold text-lg text-gray-700 dark:text-gray-200">#{block.index}</span>
         </div>
-        <div className="text-gray-900 dark:text-gray-100 font-medium text-xs line-clamp-2">
-            {block.data}
+        {type === 'competitor' && <GitBranch className="w-4 h-4 text-orange-500" />}
+        <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+            {isNew ? 'Just Mined' : `${confirmations} Confirms`}
+        </span>
+      </div>
+
+      <div className="flex-1 overflow-hidden space-y-2">
+        <div>
+            <div className="text-[10px] text-gray-400 uppercase font-semibold">Hash</div>
+            <div className="font-mono text-xs text-gray-500 dark:text-gray-400 truncate" title={block.hash}>
+                {block.hash}
+            </div>
+        </div>
+        <div>
+            <div className="text-[10px] text-gray-400 uppercase font-semibold">Data</div>
+            <div className="text-sm text-gray-900 dark:text-white line-clamp-2 font-medium">
+                {block.data}
+            </div>
         </div>
       </div>
-      <div className="mt-2 flex items-center text-[10px] text-gray-400">
-         <Clock className="w-3 h-3 mr-1" />
-         {new Date(block.timestamp).toLocaleTimeString()}
+
+      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs text-gray-400">
+         <div className="flex items-center">
+            <Clock className="w-3 h-3 mr-1" />
+            {new Date(block.timestamp).toLocaleTimeString()}
+         </div>
+         <div className="font-mono">Nonce: {block.nonce}</div>
       </div>
     </div>
   );
@@ -49,7 +79,7 @@ const ChainPanel: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Track previous fork state to detect new forks for mastery
-  const prevForkRef = useRef<string | null>(null); // Use ID or unique property if possible, or just status tracking
+  const prevForkRef = useRef<string | null>(null);
   const incrementMastery = useSandboxStore(state => state.incrementMastery);
 
   // Auto scroll
@@ -61,43 +91,35 @@ const ChainPanel: React.FC = () => {
 
   // Track mastery
   useEffect(() => {
-    // Detect new fork
     if (activeFork && activeFork.status === 'active' && !prevForkRef.current) {
         incrementMastery('forksWitnessed');
         prevForkRef.current = 'active';
     } else if (!activeFork && prevForkRef.current) {
-        // Fork ended
-        // We assume survival if it ended without explicit failure (which is not really tracked here)
         incrementMastery('reorgsSurvived');
         prevForkRef.current = null;
     }
   }, [activeFork, incrementMastery]);
 
-  // Determine blocks to show
-  const visibleBlocks = blocks.slice(-10);
+  const visibleBlocks = blocks; // Show all in scroll
 
   return (
-    <div className="h-full bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
-        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
-          <Box className="w-4 h-4 text-indigo-500" />
-          Blockchain
-        </h3>
-        <div className="flex items-center gap-3">
-            {activeFork && (
-                <span className="flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full animate-pulse">
-                    <GitBranch className="w-3 h-3" /> FORK ACTIVE
-                </span>
-            )}
-            <span className="text-xs text-gray-500 font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
-                Height: {blocks.length}
-            </span>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-x-auto p-4 relative" ref={scrollRef}>
-        <div className="flex gap-4 min-w-max items-center h-full pb-2">
-            {/* Standard Chain Visualization */}
+    <SandboxPanel
+        title="Blockchain"
+        icon={Box}
+        isLive={true}
+        footer={
+            <div className="flex justify-between items-center text-xs text-gray-500">
+                <span>Height: <span className="font-mono font-bold text-gray-900 dark:text-white">{blocks.length}</span></span>
+                {activeFork && (
+                    <span className="flex items-center gap-1 font-bold text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full animate-pulse">
+                        <GitBranch className="w-3 h-3" /> FORK ACTIVE
+                    </span>
+                )}
+            </div>
+        }
+    >
+      <div className="h-full flex items-center overflow-x-auto pb-4 custom-scrollbar" ref={scrollRef}>
+        <div className="flex gap-6 px-2 min-w-max items-center h-full">
             {visibleBlocks.map((block, i) => {
                 let competitor: Block | null = null;
 
@@ -113,20 +135,22 @@ const ChainPanel: React.FC = () => {
                 }
 
                 return (
-                    <div key={block.hash} className="flex flex-col gap-4 relative justify-center">
-                        <BlockCard block={block} />
+                    <div key={block.hash} className="flex flex-col gap-4 relative justify-center group">
+                        <BlockCard block={block} height={blocks.length} />
 
                         {/* Connecting Line */}
                         {i < visibleBlocks.length - 1 && (
-                             <div className="absolute top-1/2 -right-4 w-4 h-0.5 bg-gray-300 dark:bg-gray-600 z-0" />
+                             <div className="absolute top-1/2 -right-6 w-6 h-1 bg-gray-200 dark:bg-gray-700 z-0 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900 transition-colors" />
                         )}
 
                         {/* Competitor (Fork Branch) */}
                         {competitor && (
-                            <div className="absolute top-full mt-4 animate-in slide-in-from-top-4 fade-in duration-500 z-10">
+                            <div className="absolute top-full mt-8 animate-in slide-in-from-top-4 fade-in duration-500 z-10">
                                 {/* Visual branch connector */}
-                                <div className="absolute -top-4 left-1/2 w-0.5 h-4 bg-orange-300 border-l border-dashed border-orange-500" />
-                                <BlockCard block={competitor} type="competitor" />
+                                <svg className="absolute -top-8 left-1/2 -translate-x-1/2 w-4 h-8 text-orange-300" overflow="visible">
+                                    <path d="M 0 0 V 15 Q 0 30 15 30 H 20" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4" />
+                                </svg>
+                                <BlockCard block={competitor} height={blocks.length} type="competitor" />
                             </div>
                         )}
                     </div>
@@ -134,7 +158,7 @@ const ChainPanel: React.FC = () => {
             })}
         </div>
       </div>
-    </div>
+    </SandboxPanel>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import SandboxToolbar from './SandboxToolbar';
 import ChainPanel from './panels/ChainPanel';
 import MiningPanel from './panels/MiningPanel';
@@ -8,7 +8,7 @@ import NetworkPanel from './panels/NetworkPanel';
 import ContractPanel from './panels/ContractPanel';
 import EventLogPanel from './panels/EventLogPanel';
 import Tabs from '../ui/Tabs';
-import { Box, Hammer, Wallet, Layers, Globe, FileCode, Terminal } from 'lucide-react';
+import { Box, Hammer, Wallet, Layers, Globe, FileCode } from 'lucide-react';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useSandboxStore } from '../../stores/useSandboxStore';
 import { useBackground } from '../../context/BackgroundContext';
@@ -22,19 +22,13 @@ const SandboxLayout: React.FC = () => {
   const { addToast } = useToast();
   const { playSound } = useSound();
 
-  // Refs for scrolling
-  const miningRef = useRef<HTMLDivElement>(null);
-  const walletRef = useRef<HTMLDivElement>(null);
-
   useKeyboardShortcuts({
     'm': () => {
         setActiveTab('mining');
-        miningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         addToast('Switched to Mining', 'info', 1000);
     },
     't': () => {
         setActiveTab('wallet');
-        walletRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         addToast('Switched to Wallet', 'info', 1000);
     },
     'g': () => {
@@ -51,68 +45,57 @@ const SandboxLayout: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden font-sans transition-colors duration-300">
       <SandboxToolbar />
 
-      {/* Mobile/Tablet View (Tabs) - Visible below lg (1024px) */}
-      <div className="lg:hidden flex-1 flex flex-col overflow-hidden">
-        <div className="p-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 shrink-0">
-          <Tabs
-            tabs={[
-              { id: 'chain', label: 'Chain', icon: <Box className="w-4 h-4" /> },
-              { id: 'mining', label: 'Mining', icon: <Hammer className="w-4 h-4" /> },
-              { id: 'wallet', label: 'Wallet', icon: <Wallet className="w-4 h-4" /> },
-              { id: 'mempool', label: 'Mempool', icon: <Layers className="w-4 h-4" /> },
-              { id: 'network', label: 'Network', icon: <Globe className="w-4 h-4" /> },
-              { id: 'contract', label: 'Contracts', icon: <FileCode className="w-4 h-4" /> },
-              { id: 'events', label: 'Logs', icon: <Terminal className="w-4 h-4" /> },
-            ]}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-            className="w-full"
-          />
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden relative flex flex-col">
+
+        {/* Mobile View (<768px) */}
+        <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+          <div className="p-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 overflow-x-auto no-scrollbar">
+             <Tabs
+              tabs={[
+                { id: 'chain', label: 'Chain', icon: <Box className="w-4 h-4" /> },
+                { id: 'mining', label: 'Mining', icon: <Hammer className="w-4 h-4" /> },
+                { id: 'wallet', label: 'Wallet', icon: <Wallet className="w-4 h-4" /> },
+                { id: 'mempool', label: 'Mempool', icon: <Layers className="w-4 h-4" /> },
+                { id: 'network', label: 'Network', icon: <Globe className="w-4 h-4" /> },
+                { id: 'contract', label: 'Contracts', icon: <FileCode className="w-4 h-4" /> },
+              ]}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              className="min-w-max"
+            />
+          </div>
+          <div className="flex-1 p-3 overflow-hidden bg-gray-100 dark:bg-gray-950">
+             {activeTab === 'chain' && <ChainPanel />}
+             {activeTab === 'mining' && <MiningPanel />}
+             {activeTab === 'wallet' && <WalletPanel />}
+             {activeTab === 'mempool' && <MempoolPanel />}
+             {activeTab === 'network' && <NetworkPanel />}
+             {activeTab === 'contract' && <ContractPanel />}
+          </div>
         </div>
-        <div className="flex-1 p-4 overflow-y-auto">
-          {activeTab === 'chain' && <div className="h-[400px]"><ChainPanel /></div>}
-          {activeTab === 'mining' && <div className="h-[500px]"><MiningPanel /></div>}
-          {activeTab === 'wallet' && <div className="h-[500px]"><WalletPanel /></div>}
-          {activeTab === 'mempool' && <div className="h-[500px]"><MempoolPanel /></div>}
-          {activeTab === 'network' && <div className="h-[400px]"><NetworkPanel /></div>}
-          {activeTab === 'contract' && <div className="h-[600px]"><ContractPanel /></div>}
-          {activeTab === 'events' && <div className="h-[400px]"><EventLogPanel /></div>}
+
+        {/* Tablet/Desktop Grid (>=768px) */}
+        <div className="hidden md:block flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar bg-gray-100 dark:bg-gray-950">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 auto-rows-[minmax(400px,auto)] pb-32 max-w-[1920px] mx-auto">
+                 {/* Row 1 */}
+                 <div className="h-[400px] lg:h-[450px]"><ChainPanel /></div>
+                 <div className="h-[400px] lg:h-[450px]"><MiningPanel /></div>
+                 <div className="h-[400px] lg:h-[450px]"><WalletPanel /></div>
+
+                 {/* Row 2 */}
+                 <div className="h-[400px] lg:h-[450px]"><MempoolPanel /></div>
+                 <div className="h-[400px] lg:h-[450px]"><NetworkPanel /></div>
+                 <div className="h-[400px] lg:h-[450px]"><ContractPanel /></div>
+            </div>
         </div>
-      </div>
 
-      {/* Desktop View (Dashboard Grid) - Visible lg and above */}
-      <div className="hidden lg:block flex-1 overflow-y-auto p-6">
-        <div className="grid grid-cols-3 gap-6 auto-rows-min max-w-[1600px] mx-auto">
-
-            {/* Top Row */}
-            <div className="col-span-2 h-[350px]">
-                <ChainPanel />
-            </div>
-            <div className="col-span-1 h-[350px]" ref={miningRef}>
-                <MiningPanel />
-            </div>
-
-            {/* Middle Row */}
-            <div className="col-span-1 h-[450px]" ref={walletRef}>
-                <WalletPanel />
-            </div>
-            <div className="col-span-1 h-[450px]">
-                <MempoolPanel />
-            </div>
-            <div className="col-span-1 h-[450px]">
-                <ContractPanel />
-            </div>
-
-            {/* Bottom Row */}
-            <div className="col-span-1 h-[250px]">
-                <NetworkPanel />
-            </div>
-            <div className="col-span-2 h-[250px]">
-                <EventLogPanel />
-            </div>
+        {/* Event Log (Sticky Bottom) */}
+        <div className="shrink-0 z-40 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <EventLogPanel />
         </div>
       </div>
     </div>
