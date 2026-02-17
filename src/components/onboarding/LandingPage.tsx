@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, BookOpen, Cpu, Trophy, Activity, Box, Users, Play } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Box, Activity, Cpu, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import HeroBackground from './HeroBackground';
 import NetworkConnect from './NetworkConnect';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+import AnimatedNumber from '../ui/AnimatedNumber';
 import { useProgress } from '../../context/ProgressContext';
 import { useBlockchainStore } from '../../stores/useBlockchainStore';
 import { useWalletStore } from '../../stores/useWalletStore';
@@ -12,7 +15,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentStep, journeyComplete } = useProgress();
   const { blocks } = useBlockchainStore();
-  const { mempool } = useWalletStore(); // minedTransactions tracks session mines
+  const { mempool } = useWalletStore();
   const { engine } = useBackground();
 
   const [showConnect, setShowConnect] = useState(false);
@@ -27,16 +30,10 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const updateStats = () => {
        const blockCount = blocks.length;
-
-       // Calculate total transactions from blocks + mempool
-       // This is expensive to do every render if blocks are huge, but fine for simulation scale
        let txCount = 0;
        blocks.forEach(b => {
-           // Block data format: "Mined by X\nTx1, Tx2..."
            const lines = b.data.split('\n');
            if (lines.length > 1) {
-               // Assuming comma separated txs in second line, or just counting lines
-               // BackgroundEngine uses: "from->to (amt), ..."
                const txLine = lines[1];
                if (txLine && txLine !== 'No transactions') {
                    txCount += txLine.split(', ').length;
@@ -45,9 +42,6 @@ const LandingPage: React.FC = () => {
        });
        txCount += mempool.length;
 
-       // Add some simulated historical base for effect if needed, but let's stick to real simulation stats
-       // or user request "1,204 transactions processed" suggests a higher number.
-       // Let's add a base number to make it look "live" and mature if it's small.
        const baseTx = 1204;
        const baseBlocks = 347;
 
@@ -77,166 +71,220 @@ const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-brand-500 selection:text-white overflow-x-hidden">
       {/* Network Connect Overlay */}
       {showConnect && (
         <NetworkConnect onComplete={() => navigate('/journey/1')} />
       )}
 
-      {/* Section 1: Hero */}
+      {/* ─────────────────────────────────────────────────────────────
+          HERO SECTION
+      ───────────────────────────────────────────────────────────── */}
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
         <HeroBackground />
 
         <div className="z-10 text-center px-4 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-1000 slide-in-from-bottom-10">
-          <div className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
-              You've heard about blockchain.
-              <br />
-              <span className="text-white">Now BECOME part of one.</span>
+          <div className="space-y-2">
+             <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight text-white drop-shadow-lg">
+              YOU'VE HEARD ABOUT <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">BLOCKCHAIN.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-              This isn't a tutorial. This is a living blockchain network.
-              <br />
-              And you're about to join it.
-            </p>
+            <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight text-white drop-shadow-lg">
+              NOW BECOME <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">PART OF ONE.</span>
+            </h1>
           </div>
 
-          <div className="flex flex-col items-center gap-4 pt-8">
-            <button
-              onClick={handleBegin}
-              className="group relative px-8 py-4 bg-white text-black font-bold text-lg rounded-full hover:bg-gray-200 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
-            >
-              Begin Your Journey
-              <ArrowRight className="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+          <div className="space-y-1">
+             <p className="text-lg md:text-xl text-gray-400">This isn't a tutorial.</p>
+             <p className="text-lg md:text-xl text-gray-400">It's a living network.</p>
+             <p className="text-lg md:text-xl text-white font-medium">And you're about to join it.</p>
+          </div>
 
-            <div className="flex items-center gap-6 mt-4 text-sm font-medium">
-              {currentStep > 1 && (
-                <Link to={`/journey/${currentStep}`} className="text-gray-400 hover:text-white transition-colors flex items-center">
-                  <Play className="w-4 h-4 mr-1" />
-                  Continue from Step {currentStep}
-                </Link>
-              )}
-              {journeyComplete && (
-                <Link to="/sandbox" className="text-gray-400 hover:text-indigo-400 transition-colors flex items-center">
-                  <Box className="w-4 h-4 mr-1" />
-                  Enter Sandbox
-                </Link>
-              )}
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-8">
+            <Button
+              onClick={handleBegin}
+              variant="primary"
+              size="lg"
+              className="w-full md:w-auto min-w-[200px] shadow-[0_0_30px_rgba(99,102,241,0.4)]"
+            >
+              Begin Your Journey <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+
+            <div className="flex items-center gap-4">
+               {currentStep > 1 && (
+                  <Button
+                    onClick={() => navigate(`/journey/${currentStep}`)}
+                    variant="ghost"
+                    size="lg"
+                    className="w-full md:w-auto border border-white/10 hover:bg-white/5"
+                  >
+                    Continue Step {currentStep}
+                  </Button>
+               )}
+               {journeyComplete && (
+                  <Button
+                     onClick={() => navigate('/sandbox')}
+                     variant="ghost"
+                     size="lg"
+                      className="w-full md:w-auto border border-white/10 hover:bg-white/5"
+                  >
+                     Sandbox
+                  </Button>
+               )}
             </div>
           </div>
         </div>
 
         {/* Scroll Indicator */}
         <div className="absolute bottom-8 animate-bounce text-gray-500">
-          <span className="text-xs uppercase tracking-widest">How it works</span>
+          <span className="text-xs uppercase tracking-widest">Scroll to explore</span>
         </div>
       </section>
 
-      {/* Section 2: How It Works */}
-      <section className="py-24 px-6 bg-zinc-900 border-t border-zinc-800">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
-
-            {/* Step 1 */}
-            <div className="space-y-4 group">
-              <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
-                <BookOpen className="w-8 h-8 text-indigo-400" />
-              </div>
-              <h3 className="text-2xl font-bold">1. LEARN</h3>
-              <p className="text-gray-400 leading-relaxed">
-                8 guided steps. Each builds on the last. You can't skip ahead.
-                Understand the "why" before the "how".
+      {/* ─────────────────────────────────────────────────────────────
+          HOW IT WORKS SECTION
+      ───────────────────────────────────────────────────────────── */}
+      <section className="py-24 px-6 bg-surface-secondary dark:bg-[#0B0F19]">
+        <div className="max-w-7xl mx-auto space-y-16">
+           <div className="text-center space-y-4">
+              <h2 className="text-3xl md:text-5xl font-display font-bold text-white">How You'll Learn Blockchain</h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">
+                 Forget static text. You learn by doing. By breaking. By fixing.
               </p>
-            </div>
+           </div>
 
-            {/* Step 2 */}
-            <div className="space-y-4 group">
-              <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                <Cpu className="w-8 h-8 text-purple-400" />
-              </div>
-              <h3 className="text-2xl font-bold">2. APPLY</h3>
-              <p className="text-gray-400 leading-relaxed">
-                Sandbox mode. Everything on one screen. Free play.
-                Experiment without consequences.
-              </p>
-            </div>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+              {/* Connector Lines (Desktop) */}
+              <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-brand-500/30 to-transparent -translate-y-1/2 z-0"></div>
 
-            {/* Step 3 */}
-            <div className="space-y-4 group">
-              <div className="w-16 h-16 bg-pink-500/10 rounded-2xl flex items-center justify-center group-hover:bg-pink-500/20 transition-colors">
-                <Trophy className="w-8 h-8 text-pink-400" />
-              </div>
-              <h3 className="text-2xl font-bold">3. MASTER</h3>
-              <p className="text-gray-400 leading-relaxed">
-                Challenges. Double spend attacks. 51% attacks. Forks.
-                Deploy contracts. Feel what it means to trust math.
-              </p>
-            </div>
-          </div>
+              {/* Step 1 */}
+              <Card variant="glass" className="relative z-10 hover:scale-105 transition-transform duration-300 border-white/5 bg-gray-900/40 backdrop-blur-xl">
+                 <div className="flex flex-col items-center text-center space-y-4 p-4">
+                    <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                       <span className="text-3xl">🎓</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">LEARN</h3>
+                    <p className="text-gray-400">
+                       8 guided steps. Each builds on the last. Master the fundamentals one block at a time.
+                    </p>
+                 </div>
+              </Card>
 
-          <div className="mt-16 p-8 bg-gradient-to-r from-zinc-800 to-zinc-900 rounded-2xl border border-zinc-700 text-center">
-            <p className="text-lg text-gray-300">
-              "You'll create wallets, mine blocks, send coins, break chains, experience forks, deploy contracts
-              and <span className="text-white font-bold">FEEL</span> what it means to trust math over people."
-            </p>
-          </div>
+              {/* Step 2 */}
+              <Card variant="glass" className="relative z-10 hover:scale-105 transition-transform duration-300 border-white/5 bg-gray-900/40 backdrop-blur-xl delay-100">
+                 <div className="flex flex-col items-center text-center space-y-4 p-4">
+                    <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                       <span className="text-3xl">⚡</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">APPLY</h3>
+                    <p className="text-gray-400">
+                       Sandbox mode. Everything is connected. Free play with a fully simulated blockchain node.
+                    </p>
+                 </div>
+              </Card>
+
+              {/* Step 3 */}
+              <Card variant="glass" className="relative z-10 hover:scale-105 transition-transform duration-300 border-white/5 bg-gray-900/40 backdrop-blur-xl delay-200">
+                 <div className="flex flex-col items-center text-center space-y-4 p-4">
+                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                       <span className="text-3xl">🏆</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">MASTER</h3>
+                    <p className="text-gray-400">
+                       Real challenges. Break things on purpose. Double spend, 51% attacks, and forks.
+                    </p>
+                 </div>
+              </Card>
+           </div>
         </div>
       </section>
 
-      {/* Section 3: Live Network Preview */}
-      <section className="py-24 px-6 bg-black relative overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-900/20 rounded-full blur-[100px] pointer-events-none" />
+      {/* ─────────────────────────────────────────────────────────────
+          LIVE NETWORK SECTION
+      ───────────────────────────────────────────────────────────── */}
+      <section className="py-24 px-6 bg-gray-950 relative overflow-hidden">
+         {/* Background Decoration */}
+         <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-900/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
+         </div>
 
-        <div className="max-w-4xl mx-auto relative z-10 text-center">
-          <h2 className="text-3xl font-bold mb-12 flex items-center justify-center gap-3">
-            <Activity className="w-6 h-6 text-green-400 animate-pulse" />
-            Right now, our simulated network is running
-          </h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-            <div className="p-6 bg-zinc-900/50 backdrop-blur border border-zinc-800 rounded-xl">
-              <div className="text-3xl font-bold text-white mb-2">{stats.blocks.toLocaleString()}</div>
-              <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
-                <Box className="w-4 h-4" /> Blocks Mined
-              </div>
+         <div className="max-w-6xl mx-auto relative z-10">
+            <div className="text-center mb-16 space-y-4">
+               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-sm font-medium animate-pulse-subtle">
+                  <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
+                  LIVE NETWORK STATUS
+               </div>
+               <h2 className="text-4xl md:text-5xl font-display font-bold text-white">The Network Is Running. Right Now.</h2>
             </div>
 
-            <div className="p-6 bg-zinc-900/50 backdrop-blur border border-zinc-800 rounded-xl">
-              <div className="text-3xl font-bold text-white mb-2">{stats.txs.toLocaleString()}</div>
-              <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
-                <Activity className="w-4 h-4" /> Transactions
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+               {/* Stats Grid */}
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="p-6 rounded-2xl bg-gray-900/50 border border-white/5 backdrop-blur-sm">
+                     <div className="text-4xl font-mono font-bold text-white mb-2">
+                        <AnimatedNumber value={stats.blocks} />
+                     </div>
+                     <div className="text-gray-400 flex items-center gap-2">
+                        <Box className="w-4 h-4 text-brand-400" /> Blocks Mined
+                     </div>
+                  </div>
+                  <div className="p-6 rounded-2xl bg-gray-900/50 border border-white/5 backdrop-blur-sm">
+                     <div className="text-4xl font-mono font-bold text-white mb-2">
+                        <AnimatedNumber value={stats.txs} />
+                     </div>
+                     <div className="text-gray-400 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-emerald-400" /> Transactions
+                     </div>
+                  </div>
+                  <div className="p-6 rounded-2xl bg-gray-900/50 border border-white/5 backdrop-blur-sm">
+                     <div className="text-4xl font-mono font-bold text-white mb-2">
+                        <AnimatedNumber value={stats.miners} />
+                     </div>
+                     <div className="text-gray-400 flex items-center gap-2">
+                        <Cpu className="w-4 h-4 text-amber-400" /> Active Miners
+                     </div>
+                  </div>
+                  <div className="p-6 rounded-2xl bg-gray-900/50 border border-white/5 backdrop-blur-sm">
+                     <div className="text-4xl font-mono font-bold text-white mb-2">
+                        <AnimatedNumber value={stats.nodes} />
+                     </div>
+                     <div className="text-gray-400 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-400" /> Peer Nodes
+                     </div>
+                  </div>
+               </div>
+
+               {/* Mini Chain Visualization */}
+               <div className="relative h-64 bg-gray-900/30 rounded-2xl border border-white/5 overflow-hidden flex items-center justify-end px-8">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-transparent to-transparent z-10"></div>
+
+                  {/* Visual blocks */}
+                  <div className="flex items-center gap-4 animate-slide-in-right">
+                      {/* We just show a few static-looking blocks that pulse to simulate activity */}
+                      {[...Array(5)].map((_, i) => (
+                         <div key={i} className="relative group">
+                            <div className={`w-16 h-16 rounded-xl border border-brand-500/30 bg-brand-500/10 flex items-center justify-center text-xs font-mono text-brand-300
+                               shadow-[0_0_15px_rgba(99,102,241,0.1)] transition-all duration-500
+                               ${i === 4 ? 'animate-pulse bg-brand-500/20 border-brand-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)]' : 'opacity-60'}
+                            `}>
+                               #{stats.blocks - (4-i)}
+                            </div>
+                            {i < 4 && <div className="absolute top-1/2 -right-4 w-4 h-0.5 bg-brand-500/20"></div>}
+                         </div>
+                      ))}
+                  </div>
+               </div>
+
             </div>
 
-            <div className="p-6 bg-zinc-900/50 backdrop-blur border border-zinc-800 rounded-xl">
-              <div className="text-3xl font-bold text-white mb-2">{stats.miners}</div>
-              <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
-                <Cpu className="w-4 h-4" /> Miners
-              </div>
+            <div className="mt-16 text-center">
+               <Button onClick={handleBegin} variant="primary" size="lg" className="px-12 py-6 text-xl shadow-[0_0_40px_rgba(99,102,241,0.3)]">
+                  Join the Network <ArrowRight className="ml-3 w-6 h-6" />
+               </Button>
             </div>
-
-            <div className="p-6 bg-zinc-900/50 backdrop-blur border border-zinc-800 rounded-xl">
-              <div className="text-3xl font-bold text-white mb-2">{stats.nodes}</div>
-              <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
-                <Users className="w-4 h-4" /> Nodes
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <p className="text-xl text-gray-400">
-              This network is waiting for you.
-            </p>
-            <button
-              onClick={handleBegin}
-              className="px-12 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/25"
-            >
-              Join Now
-            </button>
-          </div>
-        </div>
+         </div>
       </section>
     </div>
   );
