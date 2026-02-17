@@ -1,105 +1,127 @@
-import React, { useEffect, useState } from 'react';
-import { Eye, Server, Zap, Settings } from 'lucide-react';
-import { useSandboxStore } from '../../stores/useSandboxStore';
-import { NodeIdentity } from '../../engine/NodeIdentity';
-import ProgressBar from '../ui/ProgressBar';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Play, Pause, RefreshCw, Settings, Shield, Zap, Moon, Sun, Monitor } from 'lucide-react';
+import Button from '../ui/Button';
+import { useProgress } from '../../context/ProgressContext';
+import { useNodeIdentity } from '../../context/NodeContext';
+import { useDarkMode } from '../../hooks/useDarkMode';
 
-const SandboxToolbar: React.FC = () => {
-  const { mode, setMode } = useSandboxStore();
-  const [nodeId, setNodeId] = useState<string>('');
+interface SandboxToolbarProps {
+  isRunning: boolean;
+  onToggle: () => void;
+  onReset: () => void;
+  onTriggerSpike: () => void;
+  mode: 'node' | 'god';
+  onToggleMode: () => void;
+}
 
-  // Mastery
-  const masteryScore = useSandboxStore(state => state.getMasteryScore());
-  const masteryLevel = useSandboxStore(state => state.getMasteryLevel());
+const SandboxToolbar: React.FC<SandboxToolbarProps> = ({
+  isRunning,
+  onToggle,
+  onReset,
+  onTriggerSpike,
+  mode,
+  onToggleMode,
+}) => {
+  const { getMasteryScore, getRank } = useProgress();
+  const { identity } = useNodeIdentity();
+  const { isDarkMode, toggle: toggleTheme } = useDarkMode();
+  const [showSettings, setShowSettings] = useState(false);
 
-  useEffect(() => {
-    try {
-      const identity = NodeIdentity.getOrCreate();
-      setNodeId(identity.getId());
-    } catch (e) {
-      setNodeId('Node #UNKNOWN');
-    }
-  }, []);
+  const score = getMasteryScore();
+  const rank = getRank();
 
   return (
-    <div className="sticky top-0 z-50 glass backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 h-16 flex items-center justify-between px-4 lg:px-6 transition-all duration-300">
+    <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 p-4 sticky top-16 z-30 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
 
-      {/* Left: Branding */}
-      <div className="flex items-center gap-3">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 transition-transform group-hover:scale-105">
-            <Zap className="w-5 h-5 fill-current" />
-          </div>
-          <div className="hidden md:block">
-            <h1 className="font-display font-bold text-lg leading-none text-gray-900 dark:text-white">Blockchain</h1>
-            <span className="text-xs font-medium text-gray-500 tracking-wider uppercase">Sandbox Control</span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Center: Mode Toggle */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex flex-col items-center">
-        <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex items-center shadow-inner border border-gray-200 dark:border-gray-700">
-          <button
-            onClick={() => setMode('node')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-              mode === 'node'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
+        {/* Left: Controls */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Button
+            variant={isRunning ? "secondary" : "primary"}
+            onClick={onToggle}
+            className="flex-1 md:flex-none"
           >
-            <Server className="w-4 h-4" />
-            <span>Node</span>
-          </button>
-          <button
-            onClick={() => setMode('god')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-              mode === 'god'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Eye className="w-4 h-4" />
-            <span>God Mode</span>
-          </button>
-        </div>
-        <span className="text-[10px] mt-1 font-medium text-gray-400">
-            {mode === 'node' ? `You are ${nodeId}` : 'Omniscient View'}
-        </span>
-      </div>
+            {isRunning ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+            {isRunning ? 'Pause Network' : 'Resume'}
+          </Button>
 
-      {/* Right: Mastery & Settings */}
-      <div className="flex items-center gap-4">
-        {/* Mastery Badge */}
-        <div className="hidden sm:flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 pr-4 pl-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold border ${
-                masteryScore >= 75 ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                masteryScore >= 50 ? 'bg-indigo-100 text-indigo-700 border-indigo-200' :
-                'bg-gray-100 text-gray-700 border-gray-200'
-            }`}>
-                {masteryScore >= 75 ? '🏆' : masteryScore >= 50 ? '⚡' : '🎓'}
-            </div>
-            <div className="flex flex-col w-24">
-                <div className="flex justify-between text-xs mb-1">
-                    <span className="font-bold text-gray-900 dark:text-white">{masteryLevel}</span>
-                    <span className="font-mono text-gray-500">{Math.floor(masteryScore)}%</span>
-                </div>
-                <ProgressBar value={masteryScore} size="sm" showPercentage={false} animated={true} />
-            </div>
+          <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2 hidden md:block" />
+
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+             <button
+                onClick={() => mode !== 'node' && onToggleMode()}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'node' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+             >
+                 Node View
+             </button>
+             <button
+                onClick={() => mode !== 'god' && onToggleMode()}
+                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'god' ? 'bg-white dark:bg-gray-700 shadow-sm text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+             >
+                 God Mode
+             </button>
+          </div>
         </div>
 
-        {/* Mobile Mode Toggle (Simplified) */}
-        <button
-             onClick={() => setMode(mode === 'node' ? 'god' : 'node')}
-             className="md:hidden w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-        >
-            {mode === 'node' ? <Server className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-        </button>
+        {/* Center: Mastery (Desktop) */}
+        <div className="hidden lg:flex items-center gap-4">
+             <div className="flex flex-col items-end">
+                 <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mastery</div>
+                 <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                     <Shield className="w-4 h-4 text-indigo-500" />
+                     {rank}
+                 </div>
+             </div>
+             <div className="w-32 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                 <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500" style={{ width: `${Math.min(score, 100)}%` }} />
+             </div>
+             <div className="font-mono font-bold text-indigo-500">{score} XP</div>
+        </div>
 
-        <button className="w-10 h-10 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-500 transition-colors">
-            <Settings className="w-5 h-5" />
-        </button>
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2 ml-auto">
+            <Button variant="ghost" size="sm" onClick={onTriggerSpike} title="Simulate Transaction Spike">
+                <Zap className="w-4 h-4 text-amber-500" />
+            </Button>
+
+            <div className="relative">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className={showSettings ? 'bg-gray-100 dark:bg-gray-800' : ''}
+                >
+                    <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                </Button>
+
+                {showSettings && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 animate-in slide-in-from-top-2 z-50">
+                        <button
+                            onClick={() => {
+                                toggleTheme();
+                                setShowSettings(false);
+                            }}
+                            className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        >
+                            {isDarkMode ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                        </button>
+                        <div className="h-[1px] bg-gray-100 dark:bg-gray-800 my-1" />
+                        <button
+                            onClick={() => {
+                                onReset();
+                                setShowSettings(false);
+                            }}
+                            className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Reset Network
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+
       </div>
     </div>
   );
