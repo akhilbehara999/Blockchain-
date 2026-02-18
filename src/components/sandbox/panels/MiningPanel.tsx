@@ -7,7 +7,6 @@ import { useWalletStore } from '../../../stores/useWalletStore';
 import { forkManager } from '../../../engine/ForkManager';
 import { NodeIdentity } from '../../../engine/NodeIdentity';
 import SandboxPanel from '../SandboxPanel';
-import ProgressBar from '../../ui/ProgressBar';
 
 interface MinerStat extends Miner {
   blocksWon: number;
@@ -15,7 +14,6 @@ interface MinerStat extends Miner {
 }
 
 const MiningPanel: React.FC = () => {
-  const mode = useSandboxStore(state => state.mode);
   const blocks = useBlockchainStore(state => state.blocks);
   const incrementMastery = useSandboxStore(state => state.incrementMastery);
   const { mempool } = useWalletStore();

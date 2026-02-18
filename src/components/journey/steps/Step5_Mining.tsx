@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
 import { sha256 } from '../../../engine/hash';
 import { Miner, startMiningRace } from '../../../engine/miner';
-import { Clock, Zap, Trophy, Users, AlertTriangle, Check, ArrowRight, Pickaxe } from 'lucide-react';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import Badge from '../../ui/Badge';
 import Hash from '../../ui/Hash';
 import { useInView } from '../../../hooks/useInView';
 import { useNavigate } from 'react-router-dom';
+import { Hammer, Zap, Clock, AlertTriangle, Users, Trophy, Check } from 'lucide-react';
 
 // --- Constants ---
 const MANUAL_ATTEMPTS_TARGET = 5;
@@ -38,7 +38,7 @@ const Step5_Mining: React.FC = () => {
   const [difficulty, setDifficulty] = useState<number>(3);
   const [diffStatus, setDiffStatus] = useState<'idle' | 'mining' | 'found'>('idle');
   const [diffResults, setDiffResults] = useState<Record<number, { time: number; attempts: number }>>({});
-  const [diffProgress, setDiffProgress] = useState<{ nonce: number; hash: string }>({ nonce: 0, hash: '' });
+  const [, setDiffProgress] = useState<{ nonce: number; hash: string }>({ nonce: 0, hash: '' });
 
   // --- State: Mining Race ---
   const [raceStatus, setRaceStatus] = useState<'idle' | 'racing' | 'finished'>('idle');
@@ -212,7 +212,7 @@ const Step5_Mining: React.FC = () => {
         <Card variant="elevated">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold flex items-center gap-2">
-                    <Pickaxe className="w-5 h-5 text-brand-500" />
+                    <Hammer className="w-5 h-5 text-brand-500" />
                     Mine By Hand
                 </h3>
                 <Badge variant="info">{manualAttempts} / {MANUAL_ATTEMPTS_TARGET} Attempts</Badge>

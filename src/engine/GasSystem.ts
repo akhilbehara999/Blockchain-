@@ -23,19 +23,15 @@ export class GasSystem {
       case 'read':
         return GAS_COSTS.READ;
       case 'complex':
-        // Average for estimation
         return Math.floor((GAS_COSTS.LOGIC_MIN + GAS_COSTS.LOGIC_MAX) / 2);
       case 'deploy':
         return Math.floor((GAS_COSTS.DEPLOY_MIN + GAS_COSTS.DEPLOY_MAX) / 2);
       default:
-        // Default to complex if unknown, or maybe 0? Let's safeguard.
         return GAS_COSTS.TRANSFER;
     }
   }
 
   static getCurrentGasPrice(): number {
-    // Market-determined price simulation
-    // Base 20 Gwei + random fluctuation 0-30
     const base = 20;
     const fluctuation = Math.floor(Math.random() * 31);
     return base + fluctuation;
@@ -44,15 +40,14 @@ export class GasSystem {
   /**
    * Simulates execution with gas constraints.
    * @param operation The operation type
-   * @param args Arguments for the operation (unused in basic simulation)
+   * @param _args Arguments for the operation (unused in basic simulation)
    * @param gasLimit The maximum gas the user is willing to spend
    * @param gasPrice The price per unit of gas
    * @param actualGasUsed Optional: if the operation was actually executed by a VM, pass the real gas used here.
-   *                      If not provided, we simulate based on the operation type.
    */
   static executeWithGas(
     operation: string,
-    _args: any[],
+    _args: unknown[],
     gasLimit: number,
     gasPrice: number,
     actualGasUsed?: number
@@ -72,7 +67,6 @@ export class GasSystem {
           requiredGas = GAS_COSTS.READ;
           break;
         case 'complex':
-           // Randomly determine actual cost for complex ops in simulation
            requiredGas = Math.floor(Math.random() * (GAS_COSTS.LOGIC_MAX - GAS_COSTS.LOGIC_MIN + 1)) + GAS_COSTS.LOGIC_MIN;
            break;
         case 'deploy':
@@ -84,17 +78,15 @@ export class GasSystem {
     }
 
     if (gasLimit < requiredGas) {
-      // Out of gas
       return {
         success: false,
-        gasUsed: gasLimit, // Miner takes all provided gas up to limit (which is less than required)
+        gasUsed: gasLimit,
         gasRefunded: 0,
-        cost: gasLimit * gasPrice, // User pays full limit
+        cost: gasLimit * gasPrice,
         revertReason: 'Out of gas'
       };
     }
 
-    // Success
     const gasUsed = requiredGas;
     const gasRefunded = gasLimit - gasUsed;
     const cost = gasUsed * gasPrice;

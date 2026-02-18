@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Play, Pause, RefreshCw, Settings, Shield, Zap, Moon, Sun, Monitor } from 'lucide-react';
+import { Play, Pause, RefreshCw, Settings, Shield, Zap, Moon, Sun } from 'lucide-react';
 import Button from '../ui/Button';
 import { useProgress } from '../../context/ProgressContext';
-import { useNodeIdentity } from '../../context/NodeContext';
 import { useDarkMode } from '../../hooks/useDarkMode';
 
 interface SandboxToolbarProps {
@@ -10,8 +9,8 @@ interface SandboxToolbarProps {
   onToggle: () => void;
   onReset: () => void;
   onTriggerSpike: () => void;
-  mode: 'node' | 'god';
-  onToggleMode: () => void;
+  mode?: 'node' | 'god';
+  onToggleMode?: () => void;
 }
 
 const SandboxToolbar: React.FC<SandboxToolbarProps> = ({
@@ -23,7 +22,6 @@ const SandboxToolbar: React.FC<SandboxToolbarProps> = ({
   onToggleMode,
 }) => {
   const { getMasteryScore, getRank } = useProgress();
-  const { identity } = useNodeIdentity();
   const { isDarkMode, toggle: toggleTheme } = useDarkMode();
   const [showSettings, setShowSettings] = useState(false);
 
@@ -45,22 +43,26 @@ const SandboxToolbar: React.FC<SandboxToolbarProps> = ({
             {isRunning ? 'Pause Network' : 'Resume'}
           </Button>
 
-          <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2 hidden md:block" />
+          {onToggleMode && (
+            <>
+              <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2 hidden md:block" />
 
-          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-             <button
-                onClick={() => mode !== 'node' && onToggleMode()}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'node' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
-             >
-                 Node View
-             </button>
-             <button
-                onClick={() => mode !== 'god' && onToggleMode()}
-                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'god' ? 'bg-white dark:bg-gray-700 shadow-sm text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
-             >
-                 God Mode
-             </button>
-          </div>
+              <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                 <button
+                    onClick={() => mode !== 'node' && onToggleMode()}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'node' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+                 >
+                     Node View
+                 </button>
+                 <button
+                    onClick={() => mode !== 'god' && onToggleMode()}
+                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mode === 'god' ? 'bg-white dark:bg-gray-700 shadow-sm text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+                 >
+                     God Mode
+                 </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Center: Mastery (Desktop) */}

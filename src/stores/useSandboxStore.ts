@@ -13,12 +13,21 @@ export interface MasteryStats {
   challengesCompleted: number;
 }
 
+export interface ContractABI {
+  type: 'function' | 'event' | 'constructor';
+  name?: string;
+  inputs?: { name: string; type: string }[];
+  outputs?: { name: string; type: string }[];
+  stateMutability?: 'pure' | 'view' | 'nonpayable' | 'payable';
+  cost?: number; // Added for visualization
+}
+
 export interface DeployedContract {
   id: string;
   name: string;
   address: string;
-  state: any;
-  abi: any[]; // Simplified ABI
+  state: Record<string, unknown>;
+  abi: ContractABI[];
   createdAt: number;
 }
 
@@ -27,14 +36,12 @@ interface SandboxState {
   mastery: MasteryStats;
   deployedContracts: DeployedContract[];
 
-  // Actions
   setMode: (mode: SandboxMode) => void;
   incrementMastery: (key: keyof MasteryStats, amount?: number) => void;
   addContract: (contract: DeployedContract) => void;
-  updateContractState: (id: string, newState: any) => void;
+  updateContractState: (id: string, newState: Record<string, unknown>) => void;
   resetSandbox: () => void;
 
-  // Getters
   getMasteryScore: () => number;
   getMasteryLevel: () => string;
 }
@@ -52,7 +59,7 @@ const INITIAL_MASTERY: MasteryStats = {
 export const useSandboxStore = create<SandboxState>()(
   persist(
     (set, get) => ({
-      mode: 'node', // Default to node mode
+      mode: 'node',
       mastery: INITIAL_MASTERY,
       deployedContracts: [],
 
@@ -62,7 +69,7 @@ export const useSandboxStore = create<SandboxState>()(
         set((state) => ({
           mastery: {
             ...state.mastery,
-            [key]: state.mastery[key] + amount
+            [key]: (state.mastery[key] || 0) + amount
           }
         }));
       },
@@ -93,14 +100,12 @@ export const useSandboxStore = create<SandboxState>()(
         const { mastery } = get();
         let score = 0;
 
-        // Cap points based on rules
-        score += Math.min(mastery.blocksMined * 2, 20);
-        score += Math.min(mastery.txSent * 1, 15);
-        score += Math.min(mastery.forksWitnessed * 5, 15);
-        score += Math.min(mastery.reorgsSurvived * 10, 20);
-        score += Math.min(mastery.contractsDeployed * 5, 15);
-        score += Math.min(mastery.gasFailures * 5, 10);
-        // score += mastery.challengesCompleted * 10; // Future
+        score += Math.min((mastery.blocksMined || 0) * 2, 20);
+        score += Math.min((mastery.txSent || 0) * 1, 15);
+        score += Math.min((mastery.forksWitnessed || 0) * 5, 15);
+        score += Math.min((mastery.reorgsSurvived || 0) * 10, 20);
+        score += Math.min((mastery.contractsDeployed || 0) * 5, 15);
+        score += Math.min((mastery.gasFailures || 0) * 5, 10);
 
         return Math.min(score, 100);
       },
@@ -108,19 +113,17 @@ export const useSandboxStore = create<SandboxState>()(
       getMasteryLevel: () => {
         const score = get().getMasteryScore();
         if (score <= 20) return 'Novice';
-        if (score <= 40) return 'Student';
+        if (score <= 40) return 'Learner';
         if (score <= 60) return 'Practitioner';
         if (score <= 80) return 'Expert';
         return 'Master';
       }
     }),
     {
-      name: 'yupp_sandbox_store', // unique name
+      name: 'yupp_sandbox_store',
       partialize: (state) => ({
         mastery: state.mastery,
         deployedContracts: state.deployedContracts,
-        // Don't persist mode, reset to node on load? Or persist it.
-        // Let's persist mode too for convenience.
         mode: state.mode
       }),
     }

@@ -7,12 +7,14 @@ const ec = new EC('secp256k1');
 export function generateKeyPair(): { publicKey: string, privateKey: string } {
   const key = ec.genKeyPair();
   return {
-    publicKey: key.getPublic('hex'),
+    publicKey: '0x' + key.getPublic('hex'),
     privateKey: key.getPrivate('hex'),
   };
 }
 
 export function getAddress(publicKey: string): string {
+  // If publicKey has 0x prefix, we can strip it for hashing or just hash it all.
+  // Original code hashed raw key? No, it just called sha256(publicKey).
   return sha256(publicKey).substring(0, 8);
 }
 

@@ -1,29 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useWalletStore } from '../../../stores/useWalletStore';
 import { useBlockchainStore } from '../../../stores/useBlockchainStore';
-import { useProgress } from '../../../context/ProgressContext';
 import { backgroundEngine } from '../../../engine/BackgroundEngine';
 import { FEE_LEVELS } from '../../../engine/transaction';
-import { Clock, Send, CheckCircle, Lock, Coins, TrendingUp, User, Wallet as WalletIcon, ArrowRight } from 'lucide-react';
 import { Wallet } from '../../../engine/types';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import Badge from '../../ui/Badge';
-import Hash from '../../ui/Hash';
 import { useInView } from '../../../hooks/useInView';
 import { useNavigate } from 'react-router-dom';
-
-// Stages of the lesson
-// 0: Intro -> Needs Funding
-// 1: Funded -> Needs First Tx
-// 2: First Tx Sent -> Waiting for Confirmation
-// 3: First Tx Confirmed -> Ready for Low Fee Experiment
-// 4: Low Fee Experiment Intro -> Needs Low Fee Tx
-// 5: Low Fee Tx Sent -> Waiting (Longer)
-// 6: Low Fee Tx Confirmed -> Done
+import { Wallet as WalletIcon, Coins, Send, TrendingUp, CheckCircle, Clock, Lock } from 'lucide-react';
 
 const Step6_Transactions: React.FC = () => {
-  const { completeStep } = useProgress();
   const navigate = useNavigate();
   const { wallets, mempool, minedTransactions, sendTransaction, mineMempool, createWallet } = useWalletStore();
   const { blocks } = useBlockchainStore();
@@ -34,10 +22,10 @@ const Step6_Transactions: React.FC = () => {
   const [amount, setAmount] = useState<number>(1);
   const [feeLevel, setFeeLevel] = useState<'high' | 'standard' | 'economy'>('standard');
 
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [lowFeeTxHash, setLowFeeTxHash] = useState<string | null>(null);
   const [confirmationCount, setConfirmationCount] = useState<number>(0);
   const [peers, setPeers] = useState<Wallet[]>([]);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [lowFeeTxHash, setLowFeeTxHash] = useState<string | null>(null);
 
   // InView hooks
   const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
@@ -108,8 +96,7 @@ const Step6_Transactions: React.FC = () => {
     } else {
       setConfirmationCount(0);
     }
-  }, [blocks, minedTransactions, txHash, lowFeeTxHash, stage]);
-
+  }, [blocks, minedTransactions, stage, txHash, lowFeeTxHash]);
 
   // --- Actions ---
 

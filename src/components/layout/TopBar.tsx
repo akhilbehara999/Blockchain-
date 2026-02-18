@@ -5,8 +5,8 @@ import { useProgress } from '../../context/ProgressContext';
 import { useNodeIdentity } from '../../context/NodeContext';
 import { useSound } from '../../context/SoundContext';
 import {
-    Moon, Sun, Lock, Home, Map, Box, CheckCircle, Menu, X,
-    Volume2, VolumeX, Shield, Award, RotateCcw, Monitor
+    Volume2, VolumeX, Shield, Award, RotateCcw, Monitor,
+    Home, Box, Lock as LockIcon, Menu, X, Map as MapIcon, Moon, Sun
 } from 'lucide-react';
 import Button from '../ui/Button';
 
@@ -93,7 +93,7 @@ const TopBar: React.FC = () => {
                     <span className="text-xs text-gray-400 dark:text-gray-500 font-normal">▸{currentStep}/8</span>
                 </span>
             }
-            icon={Map}
+            icon={MapIcon}
             progress={true}
           />
 
@@ -102,7 +102,7 @@ const TopBar: React.FC = () => {
             label="Sandbox"
             icon={Box}
             unlocked={sandboxUnlocked}
-            statusIcon={sandboxUnlocked ? <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" /> : <Lock className="w-3 h-3 text-gray-400" />}
+            statusIcon={sandboxUnlocked ? <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" /> : <LockIcon className="w-3 h-3 text-gray-400" />}
           />
 
           <NavItem
@@ -110,7 +110,7 @@ const TopBar: React.FC = () => {
             label="Challenges"
             icon={Award}
             unlocked={challengesUnlocked}
-            statusIcon={challengesUnlocked ? <div className="text-[10px] font-bold text-indigo-500">#A7F3</div> : <Lock className="w-3 h-3 text-gray-400" />}
+            statusIcon={challengesUnlocked ? <div className="text-[10px] font-bold text-indigo-500">#A7F3</div> : <LockIcon className="w-3 h-3 text-gray-400" />}
           />
         </nav>
 
@@ -202,7 +202,7 @@ const TopBar: React.FC = () => {
                         className={({isActive}) => `flex items-center justify-between px-4 py-4 rounded-xl text-lg font-medium transition-colors ${isActive ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                     >
                         <div className="flex items-center">
-                            <Map className="w-5 h-5 mr-3" />
+                            <MapIcon className="w-5 h-5 mr-3" />
                             Journey
                         </div>
                         <span className="text-sm bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300">Step {currentStep}/8</span>
@@ -220,7 +220,7 @@ const TopBar: React.FC = () => {
                             <Box className="w-5 h-5 mr-3" />
                             Sandbox
                         </div>
-                        {sandboxUnlocked ? <div className="w-2 h-2 rounded-full bg-emerald-500" /> : <Lock className="w-4 h-4" />}
+                        {sandboxUnlocked ? <div className="w-2 h-2 rounded-full bg-emerald-500" /> : <LockIcon className="w-4 h-4" />}
                     </NavLink>
 
                     <NavLink
@@ -235,7 +235,7 @@ const TopBar: React.FC = () => {
                             <Award className="w-5 h-5 mr-3" />
                             Challenges
                         </div>
-                        {challengesUnlocked ? <span className="text-sm text-gray-500">2/5</span> : <Lock className="w-4 h-4" />}
+                        {challengesUnlocked ? <span className="text-sm text-gray-500">2/5</span> : <LockIcon className="w-4 h-4" />}
                     </NavLink>
                 </div>
 

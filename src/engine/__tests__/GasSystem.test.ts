@@ -28,19 +28,19 @@ describe('ContractVM', () => {
   it('executes steps successfully', async () => {
     const vm = new ContractVM({ val: 0 });
     const steps: VMStep[] = [
-      { name: 'Inc', cost: 1000, action: (s) => ({ val: s.val + 1 }) }
+      { name: 'Inc', cost: 1000, action: (s) => ({ val: ((s as any).val) + 1 }) }
     ];
 
     const res = await vm.execute(steps, 5000, 10);
     expect(res.success).toBe(true);
     expect(res.gasUsed).toBe(1000);
-    expect(res.result.val).toBe(1);
+    expect(((res.result as any).val)).toBe(1);
   });
 
   it('fails on out of gas', async () => {
     const vm = new ContractVM({ val: 0 });
     const steps: VMStep[] = [
-      { name: 'Inc', cost: 6000, action: (s) => ({ val: s.val + 1 }) }
+      { name: 'Inc', cost: 6000, action: (s) => ({ val: ((s as any).val) + 1 }) }
     ];
 
     const res = await vm.execute(steps, 5000, 10);
@@ -53,7 +53,7 @@ describe('ContractVM', () => {
   it('reverts state on error', async () => {
     const vm = new ContractVM({ val: 0 });
     const steps: VMStep[] = [
-      { name: 'Inc', cost: 1000, action: (s) => ({ val: s.val + 1 }) },
+      { name: 'Inc', cost: 1000, action: (s) => ({ val: ((s as any).val) + 1 }) },
       { name: 'Fail', cost: 1000, action: () => { throw new Error('Fail'); } }
     ];
 

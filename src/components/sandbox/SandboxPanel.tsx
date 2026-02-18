@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { LucideIcon } from 'lucide-react';
 
 interface SandboxPanelProps {
@@ -10,7 +10,7 @@ interface SandboxPanelProps {
   className?: string;
 }
 
-const SandboxPanel: React.FC<SandboxPanelProps> = ({
+const SandboxPanel = memo<SandboxPanelProps>(({
   title,
   icon: Icon,
   children,
@@ -19,7 +19,7 @@ const SandboxPanel: React.FC<SandboxPanelProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`h-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden backdrop-blur-xl bg-opacity-90 dark:bg-opacity-90 ${className}`}>
+    <div className={`h-full flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden backdrop-blur-xl bg-opacity-90 dark:bg-opacity-90 transition-colors duration-300 ${className}`}>
       {/* Header */}
       <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0 bg-gray-50/50 dark:bg-gray-800/50">
         <div className="flex items-center gap-3">
@@ -51,6 +51,6 @@ const SandboxPanel: React.FC<SandboxPanelProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default SandboxPanel;

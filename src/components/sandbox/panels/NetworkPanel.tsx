@@ -135,7 +135,7 @@ const NetworkPanel: React.FC = () => {
                 </div>
 
                 {/* Peers */}
-                {peers.map((peer, i) => {
+                {peers.map((peer) => {
                     const latency = latencies[peer.name] || 50;
                     const qualityColor = latency < 50 ? 'text-green-500' : latency < 100 ? 'text-yellow-500' : 'text-red-500';
                     const signalIcon = latency < 50 ? <Wifi className="w-3 h-3" /> : latency < 100 ? <Wifi className="w-3 h-3 opacity-70" /> : <WifiOff className="w-3 h-3" />;

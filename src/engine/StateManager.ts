@@ -3,7 +3,7 @@ import { useWalletStore } from '../stores/useWalletStore';
 import { backgroundEngine, Miner } from './BackgroundEngine';
 import { eventEngine, NetworkEvent } from './EventEngine';
 import { Block, Transaction, Wallet } from './types';
-import { safeParse } from '../utils';
+import { Storage } from '../utils/storage';
 
 interface SimulationState {
   blocks: Block[];
@@ -24,8 +24,6 @@ export class StateManager {
     LAST_ACTIVE: 'yupp_last_active',
   };
 
-  private static readonly STORAGE_QUOTA_THRESHOLD = 4.5 * 1024 * 1024; // 4.5 MB
-
   public static saveState(): void {
     const blocks = useBlockchainStore.getState().blocks;
     const { wallets, mempool } = useWalletStore.getState();
@@ -33,50 +31,36 @@ export class StateManager {
     const events = eventEngine.getEvents();
     const lastActive = Date.now();
 
-    try {
-      localStorage.setItem(this.STORAGE_KEYS.BLOCKCHAIN, JSON.stringify(blocks));
-      localStorage.setItem(this.STORAGE_KEYS.WALLETS, JSON.stringify(wallets));
-      localStorage.setItem(this.STORAGE_KEYS.MEMPOOL, JSON.stringify(mempool));
-      localStorage.setItem(this.STORAGE_KEYS.BACKGROUND, JSON.stringify(backgroundState));
-      localStorage.setItem(this.STORAGE_KEYS.EVENTS, JSON.stringify(events));
-      localStorage.setItem(this.STORAGE_KEYS.LAST_ACTIVE, lastActive.toString());
-
-      this.checkQuota();
-    } catch {
-      // Emergency cleanup
-      localStorage.removeItem(this.STORAGE_KEYS.MEMPOOL);
-      localStorage.removeItem(this.STORAGE_KEYS.EVENTS);
-    }
+    Storage.setItem(this.STORAGE_KEYS.BLOCKCHAIN, blocks);
+    Storage.setItem(this.STORAGE_KEYS.WALLETS, wallets);
+    Storage.setItem(this.STORAGE_KEYS.MEMPOOL, mempool);
+    Storage.setItem(this.STORAGE_KEYS.BACKGROUND, backgroundState);
+    Storage.setItem(this.STORAGE_KEYS.EVENTS, events);
+    Storage.setItem(this.STORAGE_KEYS.LAST_ACTIVE, lastActive);
   }
 
   public static loadState(): SimulationState | null {
-    try {
-      const blocksStr = localStorage.getItem(this.STORAGE_KEYS.BLOCKCHAIN);
-      const walletsStr = localStorage.getItem(this.STORAGE_KEYS.WALLETS);
-      const mempoolStr = localStorage.getItem(this.STORAGE_KEYS.MEMPOOL);
-      const backgroundStr = localStorage.getItem(this.STORAGE_KEYS.BACKGROUND);
-      const eventsStr = localStorage.getItem(this.STORAGE_KEYS.EVENTS);
-      const lastActiveStr = localStorage.getItem(this.STORAGE_KEYS.LAST_ACTIVE);
+    const blocks = Storage.getItem<Block[]>(this.STORAGE_KEYS.BLOCKCHAIN);
+    const wallets = Storage.getItem<Wallet[]>(this.STORAGE_KEYS.WALLETS);
+    const mempool = Storage.getItem<Transaction[]>(this.STORAGE_KEYS.MEMPOOL);
+    const backgroundState = Storage.getItem<{ miners: Miner[], peerWallets: string[] }>(this.STORAGE_KEYS.BACKGROUND);
+    const events = Storage.getItem<NetworkEvent[]>(this.STORAGE_KEYS.EVENTS);
+    const lastActive = Storage.getItem<number>(this.STORAGE_KEYS.LAST_ACTIVE);
 
-      if (!blocksStr || !walletsStr) return null;
+    if (!blocks || !wallets) return null;
 
-      return {
-        blocks: safeParse(blocksStr, []),
-        wallets: safeParse(walletsStr, []),
-        mempool: safeParse(mempoolStr, []),
-        backgroundState: safeParse(backgroundStr, { miners: [], peerWallets: [] }),
-        events: safeParse(eventsStr, []),
-        lastActive: lastActiveStr ? parseInt(lastActiveStr, 10) : Date.now(),
-      };
-    } catch {
-      return null;
-    }
+    return {
+      blocks,
+      wallets,
+      mempool: mempool || [],
+      backgroundState: backgroundState || { miners: [], peerWallets: [] },
+      events: events || [],
+      lastActive: lastActive || Date.now(),
+    };
   }
 
   public static restoreState(state: SimulationState): void {
     // 1. Restore Blockchain
-    // We use a trick: directly replace the chain if valid, or just load it
-    // Since replaceChain validates, and we saved a valid chain, it should work.
     useBlockchainStore.getState().replaceChain(state.blocks);
 
     // 2. Restore Wallets & Mempool
@@ -90,28 +74,12 @@ export class StateManager {
   }
 
   public static getTimeSinceLastActive(): number {
-    const lastActiveStr = localStorage.getItem(this.STORAGE_KEYS.LAST_ACTIVE);
-    if (!lastActiveStr) return 0;
-    const lastActive = parseInt(lastActiveStr, 10);
+    const lastActive = Storage.getItem<number>(this.STORAGE_KEYS.LAST_ACTIVE);
+    if (!lastActive) return 0;
     return (Date.now() - lastActive) / 1000; // Seconds
   }
 
   public static clearState(): void {
-    Object.values(this.STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
-  }
-
-  private static checkQuota(): void {
-    let total = 0;
-    for (const key in localStorage) {
-        if (localStorage.hasOwnProperty(key)) {
-            const val = localStorage.getItem(key);
-            if (val) total += val.length * 2;
-        }
-    }
-
-    if (total > this.STORAGE_QUOTA_THRESHOLD) {
-        localStorage.setItem(this.STORAGE_KEYS.EVENTS, '[]');
-        localStorage.setItem(this.STORAGE_KEYS.MEMPOOL, '[]');
-    }
+    Object.values(this.STORAGE_KEYS).forEach(key => Storage.removeItem(key));
   }
 }

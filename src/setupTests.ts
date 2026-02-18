@@ -1,21 +1,25 @@
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {}, // Deprecated
-    removeListener: () => {}, // Deprecated
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }),
-});
+// Mock IntersectionObserver
+const IntersectionObserverMock = vi.fn(() => ({
+  disconnect: vi.fn(),
+  observe: vi.fn(),
+  takeRecords: vi.fn(),
+  unobserve: vi.fn(),
+}));
 
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
+vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);
+
+// Mock crypto.subtle if needed globally (though Step2 test handles it locally)
+// We already did a local mock in Step2, but global might help others if they use it.
+if (!global.crypto) {
+    Object.defineProperty(global, 'crypto', {
+        value: {
+            getRandomValues: (arr: any) => require('crypto').randomFillSync(arr),
+            subtle: {
+                digest: vi.fn(),
+            }
+        }
+    });
+}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNodeIdentity } from '../../../context/NodeContext';
 import { useProgress } from '../../../context/ProgressContext';
-import { safeParse } from '../../../utils';
-import { Unlock, X, Key, FileDigit, RefreshCw, Eye, EyeOff, Check } from 'lucide-react';
+import { Storage } from '../../../utils/storage';
+import { Unlock, Key, FileDigit, RefreshCw, Eye, EyeOff, Check, X } from 'lucide-react';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import Badge from '../../ui/Badge';
@@ -41,7 +41,7 @@ const Step1_Identity: React.FC = () => {
   }, [generated, guessAttempted, completeStep]);
 
   const handleGenerate = () => {
-    localStorage.removeItem('yupp_node_identity');
+    Storage.removeItem('yupp_node_identity');
     createIdentity();
     setGenerated(true);
     setGuess('');
@@ -55,13 +55,10 @@ const Step1_Identity: React.FC = () => {
 
   // Helper to get keys
   const getKeys = () => {
-    try {
-      const stored = localStorage.getItem('yupp_node_identity');
-      if (stored) {
-          const data = safeParse<{ keyPair: { publicKey: string; privateKey: string } } | null>(stored, null);
-          if (data) return data.keyPair || { publicKey: '', privateKey: '' };
-      }
-    } catch { /* ignore */ }
+    const stored = Storage.getItem<{ keyPair: { publicKey: string; privateKey: string } }>('yupp_node_identity');
+    if (stored && stored.keyPair) {
+        return stored.keyPair;
+    }
     return { publicKey: '', privateKey: '' };
   };
 
@@ -71,7 +68,7 @@ const Step1_Identity: React.FC = () => {
     <div className="space-y-12 md:space-y-16 pb-20">
 
       {/* 1. SECTION HEADER */}
-      <div ref={headerRef} className={`space-y-4 ${headerVisible ? 'animate-fade-up' : 'opacity-0'}`}>
+      <div ref={headerRef} className={`space-y-4 transition-all duration-700 ${headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <Badge variant="info">Step 1 of 8</Badge>
         <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
           You Are a Node
@@ -82,7 +79,7 @@ const Step1_Identity: React.FC = () => {
       </div>
 
       {/* 2. STORY/HOOK */}
-      <div ref={storyRef} className={storyVisible ? 'animate-fade-up' : 'opacity-0'}>
+      <div ref={storyRef} className={`transition-all duration-700 delay-100 ${storyVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <Card variant="glass" className="max-w-prose">
           <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
             In the real world, a bank knows who you are. Your name, your face, your social security number.
@@ -94,7 +91,7 @@ const Step1_Identity: React.FC = () => {
       </div>
 
       {/* 3. INTERACTIVE SECTION: GENERATE KEYS */}
-      <div ref={generateRef} className={generateVisible ? 'animate-fade-up' : 'opacity-0'}>
+      <div ref={generateRef} className={`transition-all duration-700 delay-200 ${generateVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <Card variant="elevated" className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Generate Your Identity</h3>
@@ -113,7 +110,7 @@ const Step1_Identity: React.FC = () => {
           )}
 
           {generated && (
-              <div ref={keysRef} className={`grid gap-6 ${keysVisible ? 'animate-fade-up' : ''}`}>
+              <div ref={keysRef} className={`grid gap-6 transition-all duration-700 ${keysVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                  {/* Private Key */}
                  <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
@@ -136,15 +133,9 @@ const Step1_Identity: React.FC = () => {
                                 <button onClick={() => setShowPrivateKey(false)} className="p-2 bg-white/50 dark:bg-black/50 rounded-lg hover:bg-white dark:hover:bg-black transition-colors">
                                     <EyeOff className="w-4 h-4 text-gray-600 dark:text-gray-400"/>
                                 </button>
-                                <Hash value={privateKey} copyable truncate={false} className="hidden" /> {/* Using Hash just for copy logic if needed, but here we have custom UI */}
                              </div>
                         )}
                     </div>
-                    {showPrivateKey && (
-                         <div className="flex justify-end">
-                            <Hash value={privateKey} copyable truncate />
-                         </div>
-                    )}
                  </div>
 
                  <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-2" />
@@ -177,7 +168,7 @@ const Step1_Identity: React.FC = () => {
 
       {/* 4. EXPERIMENT SECTION */}
       {generated && (
-          <div ref={experimentRef} className={experimentVisible ? 'animate-fade-up' : 'opacity-0'}>
+          <div ref={experimentRef} className={`transition-all duration-700 delay-300 ${experimentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <Card variant="outlined" status="info">
                 <div className="flex items-center gap-2 mb-6">
                     <span className="text-2xl">🧪</span>
@@ -221,7 +212,7 @@ const Step1_Identity: React.FC = () => {
 
       {/* 5. SUCCESS SECTION */}
       {guessAttempted && (
-          <div ref={completionRef} className={completionVisible ? 'animate-fade-up' : 'opacity-0'}>
+          <div ref={completionRef} className={`transition-all duration-700 delay-500 ${completionVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <Card variant="default" status="valid" className="bg-gradient-to-br from-white to-green-50 dark:from-gray-900 dark:to-green-900/20">
                 <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                     <div className="w-16 h-16 bg-status-valid/10 text-status-valid rounded-2xl flex items-center justify-center shrink-0">
