@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useWalletStore } from '../../../stores/useWalletStore';
 import { useBlockchainStore } from '../../../stores/useBlockchainStore';
 import { backgroundEngine } from '../../../engine/BackgroundEngine';
@@ -9,23 +9,53 @@ import Button from '../../ui/Button';
 import Badge from '../../ui/Badge';
 import { useInView } from '../../../hooks/useInView';
 import { useNavigate } from 'react-router-dom';
+import { useProgress } from '../../../context/ProgressContext';
 import { Wallet as WalletIcon, Coins, Send, TrendingUp, CheckCircle, Clock, Lock } from 'lucide-react';
 
 const Step6_Transactions: React.FC = () => {
   const navigate = useNavigate();
-  const { wallets, mempool, minedTransactions, sendTransaction, mineMempool, createWallet } = useWalletStore();
+  const { completeStep } = useProgress();
+  const { wallets, mempool, sendTransaction, mineMempool, createWallet } = useWalletStore();
   const { blocks } = useBlockchainStore();
 
-  const [stage, setStage] = useState<number>(0);
-  const [userBalance, setUserBalance] = useState<number>(0);
-  const [recipient, setRecipient] = useState<string>('');
-  const [amount, setAmount] = useState<number>(1);
-  const [feeLevel, setFeeLevel] = useState<'high' | 'standard' | 'economy'>('standard');
+  // Load state helper
+  const loadState = (key: string, def: any) => {
+    try {
+      const saved = localStorage.getItem('yupp_step6_state');
+      return saved ? (JSON.parse(saved)[key] ?? def) : def;
+    } catch { return def; }
+  };
 
-  const [confirmationCount, setConfirmationCount] = useState<number>(0);
+  const [stage, setStage] = useState<number>(() => loadState('stage', 0));
+  const [userBalance, setUserBalance] = useState<number>(() => loadState('userBalance', 0));
+  const [recipient, setRecipient] = useState<string>(() => loadState('recipient', ''));
+  const [amount, setAmount] = useState<number>(() => loadState('amount', 1));
+  const [feeLevel, setFeeLevel] = useState<'high' | 'standard' | 'economy'>(() => loadState('feeLevel', 'standard'));
+
+  const [confirmationCount, setConfirmationCount] = useState<number>(() => loadState('confirmationCount', 0));
   const [peers, setPeers] = useState<Wallet[]>([]);
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [lowFeeTxHash, setLowFeeTxHash] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(() => loadState('txHash', null));
+  const [lowFeeTxHash, setLowFeeTxHash] = useState<string | null>(() => loadState('lowFeeTxHash', null));
+
+  // Timers ref for cleanup
+  const timers = useRef<NodeJS.Timeout[]>([]);
+
+  // Persist state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yupp_step6_state', JSON.stringify({
+        stage, userBalance, recipient, amount, feeLevel,
+        confirmationCount, txHash, lowFeeTxHash
+      }));
+    } catch {}
+  }, [stage, userBalance, recipient, amount, feeLevel, confirmationCount, txHash, lowFeeTxHash]);
+
+  // Cleanup timers
+  useEffect(() => {
+      return () => {
+          timers.current.forEach(t => clearTimeout(t));
+      };
+  }, []);
 
   // InView hooks
   const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
@@ -73,30 +103,56 @@ const Step6_Transactions: React.FC = () => {
     setPeers(backgroundEngine.getPeerWallets());
   }, [wallets, blocks]);
 
-  // --- Monitoring Transactions ---
+  // --- Completion Check ---
   useEffect(() => {
-    const activeTxHash = stage >= 4 ? lowFeeTxHash : txHash;
-    if (!activeTxHash) return;
-
-    // Check if mined
-    const minedTx = minedTransactions.find(t => t.signature === activeTxHash);
-
-    if (minedTx && minedTx.confirmationBlock !== undefined) {
-      const currentHeight = blocks.length;
-      const confs = currentHeight - minedTx.confirmationBlock;
-      setConfirmationCount(confs);
-
-      // Transitions
-      if (stage === 2 && confs > 0) {
-        setStage(3); // First tx confirmed
+      if (stage === 6) {
+          completeStep(6);
       }
-      if (stage === 5 && confs >= 6) {
-        setStage(6); // Low fee confirmed (wait for 6)
+  }, [stage, completeStep]);
+
+  // --- Simulation Logic ---
+  const startConfirmationCounter = () => {
+    let count = 1;
+    const interval = setInterval(() => {
+      count++;
+      setConfirmationCount(count);
+      if (count >= 6) {
+        clearInterval(interval);
+        // Transition based on current stage
+        if (stage === 2) setStage(3);
+        if (stage === 5) setStage(6);
       }
-    } else {
-      setConfirmationCount(0);
+    }, 2000); // 2 seconds per confirmation for learning
+    timers.current.push(interval);
+    return () => clearInterval(interval);
+  };
+
+  const simulateTransactionConfirmation = (level: string) => {
+    let confirmDelay: number;
+    switch (level) {
+      case 'high':
+        confirmDelay = 5000 + Math.random() * 3000;  // 5-8 seconds
+        break;
+      case 'standard':
+        confirmDelay = 12000 + Math.random() * 6000;  // 12-18 seconds
+        break;
+      case 'economy':
+        confirmDelay = 30000 + Math.random() * 15000; // 30-45 seconds
+        break;
+      default:
+        confirmDelay = 12000 + Math.random() * 6000;
     }
-  }, [blocks, minedTransactions, stage, txHash, lowFeeTxHash]);
+
+    setConfirmationCount(0);
+
+    // Show "confirmed" at full delay
+    const confirmedTimer = setTimeout(() => {
+      setConfirmationCount(1);
+      // Then increment confirmations quickly for learning
+      startConfirmationCounter();
+    }, confirmDelay);
+    timers.current.push(confirmedTimer);
+  };
 
   // --- Actions ---
 
@@ -135,13 +191,15 @@ const Step6_Transactions: React.FC = () => {
         if (stage === 4) {
              setLowFeeTxHash(lastTx.signature);
              setStage(5);
-             // Trigger spike to bury this low fee tx
+             simulateTransactionConfirmation('economy');
+             // Trigger spike to bury this low fee tx (visual only in simulation mode)
              setTimeout(() => {
                  backgroundEngine.triggerMempoolSpike(15);
              }, 500);
         } else {
              setTxHash(lastTx.signature);
              setStage(2);
+             simulateTransactionConfirmation(feeLevel);
         }
     }
   };
@@ -170,6 +228,7 @@ const Step6_Transactions: React.FC = () => {
         <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl">
           In blockchain, there is no "undo" button. Once it's confirmed, it's forever.
         </p>
+        <Badge variant="warning" className="animate-pulse">Speed: Learning Mode ⚡</Badge>
       </div>
 
       {/* SECTION 2: STORY */}
@@ -331,8 +390,8 @@ const Step6_Transactions: React.FC = () => {
                             {confirmationCount === 0 && (
                                 <div className="bg-surface-tertiary dark:bg-surface-dark-tertiary p-3 rounded-lg text-xs font-mono border border-surface-border dark:border-surface-dark-border">
                                     <div className="text-gray-500 mb-2 uppercase font-bold">Top Pending Transactions</div>
-                                    {mempool.slice(0, 5).map(tx => (
-                                        <div key={tx.signature} className={`flex justify-between py-1 border-b border-gray-200 dark:border-gray-700 last:border-0 ${
+                                    {mempool.slice(0, 5).map((tx, index) => (
+                                        <div key={tx.id || `${tx.signature}-${index}`} className={`flex justify-between py-1 border-b border-gray-200 dark:border-gray-700 last:border-0 ${
                                             tx.signature === (stage >= 4 ? lowFeeTxHash : txHash) ? 'text-brand-600 font-bold' : ''
                                         }`}>
                                             <span>{tx.amount} coins</span>

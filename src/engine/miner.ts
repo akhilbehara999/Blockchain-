@@ -18,8 +18,12 @@ export interface Miner {
 }
 
 export interface MiningResult {
-  winner: Miner;
-  allMiners: Miner[];
+  winner?: Miner;
+  allMiners?: Miner[];
+  success: boolean;
+  rateLimited?: boolean;
+  message?: string;
+  retryAfter?: number;
 }
 
 export type MinerStats = Miner;
@@ -114,7 +118,13 @@ export function startMiningRace(
   onProgress: (miners: Miner[]) => void
 ): Promise<MiningResult> {
   if (!miningRateLimiter.canProceed()) {
-    return Promise.reject(new Error("Mining rate limit exceeded. Please wait between attempts."));
+    // Return graceful failure instead of throwing
+    return Promise.resolve({
+        success: false,
+        rateLimited: true,
+        message: 'Mining rate limit exceeded. Please wait between attempts.',
+        retryAfter: 2000 // Approximate
+    });
   }
 
   return new Promise((resolve) => {
@@ -238,6 +248,7 @@ export function startMiningRace(
         saveMiners(updatedBots);
 
         resolve({
+          success: true,
           winner: finalMiners.find(m => m.status === 'won')!,
           allMiners: finalMiners
         });

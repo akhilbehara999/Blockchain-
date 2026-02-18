@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BackgroundEngine } from '../BackgroundEngine';
 import { useWalletStore } from '../../stores/useWalletStore';
-import { useBlockchainStore } from '../../stores/useBlockchainStore';
 
 const mockWallets: any[] = [];
 const mockMempool: any[] = [];
