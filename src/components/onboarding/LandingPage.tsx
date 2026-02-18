@@ -10,6 +10,7 @@ import { useProgress } from '../../context/ProgressContext';
 import { useBlockchainStore } from '../../stores/useBlockchainStore';
 import { useWalletStore } from '../../stores/useWalletStore';
 import { useBackground } from '../../context/BackgroundContext';
+import { Storage } from '../../utils/storage';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ const LandingPage: React.FC = () => {
   }, [blocks, mempool, engine]);
 
   const handleBegin = () => {
-    const identity = localStorage.getItem('yupp_node_identity');
+    const identity = Storage.getItem('yupp_node_identity');
     if (identity) {
       navigate('/journey/1');
     } else {

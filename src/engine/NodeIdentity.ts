@@ -1,5 +1,5 @@
 import { generateKeyPair } from './wallet';
-import { safeParse } from '../utils';
+import { Storage } from '../utils/storage';
 
 export interface NodeIdentityData {
   id: string;
@@ -21,14 +21,9 @@ export class NodeIdentity {
   }
 
   static getOrCreate(): NodeIdentity {
-    const stored = localStorage.getItem('yupp_node_identity');
+    const stored = Storage.getItem<NodeIdentityData>('yupp_node_identity');
     if (stored) {
-      try {
-        const data = safeParse(stored, null);
-        if (data) return new NodeIdentity(data, false);
-      } catch {
-        // Fallback to create new
-      }
+       return new NodeIdentity(stored, false);
     }
 
     // Generate new identity
@@ -53,7 +48,7 @@ export class NodeIdentity {
       firstSeen: new Date().toISOString()
     };
 
-    localStorage.setItem('yupp_node_identity', JSON.stringify(data));
+    Storage.setItem('yupp_node_identity', data);
     return new NodeIdentity(data, true);
   }
 

@@ -1,13 +1,27 @@
-import type { ExecutionResult, VMStep } from './types';
+import { ExecutionResult, VMStep } from './types';
+
+/**
+ * Type definition for generic contract state.
+ * Using Record<string, unknown> to represent arbitrary JSON-serializable state.
+ */
+export type ContractState = Record<string, unknown>;
 
 export interface StateSnapshot {
-  state: any;
+  state: ContractState;
 }
 
+/**
+ * Virtual Machine for executing smart contract logic.
+ * Handles state management, gas metering, and rollback on failure.
+ */
 export class ContractVM {
-  private currentState: any;
+  private currentState: ContractState;
 
-  constructor(initialState: any = {}) {
+  /**
+   * Initializes the VM with an optional initial state.
+   * @param initialState - The starting state object
+   */
+  constructor(initialState: ContractState = {}) {
     try {
       this.currentState = JSON.parse(JSON.stringify(initialState));
     } catch {
@@ -15,6 +29,11 @@ export class ContractVM {
     }
   }
 
+  /**
+   * Captures a snapshot of the current state.
+   * Useful for rollback mechanisms.
+   * @returns A deep copy of the current state
+   */
   captureState(): StateSnapshot {
     try {
       return { state: JSON.parse(JSON.stringify(this.currentState)) };
@@ -23,6 +42,10 @@ export class ContractVM {
     }
   }
 
+  /**
+   * Restores the state from a snapshot.
+   * @param snapshot - The snapshot to restore
+   */
   restoreState(snapshot: StateSnapshot): void {
     try {
       this.currentState = JSON.parse(JSON.stringify(snapshot.state));
@@ -31,7 +54,11 @@ export class ContractVM {
     }
   }
 
-  setState(state: any): void {
+  /**
+   * Directly sets the state (useful for debugging or initialization).
+   * @param state - The new state object
+   */
+  setState(state: ContractState): void {
     try {
       this.currentState = JSON.parse(JSON.stringify(state));
     } catch {
@@ -39,16 +66,39 @@ export class ContractVM {
     }
   }
 
-  getState(): any {
+  /**
+   * Returns the current state.
+   * @returns The current state object
+   */
+  getState(): ContractState {
     return this.currentState;
   }
 
+  /**
+   * Executes a sequence of VM steps.
+   *
+   * @param steps - List of steps to execute
+   * @param gasLimit - Maximum gas allowed for execution
+   * @param gasPrice - Price per unit of gas (for cost calculation)
+   * @param onStep - Optional callback for step-by-step visualization
+   * @returns ExecutionResult containing success status, gas usage, and final state or error
+   */
   async execute(
     steps: VMStep[],
     gasLimit: number,
     gasPrice: number,
     onStep?: (index: number, gasUsed: number, totalGasUsed: number) => void
   ): Promise<ExecutionResult> {
+    if (gasLimit <= 0) {
+        return {
+            success: false,
+            gasUsed: 0,
+            gasRefunded: 0,
+            cost: 0,
+            revertReason: 'Invalid gas limit'
+        };
+    }
+
     let totalGasUsed = 0;
     const snapshot = this.captureState();
 
@@ -66,26 +116,17 @@ export class ContractVM {
           // Simulate processing time for visualization
           await new Promise(resolve => setTimeout(resolve, 800));
 
+          // Use strict typing for action result
           const result = step.action(this.currentState);
 
           // Update state if result is provided
-          if (result !== undefined) {
-             if (typeof result === 'object' && result !== null) {
-                 this.currentState = { ...this.currentState, ...result };
-             } else {
-                 // Or it might return the full new state?
-                 // Assuming action modifies state or returns partial update.
-                 // Let's assume partial update for object, or replacement?
-                 // Given the simple templates, usually it's a spread update.
-                 // But some templates replace state.
-                 // Let's assume the action logic handles state update and returns the NEW state or partial.
-                 // To be safe, let's assume result IS the new state if returned.
-                 this.currentState = result;
-             }
+          if (result !== undefined && result !== null) {
+              // Assume action returns partial or full new state
+              this.currentState = { ...this.currentState, ...result };
           }
-        } catch (error: any) {
-          // Wrap error to distinguish from OOG
-          throw new Error(error.message || 'Execution failed');
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Execution failed';
+          throw new Error(msg);
         }
 
         totalGasUsed += step.cost;
@@ -106,11 +147,12 @@ export class ContractVM {
         result: this.currentState
       };
 
-    } catch (error: any) {
+    } catch (error) {
       // Rollback
       this.restoreState(snapshot);
 
-      const isOutOfGas = error.message === 'Out of gas';
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      const isOutOfGas = msg === 'Out of gas';
       let finalGasUsed = totalGasUsed;
       let gasRefunded = 0;
 
@@ -128,7 +170,7 @@ export class ContractVM {
         gasUsed: finalGasUsed,
         gasRefunded,
         cost: finalGasUsed * gasPrice,
-        revertReason: error.message
+        revertReason: msg
       };
     }
   }

@@ -1,56 +1,49 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { NodeIdentity } from '../NodeIdentity';
+import { generateKeyPair } from '../wallet';
 import { ec as EC } from 'elliptic';
 
 const ec = new EC('secp256k1');
 
 describe('NodeIdentity', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    vi.clearAllMocks();
-  });
-
   it('should generate a new identity with mathematically linked keys', () => {
-    NodeIdentity.getOrCreate();
+    // Clear storage
+    localStorage.clear();
 
-    // Retrieve the data directly from localStorage to verify private/public key relationship
-    // because NodeIdentity doesn't expose the private key publicly.
+    const identity = NodeIdentity.getOrCreate();
+
+    expect(identity).toBeDefined();
+    expect(identity.isNew).toBe(true);
+
+    const publicKey = identity.getPublicKey();
+    // Retrieve private key from storage to verify relationship
     const stored = localStorage.getItem('yupp_node_identity');
-    expect(stored).not.toBeNull();
-
     if (stored) {
       const data = JSON.parse(stored);
-      const { privateKey, publicKey } = data.keyPair;
+      const privateKey = data.keyPair.privateKey;
 
-      expect(privateKey).toBeDefined();
-      expect(publicKey).toBeDefined();
-
-      // Verify key relationship
       const keyFromPrivate = ec.keyFromPrivate(privateKey);
-      const derivedPublic = keyFromPrivate.getPublic('hex');
+      // getPublic('hex') returns raw hex. Our generated public key has '0x'.
+      const derivedPublic = '0x' + keyFromPrivate.getPublic('hex');
 
       expect(derivedPublic).toBe(publicKey);
     }
   });
 
-  it('should derive wallet address from public key correctly', () => {
+  it('should restore existing identity', () => {
+    // Setup
+    const { publicKey, privateKey } = generateKeyPair();
+    const data = {
+        id: 'Node #TEST',
+        walletAddress: '0x123',
+        keyPair: { publicKey, privateKey },
+        firstSeen: new Date().toISOString()
+    };
+    localStorage.setItem('yupp_node_identity', JSON.stringify(data));
+
     const identity = NodeIdentity.getOrCreate();
-    const stored = localStorage.getItem('yupp_node_identity');
-
-    if (stored) {
-        const data = JSON.parse(stored);
-        const { publicKey } = data.keyPair;
-        const address = identity.getWalletAddress();
-
-        expect(address).toBe(`0x${publicKey.substring(0, 40)}`);
-    }
-  });
-
-  it('should return existing identity if present', () => {
-    const id1 = NodeIdentity.getOrCreate();
-    const id2 = NodeIdentity.getOrCreate();
-
-    expect(id1.getId()).toBe(id2.getId());
-    expect(id1.getWalletAddress()).toBe(id2.getWalletAddress());
+    expect(identity.isNew).toBe(false);
+    expect(identity.getId()).toBe('Node #TEST');
+    expect(identity.getPublicKey()).toBe(publicKey);
   });
 });

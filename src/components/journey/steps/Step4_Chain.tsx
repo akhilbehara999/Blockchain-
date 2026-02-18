@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
-import { calculateHash } from '../../../engine/block';
 import { Block } from '../../../engine/types';
-import { Link, AlertTriangle, ArrowRight, Lock, RefreshCw, Check, X, FileText, Hash as HashIcon, ArrowDown } from 'lucide-react';
+import { sha256 } from '../../../engine/hash';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import Badge from '../../ui/Badge';
 import Hash from '../../ui/Hash';
 import { useInView } from '../../../hooks/useInView';
 import { useNavigate } from 'react-router-dom';
+import { Link, ArrowRight, ArrowDown, Check, X, Lock, RefreshCw, AlertTriangle, FileText } from 'lucide-react';
 
 interface ChainBlock extends Block {
   isSealed: boolean;
-  sealedHash: string;
-  currentHash: string;
   status: 'valid' | 'invalid' | 'broken_link';
 }
 
@@ -37,8 +35,13 @@ const Step4_Chain: React.FC = () => {
   // Scroll ref for auto-scrolling
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Calculate Hash Helper
+  const calculateBlockHash = (block: Block): string => {
+    return sha256(block.index.toString() + block.previousHash + block.timestamp.toString() + block.data + block.nonce.toString());
+  };
+
   // Helper to create a new block
-  const createNewBlock = (index: number, previousHash: string) => {
+  const createNewBlock = (index: number, previousHash: string): ChainBlock => {
     const timestamp = Date.now();
     const data = index === 0 ? 'Genesis Block' : `Block ${index + 1} Data`;
     const tempBlock: Block = {
@@ -49,13 +52,11 @@ const Step4_Chain: React.FC = () => {
       nonce: 0,
       hash: '',
     };
-    const hash = calculateHash(tempBlock);
+    const hash = calculateBlockHash(tempBlock);
 
     return {
       ...tempBlock,
       hash,
-      sealedHash: hash,
-      currentHash: hash,
       isSealed: true,
       status: 'valid' as const,
     };
@@ -66,7 +67,7 @@ const Step4_Chain: React.FC = () => {
     const index = blocks.length;
     let prevHash = '0'.repeat(64);
     if (index > 0) {
-      prevHash = blocks[index - 1].sealedHash;
+        prevHash = blocks[index - 1].hash;
     }
 
     const newBlock = createNewBlock(index, prevHash);
@@ -96,12 +97,14 @@ const Step4_Chain: React.FC = () => {
     // Recalculate current hash
     const tempBlock: Block = {
       ...block,
-      hash: '',
+      hash: '', // Placeholder to prevent circular dep in hash calculation if we used block object fully, but calculateBlockHash uses explicit fields
     };
-    block.currentHash = calculateHash(tempBlock);
+    block.hash = calculateBlockHash(tempBlock);
 
     // Check validity
-    if (block.currentHash !== block.sealedHash) {
+    // For simplicity in this visualizer, any change marks it invalid/unsealed until re-mined
+    if (block.isSealed) {
+      block.isSealed = false;
       block.status = 'invalid';
       if (phase === 'tamper' && index === 1 && tamperStep === 0) {
         setTamperStep(1);
@@ -111,7 +114,7 @@ const Step4_Chain: React.FC = () => {
       }
     } else {
       block.status = 'valid';
-      if (phase === 'tamper' && index === 1 && block.currentHash === block.sealedHash) {
+      if (block.isSealed) { // Should not happen if unsealed
           setTamperStep(0);
       }
     }
@@ -128,23 +131,15 @@ const Step4_Chain: React.FC = () => {
        const prevBlock = newBlocks[i-1];
        const currBlock = newBlocks[i];
 
-       // Link logic: currBlock.previousHash SHOULD match prevBlock.currentHash?
-       // In a real blockchain, next block stores Hash(PrevBlock).
-       // If PrevBlock changes, Hash(PrevBlock) changes.
-       // So NextBlock.previousHash != Hash(PrevBlock).
-
-       // Here:
-       // prevBlock.currentHash is the actual hash of previous block.
-       // currBlock.previousHash is the stored reference.
-
-       if (currBlock.previousHash !== prevBlock.currentHash) {
+       if (currBlock.previousHash !== prevBlock.hash) {
+         // Link is broken!
          if (currBlock.status !== 'broken_link') {
             currBlock.status = 'broken_link';
             updated = true;
          }
        } else {
          // If link is valid, check if block itself is valid (internal seal)
-         if (currBlock.currentHash !== currBlock.sealedHash) {
+         if (!currBlock.isSealed) {
             if (currBlock.status !== 'invalid') {
                 currBlock.status = 'invalid';
                 updated = true;
@@ -180,28 +175,26 @@ const Step4_Chain: React.FC = () => {
   const sealBlock = (index: number) => {
      const newBlocks = [...blocks];
      const block = newBlocks[index];
-     block.sealedHash = block.currentHash;
-     block.hash = block.currentHash;
+     block.isSealed = true;
      // Status update happens in useEffect
      setBlocks(newBlocks);
   };
 
-  // Fix Action: Update Previous Hash
-  const updatePreviousHash = (index: number) => {
+  const fixLink = (index: number) => {
      if (index === 0) return;
      const newBlocks = [...blocks];
      const prevBlock = newBlocks[index - 1];
      const currBlock = newBlocks[index];
 
-     currBlock.previousHash = prevBlock.currentHash;
+     currBlock.previousHash = prevBlock.hash;
+     currBlock.isSealed = false; // Changing prevHash breaks the seal
 
      // Recalculate because body changed
      const tempBlock: Block = {
         ...currBlock,
-        previousHash: currBlock.previousHash,
         hash: '',
      };
-     currBlock.currentHash = calculateHash(tempBlock);
+     currBlock.hash = calculateBlockHash(tempBlock);
 
      setBlocks(newBlocks);
   };
@@ -224,7 +217,6 @@ const Step4_Chain: React.FC = () => {
           <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
              We make each block include the <b>hash of the previous block</b>.
              This creates an unbreakable chain. If you change a block in the past, its hash changes.
-             Then the next block's "Previous Hash" link breaks. Then <i>its</i> hash changes...
              <br/><br/>
              It's a domino effect that alerts the whole network.
           </p>
@@ -287,18 +279,20 @@ const Step4_Chain: React.FC = () => {
                         </div>
 
                         <div className="space-y-4">
-                            {/* Previous Hash */}
+                            {/* Prev Hash */}
                             <div className="space-y-1">
-                                <label className="text-[10px] uppercase font-bold text-gray-500">Previous Hash</label>
+                                <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
+                                    <Link className="w-3 h-3" /> Prev Hash
+                                </label>
                                 <div className={`font-mono text-[10px] break-all p-2 rounded border ${
                                     block.status === 'broken_link'
                                     ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-700'
                                     : 'bg-surface-tertiary dark:bg-surface-dark-tertiary border-surface-border dark:border-surface-dark-border text-gray-500'
                                 }`}>
-                                    {block.previousHash.substring(0, 20)}...
+                                    {block.previousHash}
                                 </div>
                                 {phase === 'fix' && block.status === 'broken_link' && (
-                                    <Button size="sm" variant="primary" fullWidth onClick={() => updatePreviousHash(i)} icon={<RefreshCw className="w-3 h-3"/>} className="text-xs h-8">
+                                    <Button size="sm" variant="danger" fullWidth onClick={() => fixLink(i)} icon={<RefreshCw className="w-3 h-3"/>} className="text-xs h-8">
                                         Fix Link
                                     </Button>
                                 )}
@@ -322,17 +316,17 @@ const Step4_Chain: React.FC = () => {
                                 />
                             </div>
 
-                            {/* Current Hash */}
+                            {/* Hash */}
                             <div className="space-y-1">
                                 <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
-                                    <HashIcon className="w-3 h-3" /> Hash
+                                    <Lock className="w-3 h-3" /> Hash
                                 </label>
                                 <div className={`font-mono text-[10px] break-all p-2 rounded border transition-colors ${
                                     block.status === 'invalid'
                                     ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 text-yellow-700'
                                     : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-700'
                                 }`}>
-                                    {block.currentHash.substring(0, 20)}...
+                                    <Hash value={block.hash} truncate={false} />
                                 </div>
                                 {phase === 'fix' && block.status === 'invalid' && (
                                     <Button size="sm" variant="primary" fullWidth onClick={() => sealBlock(i)} icon={<Lock className="w-3 h-3"/>} className="text-xs h-8 animate-pulse">
@@ -365,11 +359,11 @@ const Step4_Chain: React.FC = () => {
                              <div className="space-y-2 text-sm">
                                  <div className={`flex items-center gap-2 ${tamperStep >= 1 ? 'text-status-error font-bold' : 'text-gray-400'}`}>
                                      <Badge variant="error" size="sm" className="w-5 h-5 flex items-center justify-center p-0 rounded-full">1</Badge>
-                                     Block 2 Hash Changed (Invalid Seal)
+                                     Block 2 becomes invalid (seal broken).
                                  </div>
                                  <div className={`flex items-center gap-2 ${tamperStep >= 2 ? 'text-status-error font-bold' : 'text-gray-400'}`}>
                                      <Badge variant="error" size="sm" className="w-5 h-5 flex items-center justify-center p-0 rounded-full">2</Badge>
-                                     Block 3 Previous Hash Mismatch (Broken Link)
+                                     Block 3 breaks because it points to the old hash!
                                  </div>
                              </div>
                          )}
@@ -392,7 +386,7 @@ const Step4_Chain: React.FC = () => {
                  </p>
                  <ol className="space-y-2 list-decimal list-inside text-sm text-gray-600 dark:text-gray-400">
                      <li><b>Re-Seal Block 2</b> to update its valid hash.</li>
-                     <li><b>Update Block 3's Previous Hash</b> to match Block 2's new hash.</li>
+                     <li><b>Fix Link on Block 3</b> to point to the new hash.</li>
                      <li><b>Re-Seal Block 3</b> because its data (previous hash) changed.</li>
                  </ol>
              </Card>

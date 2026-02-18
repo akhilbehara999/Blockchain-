@@ -36,13 +36,13 @@ export interface Peer {
 export interface SmartContract {
   id: string;
   code: string;
-  state: Record<string, any>;
+  state: Record<string, unknown>;
   conditions: ContractCondition[];
 }
 
 export interface ContractCondition {
   type: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
   action: string;
 }
 
@@ -59,11 +59,11 @@ export interface ExecutionResult {
   gasRefunded: number;
   cost: number;
   revertReason?: string;
-  result?: any;
+  result?: unknown;
 }
 
 export interface VMStep {
   name: string;
   cost: number;
-  action: (state?: any) => any;
+  action: (state: Record<string, unknown>) => Record<string, unknown> | void;
 }

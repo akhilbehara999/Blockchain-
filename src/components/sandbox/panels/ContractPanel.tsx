@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileCode, Play, Plus, Zap, Code, Cpu, RefreshCw, Terminal, CheckCircle } from 'lucide-react';
-import { useSandboxStore, DeployedContract } from '../../../stores/useSandboxStore';
+import { useSandboxStore, DeployedContract, ContractABI } from '../../../stores/useSandboxStore';
 import { useWalletStore } from '../../../stores/useWalletStore';
 import { ContractVM } from '../../../engine/ContractVM';
 import { VMStep } from '../../../engine/types';
@@ -8,16 +8,24 @@ import { NodeIdentity } from '../../../engine/NodeIdentity';
 import SandboxPanel from '../SandboxPanel';
 import ProgressBar from '../../ui/ProgressBar';
 
+interface ContractTemplate {
+  id: string;
+  name: string;
+  description: string;
+  initialState: Record<string, unknown>;
+  functions: ContractABI[];
+}
+
 // Templates Registry
-const CONTRACT_TEMPLATES = [
+const CONTRACT_TEMPLATES: ContractTemplate[] = [
   {
     id: 'simple-storage',
     name: 'SimpleStorage',
     description: 'Store and retrieve a single number.',
     initialState: { value: 0 },
     functions: [
-      { name: 'setValue', args: ['number'], cost: 5000 },
-      { name: 'getValue', args: [], cost: 1000 }
+      { type: 'function', name: 'setValue', inputs: [{ name: 'number', type: 'number' }], outputs: [], cost: 5000 },
+      { type: 'function', name: 'getValue', inputs: [], outputs: [{ name: '', type: 'number' }], cost: 1000 }
     ]
   },
   {
@@ -26,8 +34,8 @@ const CONTRACT_TEMPLATES = [
     description: 'Increment a counter value.',
     initialState: { count: 0 },
     functions: [
-      { name: 'increment', args: [], cost: 2000 },
-      { name: 'reset', args: [], cost: 1500 }
+      { type: 'function', name: 'increment', inputs: [], outputs: [], cost: 2000 },
+      { type: 'function', name: 'reset', inputs: [], outputs: [], cost: 1500 }
     ]
   },
   {
@@ -36,8 +44,8 @@ const CONTRACT_TEMPLATES = [
     description: 'Simple token with mint and transfer.',
     initialState: { totalSupply: 1000, balances: { 'owner': 1000 } },
     functions: [
-      { name: 'transfer', args: ['address', 'amount'], cost: 8000 },
-      { name: 'mint', args: ['amount'], cost: 5000 }
+      { type: 'function', name: 'transfer', inputs: [{ name: 'address', type: 'address' }, { name: 'amount', type: 'number' }], outputs: [], cost: 8000 },
+      { type: 'function', name: 'mint', inputs: [{ name: 'amount', type: 'number' }], outputs: [], cost: 5000 }
     ]
   }
 ];
@@ -87,11 +95,11 @@ const ContractPanel: React.FC = () => {
     setResult(null);
 
     // Find function definition
-    const funcDef = selectedContract.abi.find((f: any) => f.name === selectedFunction);
+    const funcDef = selectedContract.abi.find(f => f.name === selectedFunction);
     if (!funcDef) return;
 
     // Cost calculation
-    const gasLimit = funcDef.cost;
+    const gasLimit = funcDef.cost || 5000;
     const gasPrice = 0.000001; // cheap
     const totalCost = gasLimit * gasPrice;
 
@@ -123,7 +131,7 @@ const ContractPanel: React.FC = () => {
         }
     } else if (selectedContract.name === 'Counter') {
         if (selectedFunction === 'increment') {
-             steps = [{ name: 'ADD', cost: 2000, action: (s) => ({ ...s, count: s.count + 1 }) }];
+             steps = [{ name: 'ADD', cost: 2000, action: (s) => ({ ...s, count: (s.count as number) + 1 }) }];
         } else if (selectedFunction === 'reset') {
              steps = [{ name: 'ZERO', cost: 1500, action: (s) => ({ ...s, count: 0 }) }];
         }
@@ -132,13 +140,14 @@ const ContractPanel: React.FC = () => {
              const to = args[0];
              const amount = parseInt(args[1]);
              steps = [{ name: 'TRANSFER', cost: 8000, action: (s) => {
-                 if (s.balances['owner'] >= amount) {
+                 const balances = s.balances as Record<string, number>;
+                 if (balances['owner'] >= amount) {
                      return {
                          ...s,
                          balances: {
-                             ...s.balances,
-                             'owner': s.balances['owner'] - amount,
-                             [to]: (s.balances[to] || 0) + amount
+                             ...balances,
+                             'owner': balances['owner'] - amount,
+                             [to]: (balances[to] || 0) + amount
                          }
                      };
                  }
@@ -146,11 +155,14 @@ const ContractPanel: React.FC = () => {
              }}];
         } else if (selectedFunction === 'mint') {
              const amount = parseInt(args[0]);
-             steps = [{ name: 'MINT', cost: 5000, action: (s) => ({
-                 ...s,
-                 totalSupply: s.totalSupply + amount,
-                 balances: { ...s.balances, 'owner': s.balances['owner'] + amount }
-             }) }];
+             steps = [{ name: 'MINT', cost: 5000, action: (s) => {
+                 const balances = s.balances as Record<string, number>;
+                 return {
+                    ...s,
+                    totalSupply: (s.totalSupply as number) + amount,
+                    balances: { ...balances, 'owner': balances['owner'] + amount }
+                 };
+             }}];
         }
     }
 
@@ -160,14 +172,14 @@ const ContractPanel: React.FC = () => {
         const res = await vm.execute(steps, mode === 'god' ? 1000000 : gasLimit, gasPrice);
 
         if (res.success) {
-            updateContractState(selectedContract.id, res.result);
+            updateContractState(selectedContract.id, res.result as Record<string, unknown>);
             if (!result) setResult(`Success! Gas used: ${res.gasUsed}`);
         } else {
             setResult(`Reverted: ${res.revertReason}`);
             incrementMastery('gasFailures');
         }
-    } catch (e: any) {
-        setResult(`Error: ${e.message}`);
+    } catch (e) {
+        setResult(`Error: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
         setExecuting(false);
     }
@@ -226,13 +238,15 @@ const ContractPanel: React.FC = () => {
                         <Terminal className="w-3 h-3" /> Interact
                     </label>
                     <div className="flex gap-2 flex-wrap">
-                        {selectedContract.abi.map((f: any) => (
+                        {selectedContract.abi.map(f => (
                             <button
                                 key={f.name}
                                 onClick={() => {
-                                    setSelectedFunction(f.name);
-                                    setArgs(new Array(f.args.length).fill(''));
-                                    setResult(null);
+                                    if (f.name) {
+                                        setSelectedFunction(f.name);
+                                        setArgs(new Array((f.inputs || []).length).fill(''));
+                                        setResult(null);
+                                    }
                                 }}
                                 className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
                                     selectedFunction === f.name
@@ -249,13 +263,13 @@ const ContractPanel: React.FC = () => {
                 {/* Execution Form */}
                 {selectedFunction && (
                     <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4 animate-in fade-in duration-300">
-                        {selectedContract.abi.find((f: any) => f.name === selectedFunction)?.args.length > 0 && (
+                        {(selectedContract.abi.find(f => f.name === selectedFunction)?.inputs || []).length > 0 && (
                             <div className="grid grid-cols-1 gap-3">
-                                {selectedContract.abi.find((f: any) => f.name === selectedFunction)?.args.map((arg: string, i: number) => (
+                                {selectedContract.abi.find(f => f.name === selectedFunction)?.inputs?.map((input, i) => (
                                     <div key={i} className="space-y-1">
-                                        <label className="text-[10px] uppercase font-bold text-gray-400">{arg}</label>
+                                        <label className="text-[10px] uppercase font-bold text-gray-400">{input.name}</label>
                                         <input
-                                            placeholder={`Enter ${arg}...`}
+                                            placeholder={`Enter ${input.name}...`}
                                             value={args[i]}
                                             onChange={(e) => {
                                                 const newArgs = [...args];
@@ -275,7 +289,7 @@ const ContractPanel: React.FC = () => {
                                     <Zap className="w-3 h-3 text-yellow-500" /> Gas Limit
                                 </span>
                                 <span className="font-mono text-gray-700 dark:text-gray-300">
-                                    {selectedContract.abi.find((f: any) => f.name === selectedFunction)?.cost}
+                                    {selectedContract.abi.find(f => f.name === selectedFunction)?.cost}
                                 </span>
                             </div>
                             <ProgressBar

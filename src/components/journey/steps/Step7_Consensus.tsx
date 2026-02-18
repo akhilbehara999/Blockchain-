@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useProgress } from '../../../context/ProgressContext';
 import { useBlockchainStore } from '../../../stores/useBlockchainStore';
 import { useForkStore } from '../../../stores/useForkStore';
 import { backgroundEngine } from '../../../engine/BackgroundEngine';
@@ -14,7 +13,6 @@ import { GitBranch, AlertTriangle, ArrowRight, RefreshCcw, CheckCircle, Shield }
 import { useNavigate } from 'react-router-dom';
 
 const Step7_Consensus: React.FC = () => {
-  const { completeStep } = useProgress();
   const navigate = useNavigate();
   const { blocks, replaceChain, addBlock } = useBlockchainStore();
   const { startFork, addBlockToFork, resolveFork, triggerReorg, reset: resetFork } = useForkStore();

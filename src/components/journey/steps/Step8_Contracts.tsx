@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
 import { ContractVM } from '../../../engine/ContractVM';
 import { VMStep } from '../../../engine/types';
 import {
-  Code, AlertTriangle, Check, X, Flame,
-  ArrowRight, Database, Shield, Zap, Terminal, Unlock, Coins
+  AlertTriangle, Check, X, Flame,
+  Terminal, Unlock, Shield, Zap, Database
 } from 'lucide-react';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import Badge from '../../ui/Badge';
-import Hash from '../../ui/Hash';
 import { useInView } from '../../../hooks/useInView';
 import { useNavigate } from 'react-router-dom';
 
@@ -75,7 +74,7 @@ const Step8_Contracts: React.FC = () => {
     {
       name: 'Update Ledger',
       cost: 45000,
-      action: (state) => ({ ...state, balance: (state.balance || 0) + amount })
+      action: (state) => ({ ...state, balance: ((state.balance as number) || 0) + amount })
     }
   ];
 
@@ -84,14 +83,14 @@ const Step8_Contracts: React.FC = () => {
       name: 'Check Balance (require)',
       cost: 2100,
       action: (state) => {
-        if ((state.balance || 0) < amount) throw new Error(`require failed: amount > balance (${amount} > ${state.balance})`);
+        if (((state.balance as number) || 0) < amount) throw new Error(`require failed: amount > balance (${amount} > ${state.balance})`);
         return {};
       }
     },
     {
       name: 'Transfer Funds',
       cost: 45000,
-      action: (state) => ({ ...state, balance: (state.balance || 0) - amount })
+      action: (state) => ({ ...state, balance: ((state.balance as number) || 0) - amount })
     }
   ];
 
@@ -135,7 +134,7 @@ const Step8_Contracts: React.FC = () => {
 
       if (result.success) {
         const newState = vmRef.current.getState();
-        setContractBalance(newState.balance);
+        setContractBalance(newState.balance as number);
         onComplete(true);
       } else {
         setError(result.revertReason || 'Transaction failed');
@@ -374,7 +373,8 @@ const Step8_Contracts: React.FC = () => {
                         onClick={handleOOGTest}
                         disabled={isExecuting}
                         fullWidth
-                        variant="warning"
+                        variant="secondary" // Changed from warning to secondary (or use danger/primary with custom color)
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white" // Override style for warning
                       >
                         Execute with Low Gas
                       </Button>

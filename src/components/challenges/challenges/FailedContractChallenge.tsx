@@ -20,8 +20,7 @@ const FailedContractChallenge: React.FC = () => {
       overflow: false
   });
 
-  // Create VM instance (recreated on render is fine for this stateless challenge logic,
-  // but if we wanted persistence we'd use useMemo)
+  // Create VM instance
   const vm = new ContractVM({ balance: 1000 });
 
   const runContract = async () => {
@@ -58,44 +57,54 @@ const FailedContractChallenge: React.FC = () => {
               name: 'UPDATE_BAL',
               cost: 5000,
               action: (state) => {
-                  return { ...state, balance: state.balance - amount };
+                  const currentBalance = (state.balance as number) || 0;
+                  return { ...state, balance: currentBalance - amount };
               }
           }
       ];
 
-      const result = await vm.execute(steps, gasLimit, 1);
+      try {
+        const result = await vm.execute(steps, gasLimit, 1);
 
-      if (result.success) {
-          setLogs(prev => [...prev, `✅ Success! Gas Used: ${result.gasUsed}`]);
-      } else {
-          const error = result.revertReason || 'Unknown Error';
-          setLogs(prev => [...prev, `❌ Failed: ${error}`]);
+        if (result.success) {
+            setLogs(prev => [...prev, `✅ Success! Gas Used: ${result.gasUsed}`]);
+        } else {
+            const error = result.revertReason || 'Unknown Error';
+            handleFailure(error);
+        }
+      } catch (e) {
+          const error = e instanceof Error ? e.message : 'Unknown Error';
+          handleFailure(error);
+      }
+  };
 
-          const newFailures = { ...failures };
-          let updated = false;
+  const handleFailure = (error: string) => {
+      setLogs(prev => [...prev, `❌ Failed: ${error}`]);
 
-          if (error.includes("Require failed")) {
-              if (!newFailures.require) updated = true;
-              newFailures.require = true;
-          } else if (error === "Out of gas") {
-              if (!newFailures.gas) updated = true;
-              newFailures.gas = true;
-          } else if (error.includes("Overflow")) {
-              if (!newFailures.overflow) updated = true;
-              newFailures.overflow = true;
+      const newFailures = { ...failures };
+      let updated = false;
+
+      if (error.includes("Require failed")) {
+          if (!newFailures.require) updated = true;
+          newFailures.require = true;
+      } else if (error === "Out of gas") {
+          if (!newFailures.gas) updated = true;
+          newFailures.gas = true;
+      } else if (error.includes("Overflow")) {
+          if (!newFailures.overflow) updated = true;
+          newFailures.overflow = true;
+      }
+
+      setFailures(newFailures);
+
+      if (newFailures.require && newFailures.gas && newFailures.overflow) {
+          if (!challenges.crashContract.completed) {
+              updateChallengeProgress('crashContract', { completed: true, attempts: challenges.crashContract.attempts + 1 });
+              setLogs(prev => [...prev, `🎉 CHALLENGE COMPLETE! You broke it in every way possible!`]);
           }
-
-          setFailures(newFailures);
-
-          if (newFailures.require && newFailures.gas && newFailures.overflow) {
-              if (!challenges.crashContract.completed) {
-                  updateChallengeProgress('crashContract', { completed: true, attempts: challenges.crashContract.attempts + 1 });
-                  setLogs(prev => [...prev, `🎉 CHALLENGE COMPLETE! You broke it in every way possible!`]);
-              }
-          } else if (updated) {
-              if (!challenges.crashContract.completed) {
-                   updateChallengeProgress('crashContract', { attempts: challenges.crashContract.attempts + 1 });
-              }
+      } else if (updated) {
+          if (!challenges.crashContract.completed) {
+               updateChallengeProgress('crashContract', { attempts: challenges.crashContract.attempts + 1 });
           }
       }
   };
@@ -111,6 +120,9 @@ const FailedContractChallenge: React.FC = () => {
             </span>
             Crash a Contract
         </h2>
+        {/* ... (rest of UI remains unchanged, just logic fix above) */}
+
+        {/* Re-rendering UI for completeness of file write */}
         <p className="text-gray-600 dark:text-gray-300 mb-6">
             Find the inputs that cause the contract to fail in 3 specific ways.
         </p>

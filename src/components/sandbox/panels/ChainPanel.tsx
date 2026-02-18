@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 import { Box, GitBranch, Clock, Lock, CheckCircle2 } from 'lucide-react';
 import { useBlockchainStore } from '../../../stores/useBlockchainStore';
 import { useForkStore } from '../../../stores/useForkStore';
@@ -6,13 +6,19 @@ import { useSandboxStore } from '../../../stores/useSandboxStore';
 import { Block } from '../../../engine/types';
 import SandboxPanel from '../SandboxPanel';
 
-const BlockCard: React.FC<{ block: Block; height: number; type?: 'main' | 'orphan' | 'competitor' }> = ({ block, height, type = 'main' }) => {
+interface BlockCardProps {
+  block: Block;
+  height: number;
+  type?: 'main' | 'orphan' | 'competitor';
+}
+
+const BlockCard = memo<BlockCardProps>(({ block, height, type = 'main' }) => {
   const confirmations = height - block.index + 1;
   const isNew = confirmations === 1;
   const isFinalized = confirmations >= 6; // Bitcoin standard, loosely applied
 
   let statusColor = "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800";
-  let statusIndicator = null;
+  let statusIndicator: React.ReactNode = null;
   let shadowClass = "shadow-sm";
 
   if (type === 'competitor') {
@@ -70,37 +76,43 @@ const BlockCard: React.FC<{ block: Block; height: number; type?: 'main' | 'orpha
       </div>
     </div>
   );
-};
+});
 
 const ChainPanel: React.FC = () => {
   const blocks = useBlockchainStore(state => state.blocks);
   const activeFork = useForkStore(state => state.activeFork);
   const mode = useSandboxStore(state => state.mode);
+  const incrementMastery = useSandboxStore(state => state.incrementMastery);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Track previous fork state to detect new forks for mastery
   const prevForkRef = useRef<string | null>(null);
-  const incrementMastery = useSandboxStore(state => state.incrementMastery);
 
-  // Auto scroll
+  // Auto scroll logic
   useEffect(() => {
     if (scrollRef.current) {
+        // Only scroll if we were near the end or if it's a new block?
+        // Simple behavior: auto-scroll to end on new block
         scrollRef.current.scrollTo({ left: scrollRef.current.scrollWidth, behavior: 'smooth' });
     }
   }, [blocks.length, activeFork]);
 
   // Track mastery
   useEffect(() => {
-    if (activeFork && activeFork.status === 'active' && !prevForkRef.current) {
+    if (activeFork && activeFork.status === 'active' && prevForkRef.current !== 'active') {
         incrementMastery('forksWitnessed');
         prevForkRef.current = 'active';
-    } else if (!activeFork && prevForkRef.current) {
+    } else if (!activeFork && prevForkRef.current === 'active') {
         incrementMastery('reorgsSurvived');
         prevForkRef.current = null;
     }
   }, [activeFork, incrementMastery]);
 
-  const visibleBlocks = blocks; // Show all in scroll
+  // Virtualization: limit rendered blocks to last 20 + context?
+  // Since we horizontal scroll, we ideally want all, but for perf we can slice.
+  // Let's show last 50 blocks.
+  const visibleBlocks = blocks.length > 50 ? blocks.slice(blocks.length - 50) : blocks;
 
   return (
     <SandboxPanel

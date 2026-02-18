@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { safeParse } from '../utils';
+import { Storage } from '../utils/storage';
 
 export interface ChallengeProgress {
   completed: boolean;
@@ -31,10 +31,10 @@ interface ProgressContextType extends ProgressState {
   isStepUnlocked: (step: number) => boolean;
   isJourneyComplete: () => boolean;
   resetProgress: () => void;
-  getMasteryScore: () => number;
-  getRank: () => string;
   updateChallengeProgress: (id: keyof ChallengesState, data: Partial<ChallengeProgress>) => void;
   addMasteryPoints: (points: number) => void;
+  getMasteryScore: () => number;
+  getRank: () => string;
 }
 
 const defaultChallengeState: ChallengeProgress = {
@@ -65,20 +65,22 @@ const ProgressContext = createContext<ProgressContextType | undefined>(undefined
 export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<ProgressState>(() => {
     try {
-      const saved = localStorage.getItem('yupp_progress');
+      const validator = (data: any) => {
+          if (typeof data !== 'object' || data === null) return false;
+          if (data.currentStep && (typeof data.currentStep !== 'number' || data.currentStep < 1 || data.currentStep > 9)) return false;
+          return true;
+      };
+
+      const saved = Storage.getItem<Partial<ProgressState>>('yupp_progress', validator);
       if (saved) {
-        const parsed = safeParse<Partial<ProgressState> | null>(saved, null);
-        if (parsed) {
-          // Merge with defaultState to ensure new fields exist
-          return {
-            ...defaultState,
-            ...parsed,
-            challenges: {
-              ...defaultState.challenges,
-              ...(parsed.challenges || {})
-            }
-          };
-        }
+        return {
+          ...defaultState,
+          ...saved,
+          challenges: {
+            ...defaultState.challenges,
+            ...(saved.challenges || {})
+          }
+        };
       }
       return defaultState;
     } catch {
@@ -87,7 +89,7 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   useEffect(() => {
-    localStorage.setItem('yupp_progress', JSON.stringify(state));
+    Storage.setItem('yupp_progress', state);
   }, [state]);
 
   const calculateRank = (score: number) => {
@@ -99,27 +101,20 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const completeStep = (step: number) => {
     setState((prev) => {
-      // If already completed, do nothing unless we want to update score/achievements
+      // If already completed, do nothing
       if (prev.completedSteps.includes(step)) {
           return prev;
       }
 
       const newCompletedSteps = [...prev.completedSteps, step].sort((a, b) => a - b);
-
-      // Determine if journey is complete (assuming steps 1-8)
       const allStepsCompleted = [1, 2, 3, 4, 5, 6, 7, 8].every(s => newCompletedSteps.includes(s));
 
-      let nextStep = 1;
-      for (let i = 1; i <= 8; i++) {
-          if (newCompletedSteps.includes(i)) {
-              nextStep = i + 1;
-          } else {
-              break;
-          }
+      let nextStep = prev.currentStep;
+      if (step === prev.currentStep) {
+         nextStep = step + 1;
       }
-      if (nextStep > 8) nextStep = 8;
+      if (nextStep > 8) nextStep = 8; // Or 9 if we have a post-game? Keeping it safe.
 
-      // Award 10 points per step
       const newScore = prev.masteryScore + 10;
 
       return {
@@ -145,16 +140,15 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
     setState(defaultState);
   };
 
-  const getMasteryScore = () => state.masteryScore;
-  const getRank = () => calculateRank(state.masteryScore);
-
   const updateChallengeProgress = (id: keyof ChallengesState, data: Partial<ChallengeProgress>) => {
     setState((prev) => {
+      // Check if this challenge key exists to avoid runtime errors
+      if (!prev.challenges[id]) return prev;
+
       const wasCompleted = prev.challenges[id].completed;
       const isNowCompleted = data.completed ?? wasCompleted;
 
       let newScore = prev.masteryScore;
-      // Award 15 points if newly completed
       if (!wasCompleted && isNowCompleted) {
         newScore += 15;
       }
@@ -180,6 +174,9 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
     }));
   };
 
+  const getMasteryScore = () => state.masteryScore;
+  const getRank = () => calculateRank(state.masteryScore);
+
   return (
     <ProgressContext.Provider
       value={{
@@ -188,10 +185,10 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
         isStepUnlocked,
         isJourneyComplete,
         resetProgress,
-        getMasteryScore,
-        getRank,
         updateChallengeProgress,
         addMasteryPoints,
+        getMasteryScore,
+        getRank,
       }}
     >
       {children}
