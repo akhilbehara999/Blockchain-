@@ -37,27 +37,47 @@ const Step2_Hashing: React.FC = () => {
   const [playgroundInput, setPlaygroundInput] = useState('Hello World');
   const [playgroundHash, setPlaygroundHash] = useState('');
 
+  // Load initial state helper
+  const loadState = (key: string, def: any) => {
+    try {
+      const saved = localStorage.getItem('yupp_step2_state');
+      return saved ? (JSON.parse(saved)[key] ?? def) : def;
+    } catch { return def; }
+  };
+
   // ----- Experiment 1: Determinism -----
   const [exp1InputA, setExp1InputA] = useState('');
   const [exp1InputB, setExp1InputB] = useState('');
   const [exp1HashA, setExp1HashA] = useState('');
   const [exp1HashB, setExp1HashB] = useState('');
-  const [exp1Complete, setExp1Complete] = useState(false);
+  const [exp1Complete, setExp1Complete] = useState(() => loadState('exp1Complete', false));
 
   // ----- Experiment 2: Avalanche -----
   const originalExp2Input = "blockchain";
   const [originalExp2Hash, setOriginalExp2Hash] = useState('');
   const [exp2ModifiedInput, setExp2ModifiedInput] = useState('');
   const [exp2ModifiedHash, setExp2ModifiedHash] = useState('');
-  const [exp2Complete, setExp2Complete] = useState(false);
+  const [exp2Complete, setExp2Complete] = useState(() => loadState('exp2Complete', false));
 
   // ----- Experiment 3: Irreversibility -----
   const targetInput = "hello"; // The secret
   const [targetHash, setTargetHash] = useState('');
   const [exp3Guess, setExp3Guess] = useState('');
-  const [exp3Attempts, setExp3Attempts] = useState(0);
-  const [exp3Solved, setExp3Solved] = useState(false);
+  const [exp3Attempts, setExp3Attempts] = useState<number>(() => loadState('exp3Attempts', 0));
+  const [exp3Solved, setExp3Solved] = useState(() => loadState('exp3Solved', false));
   const [showHint, setShowHint] = useState(false);
+
+  // Persist state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yupp_step2_state', JSON.stringify({
+        exp1Complete,
+        exp2Complete,
+        exp3Solved,
+        exp3Attempts
+      }));
+    } catch {}
+  }, [exp1Complete, exp2Complete, exp3Solved, exp3Attempts]);
 
   // InView hooks
   const [headerRef, headerVisible] = useInView({ threshold: 0.1 });

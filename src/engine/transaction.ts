@@ -35,6 +35,7 @@ export function createTransaction(from: string, to: string, amount: number, priv
 
   const timestamp = Date.now();
   const tx: Transaction = {
+    id: `tx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     from,
     to,
     amount,

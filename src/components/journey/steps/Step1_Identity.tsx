@@ -17,8 +17,22 @@ const Step1_Identity: React.FC = () => {
 
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [guess, setGuess] = useState('');
-  const [guessAttempted, setGuessAttempted] = useState(false);
+
+  const [guessAttempted, setGuessAttempted] = useState(() => {
+    try {
+      const saved = localStorage.getItem('yupp_step1_state');
+      return saved ? JSON.parse(saved).guessAttempted : false;
+    } catch { return false; }
+  });
+
   const [generated, setGenerated] = useState(false);
+
+  // Persist state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yupp_step1_state', JSON.stringify({ guessAttempted }));
+    } catch {}
+  }, [guessAttempted]);
 
   // InView hooks for animations
   const [headerRef, headerVisible] = useInView({ threshold: 0.1 });

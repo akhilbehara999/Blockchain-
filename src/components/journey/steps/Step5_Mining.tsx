@@ -23,28 +23,53 @@ const Step5_Mining: React.FC = () => {
   const { completeStep } = useProgress();
   const navigate = useNavigate();
 
+  // Load state helper
+  const loadState = (key: string, def: any) => {
+    try {
+      const saved = localStorage.getItem('yupp_step5_state');
+      return saved ? (JSON.parse(saved)[key] ?? def) : def;
+    } catch { return def; }
+  };
+
   // --- State: Manual Mining ---
   const [manualNonce, setManualNonce] = useState<string>('0');
   const [manualHash, setManualHash] = useState<string>('');
-  const [manualAttempts, setManualAttempts] = useState<number>(0);
+  const [manualAttempts, setManualAttempts] = useState<number>(() => loadState('manualAttempts', 0));
   const [showAutoMine, setShowAutoMine] = useState<boolean>(false);
 
   // --- State: Auto Mining ---
-  const [autoStatus, setAutoStatus] = useState<'idle' | 'mining' | 'found'>('idle');
-  const [autoResult, setAutoResult] = useState<{ nonce: number; hash: string; time: number; attempts: number } | null>(null);
+  const [autoStatus, setAutoStatus] = useState<'idle' | 'mining' | 'found'>(() => {
+      const s = loadState('autoStatus', 'idle');
+      return s === 'mining' ? 'idle' : s;
+  });
+  const [autoResult, setAutoResult] = useState<{ nonce: number; hash: string; time: number; attempts: number } | null>(() => loadState('autoResult', null));
   const [autoProgress, setAutoProgress] = useState<{ nonce: number; hash: string }>({ nonce: 0, hash: '' });
 
   // --- State: Difficulty Experiment ---
   const [difficulty, setDifficulty] = useState<number>(3);
   const [diffStatus, setDiffStatus] = useState<'idle' | 'mining' | 'found'>('idle');
-  const [diffResults, setDiffResults] = useState<Record<number, { time: number; attempts: number }>>({});
+  const [diffResults, setDiffResults] = useState<Record<number, { time: number; attempts: number }>>(() => loadState('diffResults', {}));
   const [, setDiffProgress] = useState<{ nonce: number; hash: string }>({ nonce: 0, hash: '' });
 
   // --- State: Mining Race ---
   const [raceStatus, setRaceStatus] = useState<'idle' | 'racing' | 'finished'>('idle');
   const [raceMiners, setRaceMiners] = useState<Miner[]>([]);
   const [raceWinner, setRaceWinner] = useState<Miner | null>(null);
-  const [racesCompleted, setRacesCompleted] = useState<number>(0);
+  const [racesCompleted, setRacesCompleted] = useState<number>(() => loadState('racesCompleted', 0));
+  const [raceError, setRaceError] = useState<string | null>(null);
+
+  // Persist state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yupp_step5_state', JSON.stringify({
+        manualAttempts,
+        autoStatus: autoStatus === 'mining' ? 'idle' : autoStatus,
+        autoResult,
+        diffResults,
+        racesCompleted
+      }));
+    } catch {}
+  }, [manualAttempts, autoStatus, autoResult, diffResults, racesCompleted]);
 
   // InView hooks
   const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
@@ -156,16 +181,29 @@ const Step5_Mining: React.FC = () => {
   // --- Handlers: Mining Race ---
   const handleStartRace = async () => {
     if (raceStatus === 'racing') return;
+    setRaceError(null);
     setRaceStatus('racing');
     setRaceWinner(null);
 
-    const result = await startMiningRace(3, 50, (miners) => {
-      setRaceMiners(miners);
-    });
+    try {
+        const result = await startMiningRace(3, 50, (miners) => {
+          setRaceMiners(miners);
+        });
 
-    setRaceWinner(result.winner);
-    setRaceStatus('finished');
-    setRacesCompleted(prev => prev + 1);
+        if (result.success && result.winner) {
+            setRaceWinner(result.winner);
+            setRaceStatus('finished');
+            setRacesCompleted(prev => prev + 1);
+        } else {
+            setRaceStatus('idle');
+            setRaceError(result.message || 'Please wait between mining attempts.');
+            setTimeout(() => setRaceError(null), 3000);
+        }
+    } catch (error: unknown) {
+        setRaceStatus('idle');
+        setRaceError('An error occurred during mining.');
+        setTimeout(() => setRaceError(null), 3000);
+    }
   };
 
   // --- Completion Check ---
@@ -483,12 +521,12 @@ const Step5_Mining: React.FC = () => {
 
                 <Button
                     onClick={handleStartRace}
-                    disabled={raceStatus === 'racing'}
+                    disabled={raceStatus === 'racing' || !!raceError}
                     loading={raceStatus === 'racing'}
                     fullWidth
                     variant={raceStatus === 'racing' ? 'secondary' : 'primary'}
                 >
-                    {raceStatus === 'racing' ? 'Racing...' : raceMiners.length > 0 ? 'Race Again' : 'Start Race'}
+                    {raceError || (raceStatus === 'racing' ? 'Racing...' : raceMiners.length > 0 ? 'Race Again' : 'Start Race')}
                 </Button>
             </Card>
         </div>

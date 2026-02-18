@@ -13,14 +13,35 @@ const Step3_Blocks: React.FC = () => {
   const { completeStep } = useProgress();
   const navigate = useNavigate();
 
+  // Load state helper
+  const loadState = (key: string, def: any) => {
+    try {
+      const saved = localStorage.getItem('yupp_step3_state');
+      return saved ? (JSON.parse(saved)[key] ?? def) : def;
+    } catch { return def; }
+  };
+
   // State
-  const [blockData, setBlockData] = useState('Alice pays Bob 5 coins');
-  const [timestamp] = useState(Date.now()); // Fixed timestamp for this session
-  const [isSealed, setIsSealed] = useState(false);
-  const [sealedHash, setSealedHash] = useState('');
+  const [blockData, setBlockData] = useState(() => loadState('blockData', 'Alice pays Bob 5 coins'));
+  const [timestamp] = useState(Date.now());
+  const [isSealed, setIsSealed] = useState(() => loadState('isSealed', false));
+  const [sealedHash, setSealedHash] = useState(() => loadState('sealedHash', ''));
   const [currentHash, setCurrentHash] = useState('');
-  const [hasTampered, setHasTampered] = useState(false);
-  const [showCompletion, setShowCompletion] = useState(false);
+  const [hasTampered, setHasTampered] = useState(() => loadState('hasTampered', false));
+  const [showCompletion, setShowCompletion] = useState(() => loadState('showCompletion', false));
+
+  // Persist state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yupp_step3_state', JSON.stringify({
+        blockData,
+        isSealed,
+        sealedHash,
+        hasTampered,
+        showCompletion
+      }));
+    } catch {}
+  }, [blockData, isSealed, sealedHash, hasTampered, showCompletion]);
 
   // InView hooks
   const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
@@ -95,40 +116,54 @@ const Step3_Blocks: React.FC = () => {
 
       {/* SECTION 3 — BUILDER */}
       <div ref={builderRef} className={builderVisible ? 'animate-fade-up' : 'opacity-0'}>
-        <Card variant="elevated" className={`transition-all duration-300 ${isTampered ? 'border-status-error shadow-red-500/20' : ''}`}>
+        <Card variant="elevated" className={`transition-all duration-300 ${
+            isSealed && hasTampered
+            ? 'bg-red-50 border-2 border-red-400 text-gray-800 dark:bg-red-950 dark:border-red-400 dark:text-gray-200'
+            : isSealed
+                ? 'bg-green-50 border-2 border-green-400 text-gray-800 dark:bg-green-950 dark:border-green-500 dark:text-gray-200'
+                : ''
+        }`}>
             <div className="flex justify-between items-center mb-6">
                  <h3 className="text-2xl font-bold flex items-center gap-2">
-                    <Box className="w-6 h-6 text-brand-500" />
+                    <Box className={`w-6 h-6 ${isSealed ? (hasTampered ? 'text-red-500' : 'text-green-500') : 'text-brand-500'}`} />
                     Block Builder
                  </h3>
                  {isSealed && (
-                     <Badge variant={isTampered ? 'error' : 'success'} pulse={!isTampered}>
-                         {isTampered ? 'SEAL BROKEN' : 'SEALED'}
+                     <Badge variant={hasTampered ? 'error' : 'success'} pulse={!hasTampered}>
+                         {hasTampered ? 'SEAL BROKEN' : 'SEALED'}
                      </Badge>
                  )}
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 mb-6">
                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                    <label className={`text-xs font-bold uppercase flex items-center gap-1 ${isSealed ? 'text-gray-600 dark:text-gray-400' : 'text-gray-500'}`}>
                         <HashIcon className="w-3 h-3" /> Block Number
                     </label>
-                    <div className="w-full p-3 rounded-xl border-2 border-surface-border dark:border-surface-dark-border bg-surface-tertiary dark:bg-surface-dark-tertiary text-gray-500 cursor-not-allowed font-mono">
+                    <div className={`w-full p-3 rounded-xl border-2 font-mono ${
+                        isSealed
+                        ? 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-black/20 text-gray-900 dark:text-white'
+                        : 'border-surface-border dark:border-surface-dark-border bg-surface-tertiary dark:bg-surface-dark-tertiary text-gray-500'
+                    } cursor-not-allowed`}>
                         1
                     </div>
                  </div>
                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                    <label className={`text-xs font-bold uppercase flex items-center gap-1 ${isSealed ? 'text-gray-600 dark:text-gray-400' : 'text-gray-500'}`}>
                         <Clock className="w-3 h-3" /> Timestamp
                     </label>
-                    <div className="w-full p-3 rounded-xl border-2 border-surface-border dark:border-surface-dark-border bg-surface-tertiary dark:bg-surface-dark-tertiary text-gray-500 cursor-not-allowed font-mono">
+                    <div className={`w-full p-3 rounded-xl border-2 font-mono ${
+                        isSealed
+                        ? 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-black/20 text-gray-900 dark:text-white'
+                        : 'border-surface-border dark:border-surface-dark-border bg-surface-tertiary dark:bg-surface-dark-tertiary text-gray-500'
+                    } cursor-not-allowed`}>
                         {timestamp}
                     </div>
                  </div>
             </div>
 
             <div className="space-y-2 mb-6">
-                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                <label className={`text-xs font-bold uppercase flex items-center gap-1 ${isSealed ? 'text-gray-600 dark:text-gray-400' : 'text-gray-500'}`}>
                     <FileText className="w-3 h-3" /> Data (Transactions)
                 </label>
                 <textarea
@@ -137,7 +172,7 @@ const Step3_Blocks: React.FC = () => {
                     rows={4}
                     className={`w-full p-4 rounded-xl border-2 focus:ring-4 outline-none transition-all font-mono text-sm md:text-base ${
                         isSealed
-                        ? 'border-status-warning focus:border-status-warning focus:ring-yellow-100 dark:focus:ring-yellow-900/30 bg-yellow-50 dark:bg-yellow-900/10'
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30 bg-white/80 dark:bg-black/20 text-gray-900 dark:text-white'
                         : 'border-surface-border dark:border-surface-dark-border focus:border-brand-500 focus:ring-brand-100 dark:focus:ring-brand-900/30 bg-transparent'
                     }`}
                 />
@@ -150,13 +185,17 @@ const Step3_Blocks: React.FC = () => {
             </div>
 
             <div className="space-y-2 mb-8 opacity-60 hover:opacity-100 transition-opacity">
-                 <label className="text-xs font-bold text-gray-500 uppercase">Previous Block Hash</label>
-                 <div className="w-full p-3 rounded-xl border-2 border-surface-border dark:border-surface-dark-border bg-surface-tertiary dark:bg-surface-dark-tertiary text-gray-500 font-mono text-xs break-all">
+                 <label className={`text-xs font-bold uppercase ${isSealed ? 'text-gray-600 dark:text-gray-400' : 'text-gray-500'}`}>Previous Block Hash</label>
+                 <div className={`w-full p-3 rounded-xl border-2 font-mono text-xs break-all ${
+                     isSealed
+                     ? 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-black/20 text-gray-900 dark:text-white'
+                     : 'border-surface-border dark:border-surface-dark-border bg-surface-tertiary dark:bg-surface-dark-tertiary text-gray-500'
+                 }`}>
                      0000000000000000000000000000000000000000000000000000000000000000
                  </div>
             </div>
 
-            <div className="border-t border-surface-border dark:border-surface-dark-border pt-6">
+            <div className={`border-t pt-6 ${isSealed ? 'border-gray-300 dark:border-gray-600' : 'border-surface-border dark:border-surface-dark-border'}`}>
                  {!isSealed ? (
                      <Button onClick={handleSeal} fullWidth icon={<Lock className="w-4 h-4"/>}>
                          Seal Block
@@ -164,28 +203,28 @@ const Step3_Blocks: React.FC = () => {
                  ) : (
                      <div className="space-y-4">
                          <div className="flex items-center justify-between text-sm">
-                             <span className="font-bold text-gray-700 dark:text-gray-300">Block Hash (The Seal)</span>
-                             {isTampered ? (
-                                 <span className="text-status-error font-bold flex items-center gap-1">
+                             <span className={`font-bold ${isSealed ? 'text-gray-800 dark:text-gray-200' : 'text-gray-700 dark:text-gray-300'}`}>Block Hash (The Seal)</span>
+                             {hasTampered ? (
+                                 <span className="text-red-600 font-bold flex items-center gap-1">
                                      <Unlock className="w-4 h-4" /> INVALID
                                  </span>
                              ) : (
-                                 <span className="text-status-valid font-bold flex items-center gap-1">
+                                 <span className="text-green-600 font-bold flex items-center gap-1">
                                      <Lock className="w-4 h-4" /> VALID
                                  </span>
                              )}
                          </div>
 
                          <div className={`p-4 rounded-xl border-2 font-mono text-sm break-all transition-colors ${
-                             isTampered
-                             ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
-                             : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                             hasTampered
+                             ? 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200'
+                             : 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200'
                          }`}>
                              {currentHash}
                          </div>
 
-                         {!isTampered && (
-                             <div className="text-center text-status-valid font-bold animate-bounce text-sm">
+                         {!hasTampered && (
+                             <div className="text-center text-green-700 dark:text-green-300 font-bold animate-bounce text-sm">
                                  ✅ Block sealed! Now try changing the data above.
                              </div>
                          )}

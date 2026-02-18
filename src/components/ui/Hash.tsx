@@ -29,7 +29,7 @@ const Hash: React.FC<HashProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy hash:', err);
+      // silently fail
     }
   };
 
@@ -50,14 +50,6 @@ const Hash: React.FC<HashProps> = ({
 
   const renderHighlighted = (text: string, offset: number) => {
     if (highlight === 'leading-zeros') {
-      // Find leading zeros in the ORIGINAL value, not just the segment.
-      // But if we are rendering segments (start/end), we need to be careful.
-      // Simplification: only highlight leading zeros if they are in the 'start' part or if not truncated.
-
-      // Actually, if truncated, we only show start and end. Leading zeros are only at the start.
-      // So checking the 'text' variable (which is a segment or full string) is tricky if we don't know if it's the start.
-      // But 'offset' tells us where we are.
-
       if (offset === 0) {
          const match = text.match(/^(0+)/);
          if (match) {
@@ -90,7 +82,7 @@ const Hash: React.FC<HashProps> = ({
   };
 
   return (
-    <div className={`inline-flex items-center space-x-2 ${className}`}>
+    <span className={`inline-flex items-center space-x-2 ${className}`}>
       <span
         className={`text-sm break-all ${mono ? 'font-mono' : ''} ${copyable ? 'cursor-pointer hover:bg-surface-hover rounded px-1 -mx-1 transition-colors' : ''}`}
         onClick={handleCopy}
@@ -115,7 +107,7 @@ const Hash: React.FC<HashProps> = ({
           Copied!
         </span>
       )}
-    </div>
+    </span>
   );
 };
 
