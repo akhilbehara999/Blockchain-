@@ -65,31 +65,30 @@ const ProgressContext = createContext<ProgressContextType | undefined>(undefined
 export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<ProgressState>(() => {
     try {
-      const validator = (data: any) => {
-          if (typeof data !== 'object' || data === null) return false;
-          if (data.currentStep && (typeof data.currentStep !== 'number' || data.currentStep < 1 || data.currentStep > 9)) return false;
-          return true;
-      };
-
-      const saved = Storage.getItem<Partial<ProgressState>>('yupp_progress', validator);
+      const saved = localStorage.getItem('yupp_progress');
       if (saved) {
-        return {
-          ...defaultState,
-          ...saved,
-          challenges: {
-            ...defaultState.challenges,
-            ...(saved.challenges || {})
-          }
-        };
+        const parsed = JSON.parse(saved);
+        // Validate the data shape
+        if (parsed && typeof parsed.currentStep === 'number'
+            && Array.isArray(parsed.completedSteps)) {
+          return {
+            ...defaultState,
+            ...parsed,
+            challenges: {
+              ...defaultState.challenges,
+              ...(parsed.challenges || {})
+            }
+          };
+        }
       }
-      return defaultState;
-    } catch {
-      return defaultState;
-    }
+    } catch { /* ignore */ }
+    return defaultState;
   });
 
   useEffect(() => {
-    Storage.setItem('yupp_progress', state);
+    try {
+      localStorage.setItem('yupp_progress', JSON.stringify(state));
+    } catch { /* silently fail */ }
   }, [state]);
 
   const calculateRank = (score: number) => {
@@ -117,7 +116,7 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       const newScore = prev.masteryScore + 10;
 
-      return {
+      const updated = {
         ...prev,
         completedSteps: newCompletedSteps,
         currentStep: nextStep,
@@ -126,6 +125,13 @@ export const ProgressProvider: React.FC<{ children: ReactNode }> = ({ children }
         challengesUnlocked: allStepsCompleted,
         masteryScore: newScore,
       };
+
+      // CRITICAL: Save immediately
+      try {
+        localStorage.setItem('yupp_progress', JSON.stringify(updated));
+      } catch { /* silently fail */ }
+
+      return updated;
     });
   };
 

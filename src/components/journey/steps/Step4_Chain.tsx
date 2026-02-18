@@ -19,10 +19,29 @@ const Step4_Chain: React.FC = () => {
   const { completeStep } = useProgress();
   const navigate = useNavigate();
 
+  // Load state helper
+  const loadState = (key: string, def: any) => {
+    try {
+      const saved = localStorage.getItem('yupp_step4_state');
+      return saved ? (JSON.parse(saved)[key] ?? def) : def;
+    } catch { return def; }
+  };
+
   // State
-  const [blocks, setBlocks] = useState<ChainBlock[]>([]);
-  const [phase, setPhase] = useState<'intro' | 'build' | 'tamper' | 'fix' | 'complete'>('intro');
-  const [tamperStep, setTamperStep] = useState(0);
+  const [blocks, setBlocks] = useState<ChainBlock[]>(() => loadState('blocks', []));
+  const [phase, setPhase] = useState<'intro' | 'build' | 'tamper' | 'fix' | 'complete'>(() => loadState('phase', 'intro'));
+  const [tamperStep, setTamperStep] = useState(() => loadState('tamperStep', 0));
+
+  // Persist state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yupp_step4_state', JSON.stringify({
+        blocks,
+        phase,
+        tamperStep
+      }));
+    } catch {}
+  }, [blocks, phase, tamperStep]);
 
   // InView hooks
   const [headerRef, headerVisible] = useInView({ threshold: 0.1 });
@@ -267,27 +286,29 @@ const Step4_Chain: React.FC = () => {
                     <Card
                         variant="elevated"
                         className={`min-w-full md:min-w-[320px] max-w-full md:max-w-[320px] snap-center transition-all duration-300 ${
-                            block.status === 'valid' ? 'border-status-valid' :
-                            block.status === 'broken_link' ? 'border-status-error shadow-red-500/20' :
-                            'border-status-warning shadow-yellow-500/20'
+                            block.status === 'valid'
+                            ? 'bg-green-50 border-2 border-green-400 text-gray-800 dark:bg-green-950 dark:border-green-500 dark:text-gray-200'
+                            : block.status === 'broken_link'
+                                ? 'bg-red-50 border-2 border-red-400 text-gray-800 dark:bg-red-950 dark:border-red-400 dark:text-gray-200'
+                                : 'bg-red-50 border-2 border-red-400 text-gray-800 dark:bg-red-950 dark:border-red-400 dark:text-gray-200'
                         }`}
                         status={block.status === 'valid' ? 'valid' : block.status === 'broken_link' ? 'error' : 'warning'}
                     >
                         <div className="flex justify-between items-center mb-4">
-                            <span className="font-mono font-bold text-sm">BLOCK #{block.index + 1}</span>
-                            {block.status === 'valid' ? <Check className="w-4 h-4 text-status-valid"/> : <X className="w-4 h-4 text-status-error"/>}
+                            <span className="font-mono font-bold text-sm text-gray-900 dark:text-gray-100">BLOCK #{block.index + 1}</span>
+                            {block.status === 'valid' ? <Check className="w-4 h-4 text-green-600"/> : <X className="w-4 h-4 text-red-600"/>}
                         </div>
 
                         <div className="space-y-4">
                             {/* Prev Hash */}
                             <div className="space-y-1">
-                                <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1">
                                     <Link className="w-3 h-3" /> Prev Hash
                                 </label>
                                 <div className={`font-mono text-[10px] break-all p-2 rounded border ${
                                     block.status === 'broken_link'
-                                    ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-700'
-                                    : 'bg-surface-tertiary dark:bg-surface-dark-tertiary border-surface-border dark:border-surface-dark-border text-gray-500'
+                                    ? 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200'
+                                    : 'bg-white/50 dark:bg-black/20 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200'
                                 }`}>
                                     {block.previousHash}
                                 </div>
@@ -300,17 +321,17 @@ const Step4_Chain: React.FC = () => {
 
                             {/* Data */}
                             <div className="space-y-1">
-                                <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1">
                                     <FileText className="w-3 h-3" /> Data
                                 </label>
                                 <textarea
                                     value={block.data}
                                     onChange={(e) => updateBlockData(i, e.target.value)}
                                     disabled={phase !== 'tamper' && !(phase === 'fix' && block.status !== 'valid')}
-                                    className={`w-full p-2 text-sm rounded-lg border-2 outline-none font-mono resize-none transition-all ${
+                                    className={`w-full p-2 text-sm rounded-lg border-2 outline-none font-mono resize-none transition-all text-gray-900 dark:text-gray-100 ${
                                         phase === 'tamper' && i === 1
-                                        ? 'border-brand-300 focus:border-brand-500 ring-4 ring-brand-50 dark:ring-brand-900/10'
-                                        : 'border-surface-border dark:border-surface-dark-border bg-transparent'
+                                        ? 'border-brand-300 focus:border-brand-500 ring-4 ring-brand-50 dark:ring-brand-900/10 bg-white/80 dark:bg-black/20'
+                                        : 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-black/20'
                                     }`}
                                     rows={2}
                                 />
@@ -318,13 +339,13 @@ const Step4_Chain: React.FC = () => {
 
                             {/* Hash */}
                             <div className="space-y-1">
-                                <label className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1">
                                     <Lock className="w-3 h-3" /> Hash
                                 </label>
                                 <div className={`font-mono text-[10px] break-all p-2 rounded border transition-colors ${
                                     block.status === 'invalid'
-                                    ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 text-yellow-700'
-                                    : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-700'
+                                    ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200'
+                                    : 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200'
                                 }`}>
                                     <Hash value={block.hash} truncate={false} />
                                 </div>

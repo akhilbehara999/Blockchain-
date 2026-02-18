@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertTriangle, XCircle, Info, Hammer, Radio } from 'lucide-react';
 import { useToast, Toast as ToastType } from '../../context/ToastContext';
 
-const ToastItem: React.FC<{ toast: ToastType; onRemove: (id: string) => void }> = ({ toast, onRemove }) => {
+interface ToastItemProps {
+  toast: ToastType;
+  onRemove: (id: string) => void;
+}
+
+const ToastItem = forwardRef<HTMLDivElement, ToastItemProps>(({ toast, onRemove }, ref) => {
   const getIcon = (type: ToastType['type']) => {
     switch (type) {
       case 'success': return <CheckCircle className="w-5 h-5 text-status-valid" />;
@@ -31,6 +36,7 @@ const ToastItem: React.FC<{ toast: ToastType; onRemove: (id: string) => void }> 
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, x: 50, scale: 0.9 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -58,7 +64,9 @@ const ToastItem: React.FC<{ toast: ToastType; onRemove: (id: string) => void }> 
       </div>
     </motion.div>
   );
-};
+});
+
+ToastItem.displayName = 'ToastItem';
 
 export const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useToast();

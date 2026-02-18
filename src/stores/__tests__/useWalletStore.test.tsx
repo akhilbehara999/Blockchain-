@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useWalletStore } from '../useWalletStore';
-import { generateKeyPair } from '../../engine/wallet';
 
 describe('useWalletStore', () => {
-  // generateKeyPair().publicKey already has '0x' prefix now.
-  const alice = generateKeyPair().publicKey.substring(0, 42); // Ensure valid length/format if needed, but it should be fine.
-  const bob = generateKeyPair().publicKey.substring(0, 42);
-
   beforeEach(() => {
     useWalletStore.getState().initializeWallets();
   });

@@ -17,10 +17,36 @@ const Step7_Consensus: React.FC = () => {
   const { blocks, replaceChain, addBlock } = useBlockchainStore();
   const { startFork, addBlockToFork, resolveFork, triggerReorg, reset: resetFork } = useForkStore();
 
-  const [section, setSection] = useState<number>(1);
-  const [simulationStatus, setSimulationStatus] = useState<'idle' | 'running' | 'completed'>('idle');
-  const [reorgStatus, setReorgStatus] = useState<'idle' | 'pending' | 'confirmed' | 'reorged'>('idle');
-  const [sliderValue, setSliderValue] = useState<number>(1);
+  // Load state helper
+  const loadState = (key: string, def: any) => {
+    try {
+      const saved = localStorage.getItem('yupp_step7_state');
+      return saved ? (JSON.parse(saved)[key] ?? def) : def;
+    } catch { return def; }
+  };
+
+  const [section, setSection] = useState<number>(() => loadState('section', 1));
+  const [simulationStatus, setSimulationStatus] = useState<'idle' | 'running' | 'completed'>(() => {
+      const s = loadState('simulationStatus', 'idle');
+      return s === 'running' ? 'idle' : s; // Reset running to idle
+  });
+  const [reorgStatus, setReorgStatus] = useState<'idle' | 'pending' | 'confirmed' | 'reorged'>(() => {
+      const s = loadState('reorgStatus', 'idle');
+      return s === 'pending' ? 'idle' : s;
+  });
+  const [sliderValue, setSliderValue] = useState<number>(() => loadState('sliderValue', 1));
+
+  // Persist state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yupp_step7_state', JSON.stringify({
+        section,
+        simulationStatus: simulationStatus === 'running' ? 'idle' : simulationStatus,
+        reorgStatus: reorgStatus === 'pending' ? 'idle' : reorgStatus,
+        sliderValue
+      }));
+    } catch {}
+  }, [section, simulationStatus, reorgStatus, sliderValue]);
 
   // Stop background engine on mount, restart on unmount
   useEffect(() => {

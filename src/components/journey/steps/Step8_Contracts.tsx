@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useProgress } from '../../../context/ProgressContext';
 import { ContractVM } from '../../../engine/ContractVM';
 import { VMStep } from '../../../engine/types';
@@ -24,12 +24,33 @@ interface LogEntry {
 const Step8_Contracts: React.FC = () => {
   const { completeStep } = useProgress();
   const navigate = useNavigate();
-  const [section, setSection] = useState<Section>('intro');
-  const [contractAddress, setContractAddress] = useState<string | null>(null);
-  const [contractBalance, setContractBalance] = useState(0);
-  const [userBalance, setUserBalance] = useState(10);
+
+  // Load state helper
+  const loadState = (key: string, def: any) => {
+    try {
+      const saved = localStorage.getItem('yupp_step8_state');
+      return saved ? (JSON.parse(saved)[key] ?? def) : def;
+    } catch { return def; }
+  };
+
+  const [section, setSection] = useState<Section>(() => loadState('section', 'intro'));
+  const [contractAddress, setContractAddress] = useState<string | null>(() => loadState('contractAddress', null));
+  const [contractBalance, setContractBalance] = useState<number>(() => loadState('contractBalance', 0));
+  const [userBalance, setUserBalance] = useState<number>(() => loadState('userBalance', 10));
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
+
+  // Persist state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yupp_step8_state', JSON.stringify({
+        section,
+        contractAddress,
+        contractBalance,
+        userBalance
+      }));
+    } catch {}
+  }, [section, contractAddress, contractBalance, userBalance]);
   const [gasMeter, setGasMeter] = useState({ current: 0, max: 0 });
   const [error, setError] = useState<string | null>(null);
 
@@ -121,8 +142,8 @@ const Step8_Contracts: React.FC = () => {
         gasLimit,
         gasPrice,
         (index, stepGas, totalGas) => {
-          setGasMeter(prev => ({ ...prev, current: totalGas }));
-          setLogs(prev => {
+          setGasMeter((prev: any) => ({ ...prev, current: totalGas }));
+          setLogs((prev: any) => {
             const newLogs = [...prev];
             if (newLogs[index]) {
                 newLogs[index] = { ...newLogs[index], status: 'success', gasUsed: stepGas };
@@ -138,7 +159,9 @@ const Step8_Contracts: React.FC = () => {
         onComplete(true);
       } else {
         setError(result.revertReason || 'Transaction failed');
-        setLogs(prev => {
+        // Simplified error handling to avoid TS inference issues
+        setLogs((prev: any) => {
+            if (!prev) return [];
             const newLogs = [...prev];
             const firstPendingIdx = newLogs.findIndex(l => l.status === 'pending');
             if (firstPendingIdx !== -1) {
