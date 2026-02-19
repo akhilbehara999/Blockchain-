@@ -20,11 +20,12 @@ export const FEE_LEVELS = {
  * @param amount - Amount to send
  * @param privateKey - Sender private key for signing
  * @param fee - Transaction fee (optional, default 0)
+ * @param skipRateLimit - Whether to bypass the rate limit check (optional, default false)
  * @returns Signed Transaction object
  * @throws Error if validation fails or rate limit exceeded
  */
-export function createTransaction(from: string, to: string, amount: number, privateKey: string, fee: number = 0): Transaction {
-  if (!txRateLimiter.canProceed()) {
+export function createTransaction(from: string, to: string, amount: number, privateKey: string, fee: number = 0, skipRateLimit: boolean = false): Transaction {
+  if (!skipRateLimit && !txRateLimiter.canProceed()) {
     throw new Error("Transaction rate limit exceeded. Please wait.");
   }
 

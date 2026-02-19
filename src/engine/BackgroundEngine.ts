@@ -196,8 +196,8 @@ export class BackgroundEngine {
 
     if (sender.balance < amount + fee) return;
 
-    // Create transaction
-    const tx = createTransaction(sender.publicKey, receiver.publicKey, amount, sender.privateKey, fee);
+    // Create transaction - skip rate limit for simulated background transactions
+    const tx = createTransaction(sender.publicKey, receiver.publicKey, amount, sender.privateKey, fee, true);
 
     // Update store
     useWalletStore.setState({ mempool: [...mempool, tx] });
