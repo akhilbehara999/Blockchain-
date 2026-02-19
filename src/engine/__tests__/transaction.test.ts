@@ -67,4 +67,20 @@ describe('Transaction', () => {
     }
     expect(isValid).toBe(false);
   });
+
+  it('should respect the skipRateLimit flag', () => {
+    const { publicKey: senderPub, privateKey: senderPriv } = generateKeyPair();
+    const { publicKey: receiverPub } = generateKeyPair();
+
+    const senderAddr = toAddress(senderPub);
+    const receiverAddr = toAddress(receiverPub);
+
+    // Default rate limit is 10 tx per minute.
+    // Let's create 11 transactions with skipRateLimit = true
+    for (let i = 0; i < 11; i++) {
+      expect(() => {
+        createTransaction(senderAddr, receiverAddr, 1, senderPriv, 0, true);
+      }).not.toThrow();
+    }
+  });
 });
