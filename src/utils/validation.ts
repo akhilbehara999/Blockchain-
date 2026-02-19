@@ -8,8 +8,9 @@ export function isValidFee(fee: string | number): boolean {
   return !isNaN(num) && num > 0 && num <= 1.0;
 }
 export function isValidAddress(address: string): boolean {
-  // Allow up to 132 chars (0x + 130 for uncompressed key)
-  return /^0x[a-fA-F0-9]{40,132}$/.test(address);
+  if (!address || typeof address !== 'string') return false;
+  // Allow 40-200 hex chars after 0x (Ethereum: 40, Uncompressed Key: 130)
+  return /^0x[a-fA-F0-9]{40,200}$/.test(address);
 }
 export function isValidGasLimit(gas: string | number): boolean {
   const num = typeof gas === 'string' ? parseInt(gas) : gas;

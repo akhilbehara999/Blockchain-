@@ -195,6 +195,7 @@ export class BackgroundEngine {
     const fee = parseFloat((Math.random() * (0.002 - 0.0001) + 0.0001).toFixed(5));
 
     if (sender.balance < amount + fee) return;
+    if (!sender.publicKey || !receiver.publicKey) return;
 
     // Create transaction - skip rate limit for simulated background transactions
     const tx = createTransaction(sender.publicKey, receiver.publicKey, amount, sender.privateKey, fee, true);
