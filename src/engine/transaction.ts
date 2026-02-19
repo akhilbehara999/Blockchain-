@@ -29,8 +29,8 @@ export function createTransaction(from: string, to: string, amount: number, priv
     throw new Error("Transaction rate limit exceeded. Please wait.");
   }
 
-  if (!isValidAddress(from)) throw new Error("Invalid sender address");
-  if (!isValidAddress(to)) throw new Error("Invalid recipient address");
+  if (!isValidAddress(from)) throw new Error(`Invalid sender address: ${from}`);
+  if (!isValidAddress(to)) throw new Error(`Invalid recipient address: ${to}`);
   if (!isValidAmount(amount)) throw new Error("Invalid amount");
   if (fee < 0 || (fee > 0 && !isValidFee(fee))) throw new Error("Invalid fee");
 
